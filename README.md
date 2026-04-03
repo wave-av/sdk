@@ -49,7 +49,7 @@ console.log(`Peak concurrent: ${viewers.peak_concurrent}`);
 
 ## All 34 APIs
 
-### P1 - Core Streaming
+### P1 - Core streaming
 
 | API             | Access        | Description                                                          |
 | --------------- | ------------- | -------------------------------------------------------------------- |
@@ -68,7 +68,7 @@ console.log(`Peak concurrent: ${viewers.peak_concurrent}`);
 | `wave.prism` | `PrismAPI` | Virtual Device Bridge (NDI/ONVIF/VISCA/Dante to USB UVC/UAC) |
 | `wave.zoom`  | `ZoomAPI`  | Zoom meetings, rooms, recordings, RTMS                       |
 
-### P3 - Content & Commerce
+### P3 - Content & commerce
 
 | API                 | Access            | Description                                 |
 | ------------------- | ----------------- | ------------------------------------------- |
@@ -362,7 +362,7 @@ const wave = new Wave({
 });
 ```
 
-## Individual API Imports
+## Individual API imports
 
 ```typescript
 import { WaveClient, PipelineAPI, PrismAPI } from "@wave-av/sdk";
@@ -400,10 +400,52 @@ wave.client.on("rate_limit.hit", (retryAfter) => {
 });
 ```
 
+## Troubleshooting
+
+### Types not resolving from subpath imports
+
+Ensure your `tsconfig.json` uses `"moduleResolution": "node16"` or `"nodenext"`:
+
+```json
+{
+  "compilerOptions": {
+    "module": "node16",
+    "moduleResolution": "node16"
+  }
+}
+```
+
+### Rate limit errors
+
+The SDK retries automatically with exponential backoff. To handle rate limits explicitly:
+
+```typescript
+wave.client.on("rate_limit.hit", (retryAfter) => {
+  console.log(`Rate limited. Retry in ${retryAfter}ms`);
+});
+```
+
+### ESM vs CJS
+
+The SDK supports both ESM and CJS. If using CommonJS, ensure you're importing correctly:
+
+```javascript
+const { Wave } = require("@wave-av/sdk");
+```
+
 ## Requirements
 
 - Node.js 18+
-- TypeScript 5.0+ (for TypeScript users)
+- TypeScript 5.0+ (recommended 5.5+ for best subpath support)
+
+## Related packages
+
+- [@wave-av/adk](https://www.npmjs.com/package/@wave-av/adk) — Agent Developer Kit for building AI video agents
+- [@wave-av/mcp-server](https://www.npmjs.com/package/@wave-av/mcp-server) — MCP server for Claude, Cursor, Windsurf
+- [@wave-av/cli](https://www.npmjs.com/package/@wave-av/cli) — Command-line interface
+- [@wave-av/create-app](https://www.npmjs.com/package/@wave-av/create-app) — Scaffold a new project
+- [@wave-av/workflow-sdk](https://www.npmjs.com/package/@wave-av/workflow-sdk) — Workflow orchestration
+- [OpenAPI spec](https://github.com/wave-av/api-spec) — Full API specification
 
 ## License
 
