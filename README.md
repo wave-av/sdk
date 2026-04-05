@@ -449,4 +449,4 @@ const { Wave } = require("@wave-av/sdk");
 
 ## License
 
-MIT - WAVE Inc.
+MIT - WAVE Online, LLC
