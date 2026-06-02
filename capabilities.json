@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "1",
+  "repo": "wave-av/sdk",
+  "version": "2.0.4",
+  "lifecycle": "beta",
+  "planeLayer": null,
+  "foundationPin": "v1",
+  "maintainers": [
+    {
+      "team": "sdk"
+    }
+  ],
+  "consumes": {
+    "waveProducts": [
+      {
+        "repo": "wave-av/api-spec"
+      }
+    ],
+    "foundationFrameworks": [
+      "frameworks/platform-registry"
+    ]
+  },
+  "tags": [
+    "sdk",
+    "public",
+    "typescript",
+    "@wave-av/sdk"
+  ]
+}
