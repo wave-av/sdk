@@ -21,9 +21,21 @@ import type {
 
 const DEFAULT_WS = 'wss://realtime.wave.online';
 
+/**
+ * Strip trailing `/` characters via a bounded character walk rather than a
+ * regex. `String.prototype.replace(/\/+$/, '')` triggers CodeQL's
+ * `js/polynomial-redos` warning because `\/+$` can backtrack quadratically
+ * on adversarial input; the manual walk is unambiguously O(n).
+ */
+function rstripSlashes(s: string): string {
+  let end = s.length;
+  while (end > 0 && s.charCodeAt(end - 1) === 0x2f /* '/' */) end--;
+  return end === s.length ? s : s.slice(0, end);
+}
+
 /** Derive the https REST origin from the (ws) realtime base URL. */
 function httpOrigin(wsUrl: string): string {
-  return wsUrl.replace(/^ws/i, 'http').replace(/\/+$/, '');
+  return rstripSlashes(wsUrl.replace(/^ws/i, 'http'));
 }
 
 /**
@@ -43,7 +55,7 @@ export class RealtimeChannel extends EventEmitter {
     private readonly opts: RealtimeConnectOptions = {},
   ) {
     super();
-    this.wsBase = (opts.url || DEFAULT_WS).replace(/\/+$/, '');
+    this.wsBase = rstripSlashes(opts.url || DEFAULT_WS);
     this.httpBase = httpOrigin(this.wsBase);
     this.open();
   }
@@ -123,7 +135,7 @@ export class RealtimeAPI {
   constructor(client: WaveClient, opts: { url?: string } = {}) {
     const info = client.getConnectionInfo();
     this.apiKey = info.apiKey;
-    this.wsBase = (opts.url || DEFAULT_WS).replace(/\/+$/, '');
+    this.wsBase = rstripSlashes(opts.url || DEFAULT_WS);
     this.httpBase = httpOrigin(this.wsBase);
   }
 
