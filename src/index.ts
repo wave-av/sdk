@@ -321,6 +321,10 @@ export { NotificationsAPI, createNotificationsAPI } from "./notifications";
 // DRM API
 export { DrmAPI, createDrmAPI } from "./drm";
 
+// Realtime — the live control & event plane (WebSocket)
+export { RealtimeAPI, RealtimeChannel, createRealtimeAPI } from "./realtime";
+export * from "./realtime-types";
+
 // Telemetry (opt-in)
 export {
   withTelemetry,
@@ -373,6 +377,7 @@ import { SlidesAPI } from "./slides";
 import { UsbAPI } from "./usb";
 import { NotificationsAPI } from "./notifications";
 import { DrmAPI } from "./drm";
+import { RealtimeAPI } from "./realtime";
 
 /**
  * Full WAVE SDK client with all APIs attached
@@ -427,6 +432,9 @@ export class Wave {
   public readonly notifications: NotificationsAPI;
   public readonly drm: DrmAPI;
 
+  // Realtime — live control & event plane (WebSocket)
+  public readonly realtime: RealtimeAPI;
+
   constructor(config: WaveClientConfig) {
     this.client = new WaveClient(config);
 
@@ -476,6 +484,9 @@ export class Wave {
     // Cross-cutting
     this.notifications = new NotificationsAPI(this.client);
     this.drm = new DrmAPI(this.client);
+
+    // Realtime
+    this.realtime = new RealtimeAPI(this.client);
   }
 }
 

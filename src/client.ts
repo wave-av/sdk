@@ -112,6 +112,18 @@ export class WaveClient extends EventEmitter<WaveClientEvents> {
     }
   }
 
+  /**
+   * Connection info for transports that bypass the HTTP client (e.g. the Realtime WebSocket plane,
+   * which can't route each frame through request()). Exposes the caller's own API key + base URL.
+   */
+  public getConnectionInfo(): { apiKey: string; baseUrl: string; organizationId?: string } {
+    return {
+      apiKey: this.config.apiKey,
+      baseUrl: this.config.baseUrl,
+      organizationId: this.config.organizationId || undefined,
+    };
+  }
+
   // ==========================================================================
   // HTTP Methods
   // ==========================================================================
