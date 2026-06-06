@@ -7,7 +7,12 @@
 import { EventEmitter } from 'eventemitter3';
 import type { TelemetryConfig } from './telemetry';
 import { initTelemetry } from './telemetry';
-import type { WaveClientConfig, RequestOptions, WaveClientEvents } from './client-types';
+import type {
+  WaveClientConfig,
+  RequestOptions,
+  WaveClientEvents,
+  WaveAPIErrorResponse,
+} from './client-types';
 
 // ============================================================================
 // Configuration Types
@@ -53,6 +58,47 @@ export class WaveError extends Error {
     this.requestId = requestId;
     this.details = details;
     this.retryable = this.isRetryable(statusCode, code);
+  }
+
+  /**
+   * Determine whether an error is safe to retry.
+   *
+   * Conservative by design: only transient, server-side or throttling
+   * conditions are retryable. Client errors (4xx other than 408/429) are
+   * treated as permanent so we never re-issue a request the server has
+   * already rejected on its merits (e.g. 400/401/403/404).
+   */
+  private isRetryable(statusCode: number, code: string): boolean {
+    // Server errors are transient and retryable.
+    if (statusCode >= 500) {
+      return true;
+    }
+
+    // Throttling (429) and request timeout (408) are retryable.
+    if (statusCode === 429 || statusCode === 408) {
+      return true;
+    }
+
+    // statusCode 0 indicates a network/transport-level failure (no HTTP
+    // response was received) — these are retryable.
+    if (statusCode === 0) {
+      return true;
+    }
+
+    // Code-based retryable signals for transport/throttling conditions that
+    // may surface without a conventional retryable status code.
+    const retryableCodes = new Set([
+      'RATE_LIMITED',
+      'TIMEOUT',
+      'NETWORK_ERROR',
+      'SERVICE_UNAVAILABLE',
+      'INTERNAL_ERROR',
+    ]);
+    if (retryableCodes.has(code)) {
+      return true;
+    }
+
+    return false;
   }
 
 }
@@ -366,12 +412,69 @@ export class WaveClient extends EventEmitter<WaveClientEvents> {
   }
 
   /**
-   * Parse error response
+   * Parse an error response body into a WaveError (or subclass).
+   *
+   * Reads the JSON error envelope (see WaveAPIErrorResponse) when present and
+   * tolerates non-JSON / empty bodies, falling back to the HTTP status text.
+   * The returned error's `retryable` flag is derived from status + code via
+   * WaveError's own logic, so callers can branch on `error.retryable`.
    */
+  private async parseErrorResponse(response: Response): Promise<WaveError> {
+    const statusCode = response.status;
+    const requestId = response.headers.get('x-request-id') || undefined;
+
+    let code = `HTTP_${statusCode}`;
+    let message = response.statusText || `Request failed with status ${statusCode}`;
+    let details: Record<string, unknown> | undefined;
+    let bodyRequestId: string | undefined;
+
+    try {
+      const body = (await response.json()) as Partial<WaveAPIErrorResponse>;
+      if (body && typeof body === 'object' && body.error) {
+        code = body.error.code || code;
+        message = body.error.message || message;
+        details = body.error.details;
+      }
+      bodyRequestId = body?.request_id;
+    } catch {
+      // Non-JSON or empty body — keep status-derived defaults.
+    }
+
+    return new WaveError(message, code, statusCode, requestId ?? bodyRequestId, details);
+  }
 
   /**
-   * Parse Retry-After header
+   * Parse the `Retry-After` response header into a delay in **milliseconds**
+   * (the unit expected by `sleep()` and produced by `calculateBackoff()`).
+   *
+   * Supports both forms defined by RFC 7231:
+   *   - delta-seconds (e.g. `Retry-After: 120`)
+   *   - HTTP-date     (e.g. `Retry-After: Wed, 21 Oct 2025 07:28:00 GMT`)
+   *
+   * Falls back to the base backoff delay (1000ms) when the header is missing
+   * or malformed.
    */
+  private parseRetryAfter(response: Response): number {
+    const defaultDelayMs = 1000;
+    const header = response.headers.get('retry-after');
+    if (!header) {
+      return defaultDelayMs;
+    }
+
+    // delta-seconds form: a non-negative integer number of seconds.
+    const seconds = Number(header);
+    if (Number.isFinite(seconds)) {
+      return Math.max(0, seconds) * 1000;
+    }
+
+    // HTTP-date form: convert the absolute time to a delay from now.
+    const dateMs = Date.parse(header);
+    if (!Number.isNaN(dateMs)) {
+      return Math.max(0, dateMs - Date.now());
+    }
+
+    return defaultDelayMs;
+  }
 
   /**
    * Calculate exponential backoff delay
