@@ -1,3 +1,5 @@
+import type { Timestamps, Metadata, PaginationParams } from './client-types';
+
 export type ChapterStatus = 'pending' | 'processing' | 'ready' | 'failed';
 export interface Chapter extends Timestamps {
   id: string;

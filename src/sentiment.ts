@@ -11,10 +11,9 @@ import type {
   WaveClient,
   PaginationParams,
   PaginatedResponse,
-  Timestamps,
-  Metadata,
 } from './client';
-import type { AnalysisStatus, SentimentLabel, EmotionType, SourceType, SentimentAnalysis, SentimentSegment, EmotionScore, SentimentTrend, SentimentSummary, KeyMoment, TopicSentiment, CreateAnalysisRequest, BatchAnalysisRequest, ListAnalysesParams } from './sentiment-types';
+import type { SentimentLabel, EmotionType, SentimentAnalysis, SentimentSegment, EmotionScore, SentimentTrend, SentimentSummary, KeyMoment, TopicSentiment, CreateAnalysisRequest, BatchAnalysisRequest, ListAnalysesParams } from './sentiment-types';
+export type * from './sentiment-types';
 
 // ============================================================================
 // Types

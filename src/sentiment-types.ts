@@ -1,3 +1,5 @@
+import type { Timestamps, Metadata, PaginationParams } from './client-types';
+
 export type AnalysisStatus = 'pending' | 'processing' | 'ready' | 'failed';
 export type SentimentLabel =
   | 'very_negative'

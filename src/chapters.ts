@@ -9,12 +9,10 @@
 
 import type {
   WaveClient,
-  PaginationParams,
   PaginatedResponse,
-  Timestamps,
-  Metadata,
 } from './client';
-import type { ChapterStatus, Chapter, ChapterSet, GenerateChaptersRequest, CreateChapterSetRequest, CreateChapterRequest, UpdateChapterRequest, UpdateChapterSetRequest, ListChapterSetsParams } from './chapters-types';
+import type { Chapter, ChapterSet, GenerateChaptersRequest, CreateChapterSetRequest, CreateChapterRequest, UpdateChapterRequest, UpdateChapterSetRequest, ListChapterSetsParams } from './chapters-types';
+export type * from './chapters-types';
 
 // ============================================================================
 // Types

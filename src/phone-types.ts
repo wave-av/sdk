@@ -1,3 +1,5 @@
+import type { Timestamps, Metadata, PaginationParams } from './client-types';
+
 export type CallStatus =
   | 'initiating'
   | 'ringing'

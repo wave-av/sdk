@@ -13,10 +13,9 @@ import type {
   WaveClient,
   PaginationParams,
   PaginatedResponse,
-  Timestamps,
-  Metadata,
 } from "./client";
-import type { StreamStatus, StreamProtocol, StreamQuality, Stream, CreateStreamRequest, UpdateStreamRequest, ListStreamsParams, StreamHealth, StreamRecording, IngestEndpoint, ViewerSession, StreamEvent } from './pipeline-types';
+import type { StreamProtocol, Stream, CreateStreamRequest, UpdateStreamRequest, ListStreamsParams, StreamHealth, StreamRecording, IngestEndpoint, ViewerSession } from './pipeline-types';
+export type * from './pipeline-types';
 
 // ============================================================================
 // Types
