@@ -30,6 +30,17 @@ export type {
   WaveAPIErrorResponse,
 } from './client-types';
 
+// Error codes that signal a transient transport/throttling condition and are
+// safe to retry, independent of HTTP status. Module-level so the Set is
+// allocated once rather than on every isRetryable call.
+const RETRYABLE_ERROR_CODES = new Set([
+  'RATE_LIMITED',
+  'TIMEOUT',
+  'NETWORK_ERROR',
+  'SERVICE_UNAVAILABLE',
+  'INTERNAL_ERROR',
+]);
+
 // ============================================================================
 // Configuration Types
 // ============================================================================
@@ -103,14 +114,7 @@ export class WaveError extends Error {
 
     // Code-based retryable signals for transport/throttling conditions that
     // may surface without a conventional retryable status code.
-    const retryableCodes = new Set([
-      'RATE_LIMITED',
-      'TIMEOUT',
-      'NETWORK_ERROR',
-      'SERVICE_UNAVAILABLE',
-      'INTERNAL_ERROR',
-    ]);
-    if (retryableCodes.has(code)) {
+    if (RETRYABLE_ERROR_CODES.has(code)) {
       return true;
     }
 
@@ -477,10 +481,17 @@ export class WaveClient extends EventEmitter<WaveClientEvents> {
       return defaultDelayMs;
     }
 
-    // delta-seconds form: a non-negative integer number of seconds.
-    const seconds = Number(header);
-    if (Number.isFinite(seconds)) {
-      return Math.max(0, seconds) * 1000;
+    // delta-seconds form: per RFC 7231 this is a non-negative INTEGER number
+    // of seconds. Only accept a bare run of digits; reject decimals,
+    // exponential notation, signs, and `Infinity` so they fall through to the
+    // HTTP-date parse (and ultimately the default) rather than being
+    // misinterpreted as a delay.
+    const trimmed = header.trim();
+    if (/^\d+$/.test(trimmed)) {
+      const seconds = Number(trimmed);
+      if (Number.isFinite(seconds)) {
+        return seconds * 1000;
+      }
     }
 
     // HTTP-date form: convert the absolute time to a delay from now.
