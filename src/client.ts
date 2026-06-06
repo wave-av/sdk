@@ -7,8 +7,7 @@
 import { EventEmitter } from 'eventemitter3';
 import type { TelemetryConfig } from './telemetry';
 import { initTelemetry } from './telemetry';
-import type { WaveClientConfig, RequestOptions, WaveAPIErrorResponse, WaveClientEvents, PaginationParams, PaginatedResponse, MediaType, Timestamps, Metadata } from './client-types';
-import { isRetryable, parseErrorResponse, parseRetryAfter } from './client-helpers';
+import type { WaveClientConfig, RequestOptions, WaveClientEvents } from './client-types';
 
 // ============================================================================
 // Configuration Types

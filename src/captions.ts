@@ -11,10 +11,8 @@ import type {
   WaveClient,
   PaginationParams,
   PaginatedResponse,
-  Timestamps,
-  Metadata,
 } from './client';
-import type { CaptionStatus, CaptionFormat, CaptionTrack, CaptionCue, CaptionWord, CaptionStyle, GenerateCaptionsRequest, UploadCaptionsRequest, UpdateCaptionsRequest, TranslateCaptionsRequest, BurnInCaptionsRequest, BurnInJob, ListCaptionsParams } from './captions-types';
+import type { CaptionFormat, CaptionTrack, CaptionCue, GenerateCaptionsRequest, UploadCaptionsRequest, UpdateCaptionsRequest, TranslateCaptionsRequest, BurnInCaptionsRequest, BurnInJob, ListCaptionsParams } from './captions-types';
 
 // ============================================================================
 // Types

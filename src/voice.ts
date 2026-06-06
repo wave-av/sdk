@@ -11,10 +11,8 @@ import type {
   WaveClient,
   PaginationParams,
   PaginatedResponse,
-  Timestamps,
-  Metadata,
 } from './client';
-import type { VoiceModelType, VoiceGender, AudioFormat, Voice, SynthesizeRequest, SynthesisResult, CloneVoiceRequest, VoiceCloneJob, ListVoicesParams, VoiceSettings } from './voice-types';
+import type { Voice, SynthesizeRequest, SynthesisResult, CloneVoiceRequest, VoiceCloneJob, ListVoicesParams, VoiceSettings } from './voice-types';
 
 // ============================================================================
 // Types

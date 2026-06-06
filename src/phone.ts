@@ -11,10 +11,9 @@ import type {
   WaveClient,
   PaginationParams,
   PaginatedResponse,
-  Timestamps,
   Metadata,
 } from './client';
-import type { CallStatus, CallDirection, PhoneNumberType, PhoneNumberCapabilities, PhoneNumber, Call, MakeCallRequest, UpdateCallRequest, Conference, ConferenceParticipant, SearchNumbersRequest, AvailablePhoneNumber, ListCallsParams } from './phone-types';
+import type { CallStatus, PhoneNumberType, PhoneNumber, Call, MakeCallRequest, UpdateCallRequest, Conference, ConferenceParticipant, SearchNumbersRequest, AvailablePhoneNumber, ListCallsParams } from './phone-types';
 
 // ============================================================================
 // Types

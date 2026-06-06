@@ -231,7 +231,7 @@
   "scripts": {
     "build": "tsup src/*.ts --format cjs,esm --clean",
     "dev": "tsup src/*.ts --format cjs,esm --dts --watch",
-    "lint": "eslint src/",
+    "lint": "eslint src/ --max-warnings 0",
     "test": "vitest run",
     "test:watch": "vitest",
     "type-check": "tsc --noEmit",
@@ -282,8 +282,8 @@
     "node": ">=18.0.0"
   },
   "peerDependencies": {
-    "zod": "^3.22.0",
-    "@opentelemetry/api": "^1.7.0"
+    "@opentelemetry/api": "^1.7.0",
+    "zod": "^3.22.0"
   },
   "peerDependenciesMeta": {
     "@opentelemetry/api": {
@@ -294,9 +294,12 @@
     "eventemitter3": "^5.0.1"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.4",
     "@types/node": "^25.0.3",
+    "eslint": "^9.39.4",
     "tsup": "^8.0.0",
     "typescript": "^5.9.3",
+    "typescript-eslint": "^8.60.1",
     "vitest": "^4.0.16",
     "zod": "4.4.3"
   }
