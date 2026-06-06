@@ -1,3 +1,5 @@
+import type { TelemetryConfig } from './telemetry';
+
 export interface WaveClientConfig {
   /** API key for authentication */
   apiKey: string;

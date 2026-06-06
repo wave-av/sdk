@@ -13,6 +13,7 @@ import type {
   PaginatedResponse,
 } from './client';
 import type { CaptionFormat, CaptionTrack, CaptionCue, GenerateCaptionsRequest, UploadCaptionsRequest, UpdateCaptionsRequest, TranslateCaptionsRequest, BurnInCaptionsRequest, BurnInJob, ListCaptionsParams } from './captions-types';
+export type * from './captions-types';
 
 // ============================================================================
 // Types

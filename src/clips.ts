@@ -15,6 +15,7 @@ import type {
   Metadata,
 } from './client';
 import type { ClipStatus, ClipExportFormat, ClipQualityPreset, ClipSource, Clip } from './clips-types';
+export type * from './clips-types';
 
 // ============================================================================
 // Types

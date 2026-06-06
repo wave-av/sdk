@@ -1,3 +1,5 @@
+import type { Timestamps, Metadata } from './client-types';
+
 export type ClipStatus =
   | 'pending'
   | 'processing'

@@ -13,6 +13,7 @@ import type {
   PaginatedResponse,
 } from './client';
 import type { Voice, SynthesizeRequest, SynthesisResult, CloneVoiceRequest, VoiceCloneJob, ListVoicesParams, VoiceSettings } from './voice-types';
+export type * from './voice-types';
 
 // ============================================================================
 // Types

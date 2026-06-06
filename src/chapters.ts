@@ -12,6 +12,7 @@ import type {
   PaginatedResponse,
 } from './client';
 import type { Chapter, ChapterSet, GenerateChaptersRequest, CreateChapterSetRequest, CreateChapterRequest, UpdateChapterRequest, UpdateChapterSetRequest, ListChapterSetsParams } from './chapters-types';
+export type * from './chapters-types';
 
 // ============================================================================
 // Types

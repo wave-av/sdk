@@ -14,6 +14,22 @@ import type {
   WaveAPIErrorResponse,
 } from './client-types';
 
+// Re-export shared types so sibling modules and the barrel can import them
+// from './client' (the conventional entry point for cross-cutting types).
+export type {
+  PaginationParams,
+  PaginatedResponse,
+  Timestamps,
+  Metadata,
+  MediaType,
+} from './client-types';
+export type {
+  WaveClientConfig,
+  RequestOptions,
+  WaveClientEvents,
+  WaveAPIErrorResponse,
+} from './client-types';
+
 // ============================================================================
 // Configuration Types
 // ============================================================================

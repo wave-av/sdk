@@ -15,6 +15,7 @@ import type {
   PaginatedResponse,
 } from "./client";
 import type { StreamProtocol, Stream, CreateStreamRequest, UpdateStreamRequest, ListStreamsParams, StreamHealth, StreamRecording, IngestEndpoint, ViewerSession } from './pipeline-types';
+export type * from './pipeline-types';
 
 // ============================================================================
 // Types

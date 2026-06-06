@@ -14,6 +14,7 @@ import type {
   Metadata,
 } from './client';
 import type { CallStatus, PhoneNumberType, PhoneNumber, Call, MakeCallRequest, UpdateCallRequest, Conference, ConferenceParticipant, SearchNumbersRequest, AvailablePhoneNumber, ListCallsParams } from './phone-types';
+export type * from './phone-types';
 
 // ============================================================================
 // Types
