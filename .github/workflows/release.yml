@@ -112,12 +112,21 @@ jobs:
 
   # ---------------------------------------------------------------------------
   # Gate 3 — publish. Runs ONLY if secret-scan + verify are green.
+  #
+  # Auth: npm OIDC trusted publishing (no long-lived token). The runner mints a
+  # short-lived OIDC identity token (id-token: write) and npm (>= 11.5.1) exchanges
+  # it for a scoped, single-use publish credential — provided @wave-av/sdk has a
+  # Trusted Publisher configured on npmjs.com (org: wave-av, repo: sdk,
+  # workflow: release.yml). No NPM_TOKEN secret is used.
   # ---------------------------------------------------------------------------
   publish:
     name: Publish to npm (gated)
     needs: [secret-scan, verify]
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      id-token: write   # mint the OIDC token npm exchanges for a publish credential
+      contents: read
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
@@ -128,6 +137,16 @@ jobs:
           node-version: '22'
           cache: 'npm'
           registry-url: 'https://registry.npmjs.org'
+
+      # Trusted publishing (OIDC) requires npm >= 11.5.1; Node 22 ships an older
+      # npm. Upgrade the CLI on the runner, then prove the floor is met.
+      - name: Upgrade npm to a trusted-publishing-capable CLI (>= 11.5.1)
+        run: |
+          set -euo pipefail
+          npm install -g npm@latest
+          NPM_VER="$(npm --version)"
+          echo "npm version: $NPM_VER"
+          node -e "const s='$NPM_VER'.split('.').map(Number);const min=[11,5,1];for(let i=0;i<3;i++){if(s[i]>min[i])process.exit(0);if(s[i]<min[i]){console.error('npm '+'$NPM_VER'+' < 11.5.1 — trusted publishing unavailable');process.exit(1);}}"
 
       - run: npm ci
 
@@ -151,7 +170,9 @@ jobs:
           echo "dist-tag=$DIST_TAG"
           echo "dist_tag=$DIST_TAG" >> "$GITHUB_OUTPUT"
 
-      - name: npm publish (dist-tag ${{ steps.ver.outputs.dist_tag }})
-        run: npm publish --access public --no-provenance --tag "${{ steps.ver.outputs.dist_tag }}"
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # Auth comes from the OIDC token (id-token: write) exchanged by npm against
+      # the Trusted Publisher registered for @wave-av/sdk — NO NODE_AUTH_TOKEN /
+      # NPM_TOKEN / .npmrc _authToken. --provenance is now free (and enforced):
+      # OIDC supplies the signing identity for the provenance attestation.
+      - name: npm publish (OIDC trusted publishing, dist-tag ${{ steps.ver.outputs.dist_tag }})
+        run: npm publish --access public --provenance --tag "${{ steps.ver.outputs.dist_tag }}"
