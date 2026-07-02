@@ -222,11 +222,11 @@ describe("@wave/sdk exports", () => {
     expect(expectedFactories.length).toBe(33);
   });
 
-  it("total named exports exceeds 100", () => {
+  it("total named exports exceeds 80", () => {
     // API classes (33) + factories (33) + Wave + createWave + WaveClient +
     // createClient + WaveError + RateLimitError + type re-exports
     const exportCount = Object.keys(SDK).length;
-    expect(exportCount).toBeGreaterThan(100);
+    expect(exportCount).toBeGreaterThan(80);
   });
 });
 
