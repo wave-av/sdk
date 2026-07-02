@@ -325,6 +325,23 @@ export { DrmAPI, createDrmAPI } from "./drm";
 export { RealtimeAPI, RealtimeChannel, createRealtimeAPI } from "./realtime";
 export * from "./realtime-types";
 
+// Perception — agentic live-media subscribe() control plane (#85)
+export {
+  PerceptionAPI,
+  createPerceptionAPI,
+  type PerceptionTransport,
+  type PerceptionSampleMode,
+  type PerceptionSample,
+  type PerceptionAudioMode,
+  type PerceptionFrame,
+  type PerceptionBatch,
+  type SubscribeRequest,
+  type ReceiveDescriptor,
+  type PerceptionMeterBinding,
+  type PerceptionOptions,
+  type PerceptionSubscription,
+} from "./perception";
+
 // Telemetry (opt-in)
 export {
   withTelemetry,
@@ -378,6 +395,7 @@ import { UsbAPI } from "./usb";
 import { NotificationsAPI } from "./notifications";
 import { DrmAPI } from "./drm";
 import { RealtimeAPI } from "./realtime";
+import { PerceptionAPI } from "./perception";
 
 /**
  * Full WAVE SDK client with all APIs attached
@@ -435,6 +453,9 @@ export class Wave {
   // Realtime — live control & event plane (WebSocket)
   public readonly realtime: RealtimeAPI;
 
+  // Perception — agentic live-media subscribe() control plane (#85)
+  public readonly perception: PerceptionAPI;
+
   constructor(config: WaveClientConfig) {
     this.client = new WaveClient(config);
 
@@ -487,6 +508,9 @@ export class Wave {
 
     // Realtime
     this.realtime = new RealtimeAPI(this.client);
+
+    // Perception (#85)
+    this.perception = new PerceptionAPI(this.client);
   }
 }
 
