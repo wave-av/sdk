@@ -101,6 +101,9 @@ describe("@wave/sdk exports", () => {
     expect(wave.podcast).toBeInstanceOf(SDK.PodcastAPI);
     expect(wave.slides).toBeInstanceOf(SDK.SlidesAPI);
     expect(wave.usb).toBeInstanceOf(SDK.UsbAPI);
+
+    // Perception (#85)
+    expect(wave.perception).toBeInstanceOf(SDK.PerceptionAPI);
   });
 
   // =========================================================================
@@ -146,6 +149,8 @@ describe("@wave/sdk exports", () => {
     "PodcastAPI",
     "SlidesAPI",
     "UsbAPI",
+    // Perception (#85)
+    "PerceptionAPI",
   ];
 
   it.each(expectedAPIs)("exports %s class", (apiName) => {
@@ -189,6 +194,7 @@ describe("@wave/sdk exports", () => {
     "createPodcastAPI",
     "createSlidesAPI",
     "createUsbAPI",
+    "createPerceptionAPI",
   ];
 
   it.each(expectedFactories)("exports %s factory", (factoryName) => {
@@ -214,12 +220,12 @@ describe("@wave/sdk exports", () => {
   // Module count verification
   // =========================================================================
 
-  it("has exactly 34 API module classes (33 + Wave)", () => {
-    expect(expectedAPIs.length).toBe(33);
+  it("has exactly 35 API module classes (34 + Wave)", () => {
+    expect(expectedAPIs.length).toBe(34);
   });
 
-  it("has exactly 33 factory functions", () => {
-    expect(expectedFactories.length).toBe(33);
+  it("has exactly 34 factory functions", () => {
+    expect(expectedFactories.length).toBe(34);
   });
 
   it("total named exports exceeds 100", () => {
