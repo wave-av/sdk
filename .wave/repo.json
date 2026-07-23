@@ -1,0 +1,48 @@
+{
+  "name": "sdk",
+  "kind": "library",
+  "domain": "sdk",
+  "purpose": "Official TypeScript SDK for the WAVE API — 34 API modules covering streaming, production, device management, analytics, content, and monetization behind a single `Wave` client.",
+  "visibility": "public",
+  "primaryLanguage": "TypeScript",
+  "topics": ["sdk", "typescript", "streaming", "video", "audio", "production", "webrtc", "ndi", "srt", "clips", "voice", "transcription", "captions", "analytics"],
+  "capabilities": [
+    { "id": "pipeline", "does": "Live stream lifecycle, protocols, recordings, viewer metrics via `wave.pipeline`", "status": "lib" },
+    { "id": "studio", "does": "Multi-camera production, scenes, transitions, graphics, audio mixing via `wave.studio`", "status": "lib" },
+    { "id": "prism", "does": "Virtual Device Bridge (NDI/ONVIF/VISCA/Dante to USB UVC/UAC) via `wave.prism`", "status": "lib" },
+    { "id": "fleet", "does": "Desktop Node fleet management, health, commands via `wave.fleet`", "status": "lib" },
+    { "id": "ghost", "does": "AI auto-directing (Autopilot), suggestions, overrides via `wave.ghost`", "status": "lib" },
+    { "id": "mesh", "does": "Multi-region failover, replication, topology via `wave.mesh`", "status": "lib" },
+    { "id": "pulse", "does": "Analytics, BI dashboards, revenue metrics via `wave.pulse`", "status": "lib" },
+    { "id": "clips", "does": "Video clips, exports, AI highlights via `wave.clips`", "status": "lib" },
+    { "id": "editor", "does": "Video editing, tracks, transitions, effects via `wave.editor`", "status": "lib" },
+    { "id": "voice", "does": "Text-to-speech, voice cloning via `wave.voice`", "status": "lib" },
+    { "id": "transcribe", "does": "Transcription with speaker diarization via `wave.transcribe`", "status": "lib" },
+    { "id": "captions", "does": "Auto-captions, translation, burn-in via `wave.captions`", "status": "lib" },
+    { "id": "vault", "does": "Recording storage, VOD, archive policies via `wave.vault`", "status": "lib" },
+    { "id": "creator", "does": "Monetization, subscriptions, tips, payouts via `wave.creator`", "status": "lib" }
+  ],
+  "claims": [
+    { "id": "package-name", "text": "The npm package is published as @wave-av/sdk", "resolver": { "type": "grep", "target": "package.json", "expect": "\"name\": \"@wave-av/sdk\"" } },
+    { "id": "package-version", "text": "Current package.json version is 2.1.0-next.0", "resolver": { "type": "grep", "target": "package.json", "expect": "\"version\": \"2.1.0-next.0\"" } },
+    { "id": "module-count", "text": "34 API modules covering streaming, production, device management, analytics, content, and monetization", "resolver": { "type": "grep", "target": "package.json", "expect": "34 API modules" } },
+    { "id": "wave-client-class", "text": "A single `Wave` client class in src/index.ts composes every API module as a readonly property", "resolver": { "type": "grep", "target": "src/index.ts", "expect": "export class Wave" } },
+    { "id": "subpath-exports", "text": "Each API module is independently importable via a package.json subpath export (e.g. @wave-av/sdk/pipeline)", "resolver": { "type": "grep", "target": "package.json", "expect": "\"./pipeline\":" } },
+    { "id": "docs-surface", "text": "Documentation surface is docs.wave.online", "resolver": { "type": "grep", "target": "package.json", "expect": "\"homepage\": \"https://docs.wave.online/sdk\"" } },
+    { "id": "license", "text": "Licensed Apache-2.0", "resolver": { "type": "grep", "target": "package.json", "expect": "\"license\": \"Apache-2.0\"" } },
+    { "id": "node-engine", "text": "Requires Node.js >=18.0.0", "resolver": { "type": "grep", "target": "package.json", "expect": "\"node\": \">=18.0.0\"" } },
+    { "id": "zod-peer", "text": "Takes zod ^3.22.0 as a peer dependency for runtime validation", "resolver": { "type": "grep", "target": "package.json", "expect": "\"zod\": \"^3.22.0\"" } }
+  ],
+  "install": [
+    { "manager": "npm", "cmd": "npm install @wave-av/sdk" }
+  ],
+  "quickstart": {
+    "lang": "ts",
+    "code": "import { Wave } from \"@wave-av/sdk\";\n\nconst wave = new Wave({\n  apiKey: process.env.WAVE_API_KEY!,\n  organizationId: \"org_123\",\n});\n\n// Create and start a live stream\nconst stream = await wave.pipeline.create({\n  title: \"My Live Stream\",\n  protocol: \"webrtc\",\n  recording_enabled: true,\n});\nawait wave.pipeline.start(stream.id);\n\n// Create a virtual camera from NDI\nconst device = await wave.prism.createDevice({\n  name: \"PTZ Camera 1\",\n  type: \"camera\",\n  source_protocol: \"ndi\",\n  source_endpoint: \"NDI-CAM-1\",\n  node_id: \"node_abc\",\n  ptz_enabled: true,\n});"
+  },
+  "links": {
+    "docs": "https://docs.wave.online/sdk",
+    "npm": "https://www.npmjs.com/package/@wave-av/sdk",
+    "repo": "https://github.com/wave-av/sdk"
+  }
+}
