@@ -2,39 +2,280 @@
   "name": "sdk",
   "kind": "library",
   "domain": "sdk",
-  "purpose": "Official TypeScript SDK for the WAVE API — 34 API modules covering streaming, production, device management, analytics, content, and monetization behind a single `Wave` client.",
+  "purpose": "Official TypeScript SDK for the WAVE API \u2014 34 API modules covering streaming, production, device management, analytics, content, and monetization behind a single `Wave` client.",
   "visibility": "public",
   "primaryLanguage": "TypeScript",
-  "topics": ["sdk", "typescript", "streaming", "video", "audio", "production", "webrtc", "ndi", "srt", "clips", "voice", "transcription", "captions", "analytics"],
+  "topics": [
+    "sdk",
+    "typescript",
+    "streaming",
+    "video",
+    "audio",
+    "production",
+    "webrtc",
+    "ndi",
+    "srt",
+    "clips",
+    "voice",
+    "transcription",
+    "captions",
+    "analytics"
+  ],
   "capabilities": [
-    { "id": "pipeline", "does": "Live stream lifecycle, protocols, recordings, viewer metrics via `wave.pipeline`", "status": "lib" },
-    { "id": "studio", "does": "Multi-camera production, scenes, transitions, graphics, audio mixing via `wave.studio`", "status": "lib" },
-    { "id": "prism", "does": "Virtual Device Bridge (NDI/ONVIF/VISCA/Dante to USB UVC/UAC) via `wave.prism`", "status": "lib" },
-    { "id": "fleet", "does": "Desktop Node fleet management, health, commands via `wave.fleet`", "status": "lib" },
-    { "id": "ghost", "does": "AI auto-directing (Autopilot), suggestions, overrides via `wave.ghost`", "status": "lib" },
-    { "id": "mesh", "does": "Multi-region failover, replication, topology via `wave.mesh`", "status": "lib" },
-    { "id": "pulse", "does": "Analytics, BI dashboards, revenue metrics via `wave.pulse`", "status": "lib" },
-    { "id": "clips", "does": "Video clips, exports, AI highlights via `wave.clips`", "status": "lib" },
-    { "id": "editor", "does": "Video editing, tracks, transitions, effects via `wave.editor`", "status": "lib" },
-    { "id": "voice", "does": "Text-to-speech, voice cloning via `wave.voice`", "status": "lib" },
-    { "id": "transcribe", "does": "Transcription with speaker diarization via `wave.transcribe`", "status": "lib" },
-    { "id": "captions", "does": "Auto-captions, translation, burn-in via `wave.captions`", "status": "lib" },
-    { "id": "vault", "does": "Recording storage, VOD, archive policies via `wave.vault`", "status": "lib" },
-    { "id": "creator", "does": "Monetization, subscriptions, tips, payouts via `wave.creator`", "status": "lib" }
+    {
+      "id": "pipeline",
+      "does": "Live stream lifecycle, protocols, recordings, viewer metrics via `wave.pipeline`",
+      "status": "lib"
+    },
+    {
+      "id": "studio",
+      "does": "Multi-camera production, scenes, transitions, graphics, audio mixing via `wave.studio`",
+      "status": "lib"
+    },
+    {
+      "id": "prism",
+      "does": "Virtual Device Bridge (NDI/ONVIF/VISCA/Dante to USB UVC/UAC) via `wave.prism`",
+      "status": "lib"
+    },
+    {
+      "id": "fleet",
+      "does": "Desktop Node fleet management, health, commands via `wave.fleet`",
+      "status": "lib"
+    },
+    {
+      "id": "ghost",
+      "does": "AI auto-directing (Autopilot), suggestions, overrides via `wave.ghost`",
+      "status": "lib"
+    },
+    {
+      "id": "mesh",
+      "does": "Multi-region failover, replication, topology via `wave.mesh`",
+      "status": "lib"
+    },
+    {
+      "id": "pulse",
+      "does": "Analytics, BI dashboards, revenue metrics via `wave.pulse`",
+      "status": "lib"
+    },
+    {
+      "id": "clips",
+      "does": "Video clips, exports, AI highlights via `wave.clips`",
+      "status": "lib"
+    },
+    {
+      "id": "editor",
+      "does": "Video editing, tracks, transitions, effects via `wave.editor`",
+      "status": "lib"
+    },
+    {
+      "id": "voice",
+      "does": "Text-to-speech, voice cloning via `wave.voice`",
+      "status": "lib"
+    },
+    {
+      "id": "transcribe",
+      "does": "Transcription with speaker diarization via `wave.transcribe`",
+      "status": "lib"
+    },
+    {
+      "id": "captions",
+      "does": "Auto-captions, translation, burn-in via `wave.captions`",
+      "status": "lib"
+    },
+    {
+      "id": "vault",
+      "does": "Recording storage, VOD, archive policies via `wave.vault`",
+      "status": "lib"
+    },
+    {
+      "id": "creator",
+      "does": "Monetization, subscriptions, tips, payouts via `wave.creator`",
+      "status": "lib"
+    },
+    {
+      "id": "edge",
+      "does": "CDN, edge workers, cache, routing rules via `wave.edge`",
+      "status": "lib"
+    },
+    {
+      "id": "zoom",
+      "does": "Zoom meetings, rooms, recordings, RTMS via `wave.zoom`",
+      "status": "lib"
+    },
+    {
+      "id": "phone",
+      "does": "Voice calling, conferences, numbers via `wave.phone`",
+      "status": "lib"
+    },
+    {
+      "id": "collab",
+      "does": "Real-time collaboration rooms via `wave.collab`",
+      "status": "lib"
+    },
+    {
+      "id": "chapters",
+      "does": "Video chapters and markers via `wave.chapters`",
+      "status": "lib"
+    },
+    {
+      "id": "studioAI",
+      "does": "AI production assistant, suggestions via `wave.studioAI`",
+      "status": "lib"
+    },
+    {
+      "id": "sentiment",
+      "does": "Sentiment and emotion analysis via `wave.sentiment`",
+      "status": "lib"
+    },
+    {
+      "id": "search",
+      "does": "Full-text, visual, and audio search via `wave.search`",
+      "status": "lib"
+    },
+    {
+      "id": "scene",
+      "does": "AI scene detection and shot classification via `wave.scene`",
+      "status": "lib"
+    },
+    {
+      "id": "marketplace",
+      "does": "Templates, plugins, graphics marketplace via `wave.marketplace`",
+      "status": "lib"
+    },
+    {
+      "id": "connect",
+      "does": "Third-party integrations, webhooks via `wave.connect`",
+      "status": "lib"
+    },
+    {
+      "id": "distribution",
+      "does": "Social simulcasting, scheduled posts via `wave.distribution`",
+      "status": "lib"
+    },
+    {
+      "id": "desktop",
+      "does": "Desktop Node app management via `wave.desktop`",
+      "status": "lib"
+    },
+    {
+      "id": "signage",
+      "does": "Digital signage displays, playlists via `wave.signage`",
+      "status": "lib"
+    },
+    {
+      "id": "qr",
+      "does": "Dynamic QR codes, analytics via `wave.qr`",
+      "status": "lib"
+    },
+    {
+      "id": "audience",
+      "does": "Polls, Q&A, reactions, engagement via `wave.audience`",
+      "status": "lib"
+    },
+    {
+      "id": "podcast",
+      "does": "Podcast episodes, RSS, distribution via `wave.podcast`",
+      "status": "lib"
+    },
+    {
+      "id": "slides",
+      "does": "Presentation-to-video conversion via `wave.slides`",
+      "status": "lib"
+    },
+    {
+      "id": "usb",
+      "does": "USB device relay and management via `wave.usb`",
+      "status": "lib"
+    }
   ],
   "claims": [
-    { "id": "package-name", "text": "The npm package is published as @wave-av/sdk", "resolver": { "type": "grep", "target": "package.json", "expect": "\"name\": \"@wave-av/sdk\"" } },
-    { "id": "package-version", "text": "Current package.json version is 2.1.0-next.0", "resolver": { "type": "grep", "target": "package.json", "expect": "\"version\": \"2.1.0-next.0\"" } },
-    { "id": "module-count", "text": "34 API modules covering streaming, production, device management, analytics, content, and monetization", "resolver": { "type": "grep", "target": "package.json", "expect": "34 API modules" } },
-    { "id": "wave-client-class", "text": "A single `Wave` client class in src/index.ts composes every API module as a readonly property", "resolver": { "type": "grep", "target": "src/index.ts", "expect": "export class Wave" } },
-    { "id": "subpath-exports", "text": "Each API module is independently importable via a package.json subpath export (e.g. @wave-av/sdk/pipeline)", "resolver": { "type": "grep", "target": "package.json", "expect": "\"./pipeline\":" } },
-    { "id": "docs-surface", "text": "Documentation surface is docs.wave.online", "resolver": { "type": "grep", "target": "package.json", "expect": "\"homepage\": \"https://docs.wave.online/sdk\"" } },
-    { "id": "license", "text": "Licensed Apache-2.0", "resolver": { "type": "grep", "target": "package.json", "expect": "\"license\": \"Apache-2.0\"" } },
-    { "id": "node-engine", "text": "Requires Node.js >=18.0.0", "resolver": { "type": "grep", "target": "package.json", "expect": "\"node\": \">=18.0.0\"" } },
-    { "id": "zod-peer", "text": "Takes zod ^3.22.0 as a peer dependency for runtime validation", "resolver": { "type": "grep", "target": "package.json", "expect": "\"zod\": \"^3.22.0\"" } }
+    {
+      "id": "package-name",
+      "text": "The npm package is published as @wave-av/sdk",
+      "resolver": {
+        "type": "grep",
+        "target": "package.json",
+        "expect": "\"name\": \"@wave-av/sdk\""
+      }
+    },
+    {
+      "id": "package-version",
+      "text": "Current package.json version is 2.1.0-next.0",
+      "resolver": {
+        "type": "grep",
+        "target": "package.json",
+        "expect": "\"version\": \"2.1.0-next.0\""
+      }
+    },
+    {
+      "id": "module-count",
+      "text": "34 API modules covering streaming, production, device management, analytics, content, and monetization",
+      "resolver": {
+        "type": "grep",
+        "target": "package.json",
+        "expect": "34 API modules"
+      }
+    },
+    {
+      "id": "wave-client-class",
+      "text": "A single `Wave` client class in src/index.ts composes every API module as a readonly property",
+      "resolver": {
+        "type": "grep",
+        "target": "src/index.ts",
+        "expect": "export class Wave"
+      }
+    },
+    {
+      "id": "subpath-exports",
+      "text": "Each API module is independently importable via a package.json subpath export (e.g. @wave-av/sdk/pipeline)",
+      "resolver": {
+        "type": "grep",
+        "target": "package.json",
+        "expect": "\"./pipeline\":"
+      }
+    },
+    {
+      "id": "docs-surface",
+      "text": "Documentation surface is docs.wave.online",
+      "resolver": {
+        "type": "grep",
+        "target": "package.json",
+        "expect": "\"homepage\": \"https://docs.wave.online/sdk\""
+      }
+    },
+    {
+      "id": "license",
+      "text": "Licensed Apache-2.0",
+      "resolver": {
+        "type": "grep",
+        "target": "package.json",
+        "expect": "\"license\": \"Apache-2.0\""
+      }
+    },
+    {
+      "id": "node-engine",
+      "text": "Requires Node.js >=18.0.0",
+      "resolver": {
+        "type": "grep",
+        "target": "package.json",
+        "expect": "\"node\": \">=18.0.0\""
+      }
+    },
+    {
+      "id": "zod-peer",
+      "text": "Takes zod ^3.22.0 as a peer dependency for runtime validation",
+      "resolver": {
+        "type": "grep",
+        "target": "package.json",
+        "expect": "\"zod\": \"^3.22.0\""
+      }
+    }
   ],
   "install": [
-    { "manager": "npm", "cmd": "npm install @wave-av/sdk" }
+    {
+      "manager": "npm",
+      "cmd": "npm install @wave-av/sdk"
+    }
   ],
   "quickstart": {
     "lang": "ts",
@@ -44,5 +285,390 @@
     "docs": "https://docs.wave.online/sdk",
     "npm": "https://www.npmjs.com/package/@wave-av/sdk",
     "repo": "https://github.com/wave-av/sdk"
-  }
+  },
+  "sections": [
+    {
+      "kind": "table",
+      "heading": "All 34 APIs \u2014 P1 Core streaming",
+      "columns": [
+        "API",
+        "Access",
+        "Description"
+      ],
+      "rows": [
+        [
+          "`wave.pipeline`",
+          "`PipelineAPI`",
+          "Live stream lifecycle, protocols, recordings, viewer metrics"
+        ],
+        [
+          "`wave.studio`",
+          "`StudioAPI`",
+          "Multi-camera production, scenes, transitions, graphics, audio mixing"
+        ]
+      ]
+    },
+    {
+      "kind": "table",
+      "heading": "All 34 APIs \u2014 P2 Enterprise",
+      "columns": [
+        "API",
+        "Access",
+        "Description"
+      ],
+      "rows": [
+        [
+          "`wave.fleet`",
+          "`FleetAPI`",
+          "Desktop Node fleet management, health, commands"
+        ],
+        [
+          "`wave.ghost`",
+          "`GhostAPI`",
+          "AI auto-directing (Autopilot), suggestions, overrides"
+        ],
+        [
+          "`wave.mesh`",
+          "`MeshAPI`",
+          "Multi-region failover, replication, topology"
+        ],
+        [
+          "`wave.edge`",
+          "`EdgeAPI`",
+          "CDN, edge workers, cache, routing rules"
+        ],
+        [
+          "`wave.pulse`",
+          "`PulseAPI`",
+          "Analytics, BI dashboards, revenue metrics"
+        ],
+        [
+          "`wave.prism`",
+          "`PrismAPI`",
+          "Virtual Device Bridge (NDI/ONVIF/VISCA/Dante to USB UVC/UAC)"
+        ],
+        [
+          "`wave.zoom`",
+          "`ZoomAPI`",
+          "Zoom meetings, rooms, recordings, RTMS"
+        ]
+      ]
+    },
+    {
+      "kind": "table",
+      "heading": "All 34 APIs \u2014 P3 Content & commerce",
+      "columns": [
+        "API",
+        "Access",
+        "Description"
+      ],
+      "rows": [
+        [
+          "`wave.clips`",
+          "`ClipsAPI`",
+          "Video clips, exports, AI highlights"
+        ],
+        [
+          "`wave.editor`",
+          "`EditorAPI`",
+          "Video editing, tracks, transitions, effects"
+        ],
+        [
+          "`wave.voice`",
+          "`VoiceAPI`",
+          "Text-to-speech, voice cloning"
+        ],
+        [
+          "`wave.phone`",
+          "`PhoneAPI`",
+          "Voice calling, conferences, numbers"
+        ],
+        [
+          "`wave.collab`",
+          "`CollabAPI`",
+          "Real-time collaboration rooms"
+        ],
+        [
+          "`wave.captions`",
+          "`CaptionsAPI`",
+          "Auto-captions, translation, burn-in"
+        ],
+        [
+          "`wave.chapters`",
+          "`ChaptersAPI`",
+          "Video chapters and markers"
+        ],
+        [
+          "`wave.studioAI`",
+          "`StudioAIAPI`",
+          "AI production assistant, suggestions"
+        ],
+        [
+          "`wave.transcribe`",
+          "`TranscribeAPI`",
+          "Transcription with speaker diarization"
+        ],
+        [
+          "`wave.sentiment`",
+          "`SentimentAPI`",
+          "Sentiment and emotion analysis"
+        ],
+        [
+          "`wave.search`",
+          "`SearchAPI`",
+          "Full-text, visual, and audio search"
+        ],
+        [
+          "`wave.scene`",
+          "`SceneAPI`",
+          "AI scene detection and shot classification"
+        ],
+        [
+          "`wave.vault`",
+          "`VaultAPI`",
+          "Recording storage, VOD, archive policies"
+        ],
+        [
+          "`wave.marketplace`",
+          "`MarketplaceAPI`",
+          "Templates, plugins, graphics marketplace"
+        ],
+        [
+          "`wave.connect`",
+          "`ConnectAPI`",
+          "Third-party integrations, webhooks"
+        ],
+        [
+          "`wave.distribution`",
+          "`DistributionAPI`",
+          "Social simulcasting, scheduled posts"
+        ],
+        [
+          "`wave.desktop`",
+          "`DesktopAPI`",
+          "Desktop Node app management"
+        ],
+        [
+          "`wave.signage`",
+          "`SignageAPI`",
+          "Digital signage displays, playlists"
+        ],
+        [
+          "`wave.qr`",
+          "`QrAPI`",
+          "Dynamic QR codes, analytics"
+        ],
+        [
+          "`wave.audience`",
+          "`AudienceAPI`",
+          "Polls, Q&A, reactions, engagement"
+        ],
+        [
+          "`wave.creator`",
+          "`CreatorAPI`",
+          "Monetization, subscriptions, tips, payouts"
+        ]
+      ]
+    },
+    {
+      "kind": "table",
+      "heading": "All 34 APIs \u2014 P4 Specialized",
+      "columns": [
+        "API",
+        "Access",
+        "Description"
+      ],
+      "rows": [
+        [
+          "`wave.podcast`",
+          "`PodcastAPI`",
+          "Podcast episodes, RSS, distribution"
+        ],
+        [
+          "`wave.slides`",
+          "`SlidesAPI`",
+          "Presentation-to-video conversion"
+        ],
+        [
+          "`wave.usb`",
+          "`UsbAPI`",
+          "USB device relay and management"
+        ]
+      ]
+    },
+    {
+      "kind": "code",
+      "heading": "Product example \u2014 Streams (Pipeline)",
+      "lang": "typescript",
+      "body": "import { Wave } from \"@wave-av/sdk\";\n\nconst wave = new Wave({ apiKey: process.env.WAVE_API_KEY! });\n\nconst stream = await wave.pipeline.create({\n  title: \"My Live Stream\",\n  protocol: \"webrtc\",\n  recording_enabled: true,\n});\nawait wave.pipeline.start(stream.id);\nconst live = await wave.pipeline.waitForLive(stream.id);\nconsole.log(`Playback: ${live.playback_url}`);\nawait wave.pipeline.stop(stream.id);"
+    },
+    {
+      "kind": "code",
+      "heading": "Product example \u2014 Clips",
+      "lang": "typescript",
+      "body": "import { Wave } from \"@wave-av/sdk\";\n\nconst wave = new Wave({ apiKey: process.env.WAVE_API_KEY! });\n\nconst clip = await wave.clips.create({\n  title: \"Best Moment\",\n  source: { type: \"stream\", id: \"stream_123\", start_time: 120, end_time: 150 },\n});\nconst ready = await wave.clips.waitForReady(clip.id);\nconsole.log(`Clip URL: ${ready.playback_url}`);"
+    },
+    {
+      "kind": "code",
+      "heading": "Product example \u2014 Captions",
+      "lang": "typescript",
+      "body": "import { Wave } from \"@wave-av/sdk\";\n\nconst wave = new Wave({ apiKey: process.env.WAVE_API_KEY! });\n\nconst track = await wave.captions.generate({\n  media_id: \"video_123\",\n  media_type: \"video\",\n  language: \"en\",\n  speaker_diarization: true,\n});\nconst ready = await wave.captions.waitForReady(track.id);\nawait wave.captions.translate(ready.id, { target_language: \"es\" });"
+    },
+    {
+      "kind": "code",
+      "heading": "Product example \u2014 Chapters",
+      "lang": "typescript",
+      "body": "import { Wave } from \"@wave-av/sdk\";\n\nconst wave = new Wave({ apiKey: process.env.WAVE_API_KEY! });\n\nconst chapterSet = await wave.chapters.generate({\n  media_id: \"video_123\",\n  media_type: \"video\",\n  method: \"combined\",\n  generate_thumbnails: true,\n});\nconst ready = await wave.chapters.waitForReady(chapterSet.id);\nconsole.log(`Found ${ready.chapter_count} chapters`);"
+    },
+    {
+      "kind": "code",
+      "heading": "Product example \u2014 Voice",
+      "lang": "typescript",
+      "body": "import { Wave } from \"@wave-av/sdk\";\n\nconst wave = new Wave({ apiKey: process.env.WAVE_API_KEY! });\n\nconst voices = await wave.voice.listVoices({ language: \"en\" });\nconst result = await wave.voice.synthesize({\n  text: \"Welcome to WAVE live streaming.\",\n  voice_id: voices.data[0].id,\n  format: \"mp3\",\n});\nconst audio = await wave.voice.waitForSynthesis(result.id);\nconsole.log(`Audio: ${audio.audio_url}`);"
+    },
+    {
+      "kind": "code",
+      "heading": "Product example \u2014 Transcription",
+      "lang": "typescript",
+      "body": "import { Wave } from \"@wave-av/sdk\";\n\nconst wave = new Wave({ apiKey: process.env.WAVE_API_KEY! });\n\nconst job = await wave.transcribe.create({\n  source_type: \"recording\",\n  source_id: \"rec_456\",\n  language: \"en\",\n  speaker_diarization: true,\n});\nconst result = await wave.transcribe.waitForReady(job.id);\nconst text = await wave.transcribe.getText(result.id, { include_speakers: true });\nconsole.log(text);"
+    },
+    {
+      "kind": "code",
+      "heading": "Product example \u2014 Editor",
+      "lang": "typescript",
+      "body": "import { Wave } from \"@wave-av/sdk\";\n\nconst wave = new Wave({ apiKey: process.env.WAVE_API_KEY! });\n\nconst project = await wave.editor.createProject({\n  name: \"Highlight Reel\",\n  width: 1920,\n  height: 1080,\n  frame_rate: 30,\n});\nconst track = await wave.editor.addTrack(project.id, { name: \"Main\", type: \"video\" });\nawait wave.editor.addElement(project.id, {\n  track_id: track.id,\n  type: \"clip\",\n  source_id: \"clip_789\",\n  start_time: 0,\n});\nconst job = await wave.editor.render(project.id, { format: \"mp4\", quality: \"high\" });\nconst rendered = await wave.editor.waitForRender(project.id, job.id);\nconsole.log(`Output: ${rendered.output_url}`);"
+    },
+    {
+      "kind": "code",
+      "heading": "Product example \u2014 Phone",
+      "lang": "typescript",
+      "body": "import { Wave } from \"@wave-av/sdk\";\n\nconst wave = new Wave({ apiKey: process.env.WAVE_API_KEY! });\n\nconst call = await wave.phone.makeCall({\n  from: \"+15551234567\",\n  to: \"+15559876543\",\n  timeout: 30,\n});\nconsole.log(`Call ${call.id} status: ${call.status}`);"
+    },
+    {
+      "kind": "code",
+      "heading": "Product example \u2014 Podcast",
+      "lang": "typescript",
+      "body": "import { Wave } from \"@wave-av/sdk\";\n\nconst wave = new Wave({ apiKey: process.env.WAVE_API_KEY! });\n\nconst show = await wave.podcast.create({\n  title: \"The WAVE Podcast\",\n  description: \"Weekly streaming industry news\",\n  category: \"Technology\",\n});\nconst episode = await wave.podcast.createEpisode({\n  podcast_id: show.id,\n  title: \"Episode 1: Getting Started\",\n  description: \"An introduction to live streaming.\",\n});\nawait wave.podcast.publishEpisode(episode.id);"
+    },
+    {
+      "kind": "code",
+      "heading": "Product example \u2014 Collab",
+      "lang": "typescript",
+      "body": "import { Wave } from \"@wave-av/sdk\";\n\nconst wave = new Wave({ apiKey: process.env.WAVE_API_KEY! });\n\nconst room = await wave.collab.createRoom({\n  name: \"Project Review\",\n  resource_type: \"project\",\n  resource_id: \"proj_123\",\n  settings: { voice_enabled: true, annotations_enabled: true },\n});\nconsole.log(`Room: ${room.id} (${room.participant_count} participants)`);"
+    },
+    {
+      "kind": "code",
+      "heading": "Product example \u2014 Analytics (Pulse)",
+      "lang": "typescript",
+      "body": "import { Wave } from \"@wave-av/sdk\";\n\nconst wave = new Wave({ apiKey: process.env.WAVE_API_KEY! });\n\nconst viewers = await wave.pulse.getViewerAnalytics({ time_range: \"24h\" });\nconsole.log(`Peak concurrent: ${viewers.peak_concurrent}`);\nconsole.log(`Unique viewers: ${viewers.unique_viewers}`);\n\nconst stream = await wave.pulse.getStreamAnalytics(\"stream_123\", { time_range: \"7d\" });\nconsole.log(`Quality score: ${stream.quality_score}`);"
+    },
+    {
+      "kind": "code",
+      "heading": "Product example \u2014 VOD (Vault)",
+      "lang": "typescript",
+      "body": "import { Wave } from \"@wave-av/sdk\";\n\nconst wave = new Wave({ apiKey: process.env.WAVE_API_KEY! });\n\nconst upload = await wave.vault.createUpload({\n  title: \"Conference Keynote\",\n  format: \"mp4\",\n  file_size_bytes: 524288000,\n});\nconsole.log(`Upload to: ${upload.upload_url}`);\n\nconst usage = await wave.vault.getStorageUsage();\nconsole.log(`Storage: ${usage.usage_percent}% used`);"
+    },
+    {
+      "kind": "code",
+      "heading": "Product example \u2014 Studio AI",
+      "lang": "typescript",
+      "body": "import { Wave } from \"@wave-av/sdk\";\n\nconst wave = new Wave({ apiKey: process.env.WAVE_API_KEY! });\n\nconst assistant = await wave.studioAI.startAssistant({\n  stream_id: \"stream_123\",\n  mode: \"auto_director\",\n  config: { automation_level: 75, auto_apply: false, confidence_threshold: 0.8, settings: {} },\n});\nconst suggestions = await wave.studioAI.getSuggestion(assistant.id);\nconsole.log(`AI suggestion: ${suggestions.title} (${suggestions.confidence * 100}% confidence)`);"
+    },
+    {
+      "kind": "code",
+      "heading": "Configuration",
+      "lang": "typescript",
+      "body": "const wave = new Wave({\n  apiKey: \"your-api-key\", // Required\n  organizationId: \"org_123\", // Multi-tenant isolation\n  baseUrl: \"https://api.wave.online\", // Default\n  timeout: 30000, // Request timeout (ms)\n  maxRetries: 3, // Retry attempts\n  debug: false, // Debug logging\n});"
+    },
+    {
+      "kind": "code",
+      "heading": "Individual API imports",
+      "lang": "typescript",
+      "body": "import { WaveClient, PipelineAPI, PrismAPI } from \"@wave-av/sdk\";\n\nconst client = new WaveClient({ apiKey: \"key\" });\nconst pipeline = new PipelineAPI(client);\nconst prism = new PrismAPI(client);"
+    },
+    {
+      "kind": "code",
+      "heading": "Error handling",
+      "lang": "typescript",
+      "body": "import { WaveError, RateLimitError } from \"@wave-av/sdk\";\n\ntry {\n  await wave.pipeline.get(\"invalid-id\");\n} catch (error) {\n  if (error instanceof RateLimitError) {\n    console.log(`Rate limited. Retry after ${error.retryAfter}ms`);\n  } else if (error instanceof WaveError) {\n    console.log(`${error.code}: ${error.message} (${error.statusCode})`);\n  }\n}"
+    },
+    {
+      "kind": "code",
+      "heading": "Events",
+      "lang": "typescript",
+      "body": "wave.client.on(\"request.start\", (url, method) => {\n  console.log(`${method} ${url}`);\n});\n\nwave.client.on(\"rate_limit.hit\", (retryAfter) => {\n  console.log(`Rate limited. Waiting ${retryAfter}ms`);\n});"
+    },
+    {
+      "kind": "prose",
+      "heading": "Troubleshooting \u2014 Types not resolving from subpath imports",
+      "body": "Ensure your `tsconfig.json` uses `\"moduleResolution\": \"node16\"` or `\"nodenext\"`:"
+    },
+    {
+      "kind": "code",
+      "heading": "Troubleshooting \u2014 Types not resolving from subpath imports (fix)",
+      "lang": "json",
+      "body": "{\n  \"compilerOptions\": {\n    \"module\": \"node16\",\n    \"moduleResolution\": \"node16\"\n  }\n}"
+    },
+    {
+      "kind": "prose",
+      "heading": "Troubleshooting \u2014 Rate limit errors",
+      "body": "The SDK retries automatically with exponential backoff. To handle rate limits explicitly:"
+    },
+    {
+      "kind": "code",
+      "heading": "Troubleshooting \u2014 Rate limit errors (example)",
+      "lang": "typescript",
+      "body": "wave.client.on(\"rate_limit.hit\", (retryAfter) => {\n  console.log(`Rate limited. Retry in ${retryAfter}ms`);\n});"
+    },
+    {
+      "kind": "prose",
+      "heading": "Troubleshooting \u2014 ESM vs CJS",
+      "body": "The SDK supports both ESM and CJS. If using CommonJS, ensure you're importing correctly:"
+    },
+    {
+      "kind": "code",
+      "heading": "Troubleshooting \u2014 ESM vs CJS (example)",
+      "lang": "javascript",
+      "body": "const { Wave } = require(\"@wave-av/sdk\");"
+    },
+    {
+      "kind": "prose",
+      "heading": "Requirements",
+      "body": "- Node.js 18+\n- TypeScript 5.0+ (recommended 5.5+ for best subpath support)"
+    },
+    {
+      "kind": "table",
+      "heading": "Related packages",
+      "columns": [
+        "Package",
+        "Description"
+      ],
+      "rows": [
+        [
+          "[@wave-av/adk](https://www.npmjs.com/package/@wave-av/adk)",
+          "Agent Developer Kit for building AI video agents"
+        ],
+        [
+          "[@wave-av/mcp-server](https://www.npmjs.com/package/@wave-av/mcp-server)",
+          "MCP server for Claude, Cursor, Windsurf"
+        ],
+        [
+          "[@wave-av/cli](https://www.npmjs.com/package/@wave-av/cli)",
+          "Command-line interface"
+        ],
+        [
+          "[@wave-av/create-app](https://www.npmjs.com/package/@wave-av/create-app)",
+          "Scaffold a new project"
+        ],
+        [
+          "[@wave-av/workflow-sdk](https://www.npmjs.com/package/@wave-av/workflow-sdk)",
+          "Workflow orchestration"
+        ],
+        [
+          "[OpenAPI spec](https://github.com/wave-av/api-spec)",
+          "Full API specification"
+        ]
+      ]
+    }
+  ]
 }

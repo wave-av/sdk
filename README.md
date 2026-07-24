@@ -1,22 +1,28 @@
-# @wave-av/sdk — WAVE SDK for TypeScript
+<div align="center">
 
-[![npm version](https://img.shields.io/npm/v/@wave-av/sdk.svg)](https://www.npmjs.com/package/@wave-av/sdk)
-[![npm downloads](https://img.shields.io/npm/dm/@wave-av/sdk.svg)](https://www.npmjs.com/package/@wave-av/sdk)
-[![license](https://img.shields.io/npm/l/@wave-av/sdk.svg)](https://github.com/wave-av/sdk/blob/main/LICENSE)
+# sdk
 
-Official TypeScript SDK for the WAVE API. 34 API modules covering streaming, production, analytics, and more.
+**Official TypeScript SDK for the WAVE API — 34 API modules covering streaming, production, device management, analytics, content, and monetization behind a single `Wave` client.**
 
-## Installation
+![kind](https://img.shields.io/badge/kind-library-555?style=flat-square) ![domain](https://img.shields.io/badge/domain-sdk-0a7?style=flat-square) ![lang](https://img.shields.io/badge/lang-TypeScript-3178c6?style=flat-square) ![visibility](https://img.shields.io/badge/visibility-public-brightgreen?style=flat-square)
 
-```bash
-pnpm add @wave-av/sdk
-# or
-npm install @wave-av/sdk
-```
+[docs](https://docs.wave.online/sdk) · [npm](https://www.npmjs.com/package/@wave-av/sdk) · [repo](https://github.com/wave-av/sdk) · [Docs](https://docs.wave.online) · [Status](https://wave.online/status)
+
+</div>
+
+> This README is machine-generated from WAVE's grounded Single Source of Truth — every
+> factual claim below traces to a resolver that `npm run verify` checks against the live
+> repo and live endpoints. Nothing here is asserted without a receipt.
+
+---
 
 ## Quick start
 
-```typescript
+```bash
+npm install @wave-av/sdk
+```
+
+```ts
 import { Wave } from "@wave-av/sdk";
 
 const wave = new Wave({
@@ -41,86 +47,62 @@ const device = await wave.prism.createDevice({
   node_id: "node_abc",
   ptz_enabled: true,
 });
-
-// Get analytics
-const viewers = await wave.pulse.getViewerAnalytics({ time_range: "24h" });
-console.log(`Peak concurrent: ${viewers.peak_concurrent}`);
 ```
 
-## All 34 APIs
+## All 34 APIs — P1 Core streaming
 
-### P1 - Core streaming
+| API | Access | Description |
+| --- | --- | --- |
+| `wave.pipeline` | `PipelineAPI` | Live stream lifecycle, protocols, recordings, viewer metrics |
+| `wave.studio` | `StudioAPI` | Multi-camera production, scenes, transitions, graphics, audio mixing |
 
-| API             | Access        | Description                                                          |
-| --------------- | ------------- | -------------------------------------------------------------------- |
-| `wave.pipeline` | `PipelineAPI` | Live stream lifecycle, protocols, recordings, viewer metrics         |
-| `wave.studio`   | `StudioAPI`   | Multi-camera production, scenes, transitions, graphics, audio mixing |
+## All 34 APIs — P2 Enterprise
 
-### P2 - Enterprise
-
-| API          | Access     | Description                                                  |
-| ------------ | ---------- | ------------------------------------------------------------ |
-| `wave.fleet` | `FleetAPI` | Desktop Node fleet management, health, commands              |
-| `wave.ghost` | `GhostAPI` | AI auto-directing (Autopilot), suggestions, overrides        |
-| `wave.mesh`  | `MeshAPI`  | Multi-region failover, replication, topology                 |
-| `wave.edge`  | `EdgeAPI`  | CDN, edge workers, cache, routing rules                      |
-| `wave.pulse` | `PulseAPI` | Analytics, BI dashboards, revenue metrics                    |
+| API | Access | Description |
+| --- | --- | --- |
+| `wave.fleet` | `FleetAPI` | Desktop Node fleet management, health, commands |
+| `wave.ghost` | `GhostAPI` | AI auto-directing (Autopilot), suggestions, overrides |
+| `wave.mesh` | `MeshAPI` | Multi-region failover, replication, topology |
+| `wave.edge` | `EdgeAPI` | CDN, edge workers, cache, routing rules |
+| `wave.pulse` | `PulseAPI` | Analytics, BI dashboards, revenue metrics |
 | `wave.prism` | `PrismAPI` | Virtual Device Bridge (NDI/ONVIF/VISCA/Dante to USB UVC/UAC) |
-| `wave.zoom`  | `ZoomAPI`  | Zoom meetings, rooms, recordings, RTMS                       |
+| `wave.zoom` | `ZoomAPI` | Zoom meetings, rooms, recordings, RTMS |
 
-### P3 - Content & commerce
+## All 34 APIs — P3 Content & commerce
 
-| API                 | Access            | Description                                 |
-| ------------------- | ----------------- | ------------------------------------------- |
-| `wave.clips`        | `ClipsAPI`        | Video clips, exports, AI highlights         |
-| `wave.editor`       | `EditorAPI`       | Video editing, tracks, transitions, effects |
-| `wave.voice`        | `VoiceAPI`        | Text-to-speech, voice cloning               |
-| `wave.phone`        | `PhoneAPI`        | Voice calling, conferences, numbers         |
-| `wave.collab`       | `CollabAPI`       | Real-time collaboration rooms               |
-| `wave.captions`     | `CaptionsAPI`     | Auto-captions, translation, burn-in         |
-| `wave.chapters`     | `ChaptersAPI`     | Video chapters and markers                  |
-| `wave.studioAI`     | `StudioAIAPI`     | AI production assistant, suggestions        |
-| `wave.transcribe`   | `TranscribeAPI`   | Transcription with speaker diarization      |
-| `wave.sentiment`    | `SentimentAPI`    | Sentiment and emotion analysis              |
-| `wave.search`       | `SearchAPI`       | Full-text, visual, and audio search         |
-| `wave.scene`        | `SceneAPI`        | AI scene detection and shot classification  |
-| `wave.vault`        | `VaultAPI`        | Recording storage, VOD, archive policies    |
-| `wave.marketplace`  | `MarketplaceAPI`  | Templates, plugins, graphics marketplace    |
-| `wave.connect`      | `ConnectAPI`      | Third-party integrations, webhooks          |
-| `wave.distribution` | `DistributionAPI` | Social simulcasting, scheduled posts        |
-| `wave.desktop`      | `DesktopAPI`      | Desktop Node app management                 |
-| `wave.signage`      | `SignageAPI`      | Digital signage displays, playlists         |
-| `wave.qr`           | `QrAPI`           | Dynamic QR codes, analytics                 |
-| `wave.audience`     | `AudienceAPI`     | Polls, Q&A, reactions, engagement           |
-| `wave.creator`      | `CreatorAPI`      | Monetization, subscriptions, tips, payouts  |
+| API | Access | Description |
+| --- | --- | --- |
+| `wave.clips` | `ClipsAPI` | Video clips, exports, AI highlights |
+| `wave.editor` | `EditorAPI` | Video editing, tracks, transitions, effects |
+| `wave.voice` | `VoiceAPI` | Text-to-speech, voice cloning |
+| `wave.phone` | `PhoneAPI` | Voice calling, conferences, numbers |
+| `wave.collab` | `CollabAPI` | Real-time collaboration rooms |
+| `wave.captions` | `CaptionsAPI` | Auto-captions, translation, burn-in |
+| `wave.chapters` | `ChaptersAPI` | Video chapters and markers |
+| `wave.studioAI` | `StudioAIAPI` | AI production assistant, suggestions |
+| `wave.transcribe` | `TranscribeAPI` | Transcription with speaker diarization |
+| `wave.sentiment` | `SentimentAPI` | Sentiment and emotion analysis |
+| `wave.search` | `SearchAPI` | Full-text, visual, and audio search |
+| `wave.scene` | `SceneAPI` | AI scene detection and shot classification |
+| `wave.vault` | `VaultAPI` | Recording storage, VOD, archive policies |
+| `wave.marketplace` | `MarketplaceAPI` | Templates, plugins, graphics marketplace |
+| `wave.connect` | `ConnectAPI` | Third-party integrations, webhooks |
+| `wave.distribution` | `DistributionAPI` | Social simulcasting, scheduled posts |
+| `wave.desktop` | `DesktopAPI` | Desktop Node app management |
+| `wave.signage` | `SignageAPI` | Digital signage displays, playlists |
+| `wave.qr` | `QrAPI` | Dynamic QR codes, analytics |
+| `wave.audience` | `AudienceAPI` | Polls, Q&A, reactions, engagement |
+| `wave.creator` | `CreatorAPI` | Monetization, subscriptions, tips, payouts |
 
-### P4 - Specialized
+## All 34 APIs — P4 Specialized
 
-| API            | Access       | Description                         |
-| -------------- | ------------ | ----------------------------------- |
+| API | Access | Description |
+| --- | --- | --- |
 | `wave.podcast` | `PodcastAPI` | Podcast episodes, RSS, distribution |
-| `wave.slides`  | `SlidesAPI`  | Presentation-to-video conversion    |
-| `wave.usb`     | `UsbAPI`     | USB device relay and management     |
+| `wave.slides` | `SlidesAPI` | Presentation-to-video conversion |
+| `wave.usb` | `UsbAPI` | USB device relay and management |
 
-## Product examples
-
-- [Streams (Pipeline)](#streams-pipeline)
-- [Clips](#clips)
-- [Captions](#captions)
-- [Chapters](#chapters)
-- [Voice](#voice)
-- [Transcription](#transcription)
-- [Editor](#editor)
-- [Phone](#phone)
-- [Podcast](#podcast)
-- [Collab](#collab)
-- [Analytics (Pulse)](#analytics-pulse)
-- [VOD (Vault)](#vod-vault)
-- [Studio AI](#studio-ai)
-
----
-
-### Streams (Pipeline)
+## Product example — Streams (Pipeline)
 
 ```typescript
 import { Wave } from "@wave-av/sdk";
@@ -138,7 +120,7 @@ console.log(`Playback: ${live.playback_url}`);
 await wave.pipeline.stop(stream.id);
 ```
 
-### Clips
+## Product example — Clips
 
 ```typescript
 import { Wave } from "@wave-av/sdk";
@@ -153,7 +135,7 @@ const ready = await wave.clips.waitForReady(clip.id);
 console.log(`Clip URL: ${ready.playback_url}`);
 ```
 
-### Captions
+## Product example — Captions
 
 ```typescript
 import { Wave } from "@wave-av/sdk";
@@ -170,7 +152,7 @@ const ready = await wave.captions.waitForReady(track.id);
 await wave.captions.translate(ready.id, { target_language: "es" });
 ```
 
-### Chapters
+## Product example — Chapters
 
 ```typescript
 import { Wave } from "@wave-av/sdk";
@@ -187,7 +169,7 @@ const ready = await wave.chapters.waitForReady(chapterSet.id);
 console.log(`Found ${ready.chapter_count} chapters`);
 ```
 
-### Voice
+## Product example — Voice
 
 ```typescript
 import { Wave } from "@wave-av/sdk";
@@ -204,7 +186,7 @@ const audio = await wave.voice.waitForSynthesis(result.id);
 console.log(`Audio: ${audio.audio_url}`);
 ```
 
-### Transcription
+## Product example — Transcription
 
 ```typescript
 import { Wave } from "@wave-av/sdk";
@@ -222,7 +204,7 @@ const text = await wave.transcribe.getText(result.id, { include_speakers: true }
 console.log(text);
 ```
 
-### Editor
+## Product example — Editor
 
 ```typescript
 import { Wave } from "@wave-av/sdk";
@@ -247,7 +229,7 @@ const rendered = await wave.editor.waitForRender(project.id, job.id);
 console.log(`Output: ${rendered.output_url}`);
 ```
 
-### Phone
+## Product example — Phone
 
 ```typescript
 import { Wave } from "@wave-av/sdk";
@@ -262,7 +244,7 @@ const call = await wave.phone.makeCall({
 console.log(`Call ${call.id} status: ${call.status}`);
 ```
 
-### Podcast
+## Product example — Podcast
 
 ```typescript
 import { Wave } from "@wave-av/sdk";
@@ -282,7 +264,7 @@ const episode = await wave.podcast.createEpisode({
 await wave.podcast.publishEpisode(episode.id);
 ```
 
-### Collab
+## Product example — Collab
 
 ```typescript
 import { Wave } from "@wave-av/sdk";
@@ -298,7 +280,7 @@ const room = await wave.collab.createRoom({
 console.log(`Room: ${room.id} (${room.participant_count} participants)`);
 ```
 
-### Analytics (Pulse)
+## Product example — Analytics (Pulse)
 
 ```typescript
 import { Wave } from "@wave-av/sdk";
@@ -313,7 +295,7 @@ const stream = await wave.pulse.getStreamAnalytics("stream_123", { time_range: "
 console.log(`Quality score: ${stream.quality_score}`);
 ```
 
-### VOD (Vault)
+## Product example — VOD (Vault)
 
 ```typescript
 import { Wave } from "@wave-av/sdk";
@@ -331,7 +313,7 @@ const usage = await wave.vault.getStorageUsage();
 console.log(`Storage: ${usage.usage_percent}% used`);
 ```
 
-### Studio AI
+## Product example — Studio AI
 
 ```typescript
 import { Wave } from "@wave-av/sdk";
@@ -346,8 +328,6 @@ const assistant = await wave.studioAI.startAssistant({
 const suggestions = await wave.studioAI.getSuggestion(assistant.id);
 console.log(`AI suggestion: ${suggestions.title} (${suggestions.confidence * 100}% confidence)`);
 ```
-
----
 
 ## Configuration
 
@@ -400,11 +380,11 @@ wave.client.on("rate_limit.hit", (retryAfter) => {
 });
 ```
 
-## Troubleshooting
-
-### Types not resolving from subpath imports
+## Troubleshooting — Types not resolving from subpath imports
 
 Ensure your `tsconfig.json` uses `"moduleResolution": "node16"` or `"nodenext"`:
+
+## Troubleshooting — Types not resolving from subpath imports (fix)
 
 ```json
 {
@@ -415,9 +395,11 @@ Ensure your `tsconfig.json` uses `"moduleResolution": "node16"` or `"nodenext"`:
 }
 ```
 
-### Rate limit errors
+## Troubleshooting — Rate limit errors
 
 The SDK retries automatically with exponential backoff. To handle rate limits explicitly:
+
+## Troubleshooting — Rate limit errors (example)
 
 ```typescript
 wave.client.on("rate_limit.hit", (retryAfter) => {
@@ -425,9 +407,11 @@ wave.client.on("rate_limit.hit", (retryAfter) => {
 });
 ```
 
-### ESM vs CJS
+## Troubleshooting — ESM vs CJS
 
 The SDK supports both ESM and CJS. If using CommonJS, ensure you're importing correctly:
+
+## Troubleshooting — ESM vs CJS (example)
 
 ```javascript
 const { Wave } = require("@wave-av/sdk");
@@ -440,13 +424,78 @@ const { Wave } = require("@wave-av/sdk");
 
 ## Related packages
 
-- [@wave-av/adk](https://www.npmjs.com/package/@wave-av/adk) — Agent Developer Kit for building AI video agents
-- [@wave-av/mcp-server](https://www.npmjs.com/package/@wave-av/mcp-server) — MCP server for Claude, Cursor, Windsurf
-- [@wave-av/cli](https://www.npmjs.com/package/@wave-av/cli) — Command-line interface
-- [@wave-av/create-app](https://www.npmjs.com/package/@wave-av/create-app) — Scaffold a new project
-- [@wave-av/workflow-sdk](https://www.npmjs.com/package/@wave-av/workflow-sdk) — Workflow orchestration
-- [OpenAPI spec](https://github.com/wave-av/api-spec) — Full API specification
+| Package | Description |
+| --- | --- |
+| [@wave-av/adk](https://www.npmjs.com/package/@wave-av/adk) | Agent Developer Kit for building AI video agents |
+| [@wave-av/mcp-server](https://www.npmjs.com/package/@wave-av/mcp-server) | MCP server for Claude, Cursor, Windsurf |
+| [@wave-av/cli](https://www.npmjs.com/package/@wave-av/cli) | Command-line interface |
+| [@wave-av/create-app](https://www.npmjs.com/package/@wave-av/create-app) | Scaffold a new project |
+| [@wave-av/workflow-sdk](https://www.npmjs.com/package/@wave-av/workflow-sdk) | Workflow orchestration |
+| [OpenAPI spec](https://github.com/wave-av/api-spec) | Full API specification |
 
-## License
+## Capabilities
 
-MIT - WAVE Online, LLC
+| Capability | Status |
+| --- | --- |
+| Polls, Q&A, reactions, engagement via `wave.audience` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| Auto-captions, translation, burn-in via `wave.captions` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| Video chapters and markers via `wave.chapters` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| Video clips, exports, AI highlights via `wave.clips` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| Real-time collaboration rooms via `wave.collab` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| Third-party integrations, webhooks via `wave.connect` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| Monetization, subscriptions, tips, payouts via `wave.creator` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| Desktop Node app management via `wave.desktop` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| Social simulcasting, scheduled posts via `wave.distribution` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| CDN, edge workers, cache, routing rules via `wave.edge` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| Video editing, tracks, transitions, effects via `wave.editor` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| Desktop Node fleet management, health, commands via `wave.fleet` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| AI auto-directing (Autopilot), suggestions, overrides via `wave.ghost` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| Templates, plugins, graphics marketplace via `wave.marketplace` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| Multi-region failover, replication, topology via `wave.mesh` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| Voice calling, conferences, numbers via `wave.phone` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| Live stream lifecycle, protocols, recordings, viewer metrics via `wave.pipeline` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| Podcast episodes, RSS, distribution via `wave.podcast` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| Virtual Device Bridge (NDI/ONVIF/VISCA/Dante to USB UVC/UAC) via `wave.prism` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| Analytics, BI dashboards, revenue metrics via `wave.pulse` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| Dynamic QR codes, analytics via `wave.qr` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| AI scene detection and shot classification via `wave.scene` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| Full-text, visual, and audio search via `wave.search` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| Sentiment and emotion analysis via `wave.sentiment` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| Digital signage displays, playlists via `wave.signage` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| Presentation-to-video conversion via `wave.slides` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| Multi-camera production, scenes, transitions, graphics, audio mixing via `wave.studio` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| AI production assistant, suggestions via `wave.studioAI` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| Transcription with speaker diarization via `wave.transcribe` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| USB device relay and management via `wave.usb` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| Recording storage, VOD, archive policies via `wave.vault` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| Text-to-speech, voice cloning via `wave.voice` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| Zoom meetings, rooms, recordings, RTMS via `wave.zoom` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+
+## The receipts
+
+Every claim below is checked by `npm run verify` against the live repo or endpoint — a non-`pass` verdict fails the gate.
+
+| Claim | How it's verified |
+| --- | --- |
+| Documentation surface is docs.wave.online | resolved by grepping `package.json` |
+| Licensed Apache-2.0 | resolved by grepping `package.json` |
+| 34 API modules covering streaming, production, device management, analytics, content, and monetization | resolved by grepping `package.json` |
+| Requires Node.js &gt;=18.0.0 | resolved by grepping `package.json` |
+| The npm package is published as @wave-av/sdk | resolved by grepping `package.json` |
+| Current package.json version is 2.1.0-next.0 | resolved by grepping `package.json` |
+| Each API module is independently importable via a package.json subpath export (e.g. @wave-av/sdk/pipeline) | resolved by grepping `package.json` |
+| A single `Wave` client class in src/index.ts composes every API module as a readonly property | resolved by grepping `src/index.ts` |
+| Takes zod ^3.22.0 as a peer dependency for runtime validation | resolved by grepping `package.json` |
+
+## Topics
+
+`sdk` · `typescript` · `streaming` · `video` · `audio` · `production` · `webrtc` · `ndi` · `srt` · `clips` · `voice` · `transcription` · `captions` · `analytics`
+
+---
+
+<div align="center">
+
+**Built by [WAVE Online, LLC](https://wave.online)** · [wave.online](https://wave.online) · [Docs](https://docs.wave.online) · [LinkedIn](https://www.linkedin.com/company/wave-online)
+
+</div>
+
