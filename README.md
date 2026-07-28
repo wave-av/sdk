@@ -2,7 +2,7 @@
 
 # sdk
 
-**Official TypeScript SDK for the WAVE API — 34 API modules covering streaming, production, device management, analytics, content, and monetization behind a single `Wave` client.**
+**Official TypeScript SDK for the WAVE API — 42 API module subpaths covering streaming, production, device management, analytics, content, and monetization behind a single `Wave` client. Most modules are SDK-side TypeScript surface only; see capability statuses for what has a live fleet backend today.**
 
 ![kind](https://img.shields.io/badge/kind-library-555?style=flat-square) ![domain](https://img.shields.io/badge/domain-sdk-0a7?style=flat-square) ![lang](https://img.shields.io/badge/lang-TypeScript-3178c6?style=flat-square) ![visibility](https://img.shields.io/badge/visibility-public-brightgreen?style=flat-square)
 
@@ -38,69 +38,78 @@ const stream = await wave.pipeline.create({
 });
 await wave.pipeline.start(stream.id);
 
-// Create a virtual camera from NDI
-const device = await wave.prism.createDevice({
-  name: "PTZ Camera 1",
-  type: "camera",
-  source_protocol: "ndi",
-  source_endpoint: "NDI-CAM-1",
-  node_id: "node_abc",
-  ptz_enabled: true,
+// Text-to-speech
+const synthesis = await wave.voice.synthesize({
+  text: "Hello from WAVE",
+  voice_id: "voice_abc",
 });
 ```
 
-## All 34 APIs — P1 Core streaming
+## API modules — Core streaming
 
-| API | Access | Description |
-| --- | --- | --- |
-| `wave.pipeline` | `PipelineAPI` | Live stream lifecycle, protocols, recordings, viewer metrics |
-| `wave.studio` | `StudioAPI` | Multi-camera production, scenes, transitions, graphics, audio mixing |
+| API | Access | Status | Description |
+| --- | --- | --- | --- |
+| `wave.pipeline` | `PipelineAPI` | lib | Live stream lifecycle, protocols, recordings, viewer metrics |
+| `wave.studio` | `StudioAPI` | planned | Multi-camera production, scenes, transitions, graphics, audio mixing |
 
-## All 34 APIs — P2 Enterprise
+## API modules — Enterprise
 
-| API | Access | Description |
-| --- | --- | --- |
-| `wave.fleet` | `FleetAPI` | Desktop Node fleet management, health, commands |
-| `wave.ghost` | `GhostAPI` | AI auto-directing (Autopilot), suggestions, overrides |
-| `wave.mesh` | `MeshAPI` | Multi-region failover, replication, topology |
-| `wave.edge` | `EdgeAPI` | CDN, edge workers, cache, routing rules |
-| `wave.pulse` | `PulseAPI` | Analytics, BI dashboards, revenue metrics |
-| `wave.prism` | `PrismAPI` | Virtual Device Bridge (NDI/ONVIF/VISCA/Dante to USB UVC/UAC) |
-| `wave.zoom` | `ZoomAPI` | Zoom meetings, rooms, recordings, RTMS |
+| API | Access | Status | Description |
+| --- | --- | --- | --- |
+| `wave.fleet` | `FleetAPI` | planned | Desktop Node fleet management, health, commands |
+| `wave.ghost` | `GhostAPI` | planned | AI auto-directing (Autopilot), suggestions, overrides |
+| `wave.mesh` | `MeshAPI` | planned | Multi-region failover, replication, topology |
+| `wave.edge` | `EdgeAPI` | sdk-surface | CDN, edge workers, cache, routing rules |
+| `wave.pulse` | `PulseAPI` | planned | Analytics, BI dashboards, revenue metrics |
+| `wave.prism` | `PrismAPI` | planned | Virtual Device Bridge (NDI/ONVIF/VISCA/Dante to USB UVC/UAC) |
+| `wave.zoom` | `ZoomAPI` | sdk-surface | Zoom meetings, rooms, recordings, RTMS |
 
-## All 34 APIs — P3 Content & commerce
+## API modules — Content & commerce
 
-| API | Access | Description |
-| --- | --- | --- |
-| `wave.clips` | `ClipsAPI` | Video clips, exports, AI highlights |
-| `wave.editor` | `EditorAPI` | Video editing, tracks, transitions, effects |
-| `wave.voice` | `VoiceAPI` | Text-to-speech, voice cloning |
-| `wave.phone` | `PhoneAPI` | Voice calling, conferences, numbers |
-| `wave.collab` | `CollabAPI` | Real-time collaboration rooms |
-| `wave.captions` | `CaptionsAPI` | Auto-captions, translation, burn-in |
-| `wave.chapters` | `ChaptersAPI` | Video chapters and markers |
-| `wave.studioAI` | `StudioAIAPI` | AI production assistant, suggestions |
-| `wave.transcribe` | `TranscribeAPI` | Transcription with speaker diarization |
-| `wave.sentiment` | `SentimentAPI` | Sentiment and emotion analysis |
-| `wave.search` | `SearchAPI` | Full-text, visual, and audio search |
-| `wave.scene` | `SceneAPI` | AI scene detection and shot classification |
-| `wave.vault` | `VaultAPI` | Recording storage, VOD, archive policies |
-| `wave.marketplace` | `MarketplaceAPI` | Templates, plugins, graphics marketplace |
-| `wave.connect` | `ConnectAPI` | Third-party integrations, webhooks |
-| `wave.distribution` | `DistributionAPI` | Social simulcasting, scheduled posts |
-| `wave.desktop` | `DesktopAPI` | Desktop Node app management |
-| `wave.signage` | `SignageAPI` | Digital signage displays, playlists |
-| `wave.qr` | `QrAPI` | Dynamic QR codes, analytics |
-| `wave.audience` | `AudienceAPI` | Polls, Q&A, reactions, engagement |
-| `wave.creator` | `CreatorAPI` | Monetization, subscriptions, tips, payouts |
+| API | Access | Status | Description |
+| --- | --- | --- | --- |
+| `wave.clips` | `ClipsAPI` | lib | Video clips, exports, AI highlights |
+| `wave.editor` | `EditorAPI` | lib | Video editing, tracks, transitions, effects |
+| `wave.voice` | `VoiceAPI` | lib | Text-to-speech via `synthesize()`; voice-clone methods are SDK surface only |
+| `wave.phone` | `PhoneAPI` | planned | Voice calling, conferences, numbers |
+| `wave.collab` | `CollabAPI` | sdk-surface | Real-time collaboration rooms |
+| `wave.captions` | `CaptionsAPI` | lib | Auto-captions, translation, burn-in |
+| `wave.chapters` | `ChaptersAPI` | sdk-surface | Video chapters and markers |
+| `wave.studioAI` | `StudioAIAPI` | sdk-surface | AI production assistant, suggestions |
+| `wave.transcribe` | `TranscribeAPI` | lib | Transcription with speaker diarization |
+| `wave.sentiment` | `SentimentAPI` | sdk-surface | Sentiment and emotion analysis |
+| `wave.search` | `SearchAPI` | sdk-surface | Full-text, visual, and audio search |
+| `wave.scene` | `SceneAPI` | sdk-surface | AI scene detection and shot classification |
+| `wave.vault` | `VaultAPI` | planned | Recording storage, VOD, archive policies |
+| `wave.marketplace` | `MarketplaceAPI` | sdk-surface | Templates, plugins, graphics marketplace |
+| `wave.connect` | `ConnectAPI` | sdk-surface | Third-party integrations, webhooks |
+| `wave.distribution` | `DistributionAPI` | sdk-surface | Social simulcasting, scheduled posts |
+| `wave.desktop` | `DesktopAPI` | sdk-surface | Desktop Node app management |
+| `wave.signage` | `SignageAPI` | sdk-surface | Digital signage displays, playlists |
+| `wave.qr` | `QrAPI` | sdk-surface | Dynamic QR codes, analytics |
+| `wave.audience` | `AudienceAPI` | sdk-surface | Polls, Q&A, reactions, engagement |
+| `wave.creator` | `CreatorAPI` | planned | Monetization, subscriptions, tips, payouts |
 
-## All 34 APIs — P4 Specialized
+## API modules — Specialized
 
-| API | Access | Description |
-| --- | --- | --- |
-| `wave.podcast` | `PodcastAPI` | Podcast episodes, RSS, distribution |
-| `wave.slides` | `SlidesAPI` | Presentation-to-video conversion |
-| `wave.usb` | `UsbAPI` | USB device relay and management |
+| API | Access | Status | Description |
+| --- | --- | --- | --- |
+| `wave.podcast` | `PodcastAPI` | planned | Podcast episodes, RSS, distribution |
+| `wave.slides` | `SlidesAPI` | sdk-surface | Presentation-to-video conversion |
+| `wave.usb` | `UsbAPI` | sdk-surface | USB device relay and management |
+
+## API modules — Platform
+
+| API | Access | Status | Description |
+| --- | --- | --- | --- |
+| `wave.drm` | `DrmAPI` | sdk-surface | Digital Rights Management: content protection with Widevine, FairPlay, and PlayReady |
+| `wave.notifications` | `NotificationsAPI` | sdk-surface | User notification preferences, delivery channels, and notification management |
+| `wave.perception` | `PerceptionAPI` | sdk-surface | Agentic live-media perception: one `subscribe()` verb attaches an agent to any live stream |
+| `wave.realtime` | `RealtimeAPI` | sdk-surface | Control & event plane: presence, pub/sub broadcast, and the streaming-event bus |
+
+## What the Status column means
+
+`lib` — the TypeScript client surface exists AND a live fleet backend serves it today. `planned` — the client surface exists, the backend does not yet; calling it will not work against production. `sdk-surface` — the client module is exported and typed, but this repo's SSOT declares no backend status for it, so treat it as unproven. Statuses come from `.wave/repo.json`, the same file this README is generated from.
 
 ## Product example — Streams (Pipeline)
 
@@ -150,23 +159,6 @@ const track = await wave.captions.generate({
 });
 const ready = await wave.captions.waitForReady(track.id);
 await wave.captions.translate(ready.id, { target_language: "es" });
-```
-
-## Product example — Chapters
-
-```typescript
-import { Wave } from "@wave-av/sdk";
-
-const wave = new Wave({ apiKey: process.env.WAVE_API_KEY! });
-
-const chapterSet = await wave.chapters.generate({
-  media_id: "video_123",
-  media_type: "video",
-  method: "combined",
-  generate_thumbnails: true,
-});
-const ready = await wave.chapters.waitForReady(chapterSet.id);
-console.log(`Found ${ready.chapter_count} chapters`);
 ```
 
 ## Product example — Voice
@@ -227,106 +219,6 @@ await wave.editor.addElement(project.id, {
 const job = await wave.editor.render(project.id, { format: "mp4", quality: "high" });
 const rendered = await wave.editor.waitForRender(project.id, job.id);
 console.log(`Output: ${rendered.output_url}`);
-```
-
-## Product example — Phone
-
-```typescript
-import { Wave } from "@wave-av/sdk";
-
-const wave = new Wave({ apiKey: process.env.WAVE_API_KEY! });
-
-const call = await wave.phone.makeCall({
-  from: "+15551234567",
-  to: "+15559876543",
-  timeout: 30,
-});
-console.log(`Call ${call.id} status: ${call.status}`);
-```
-
-## Product example — Podcast
-
-```typescript
-import { Wave } from "@wave-av/sdk";
-
-const wave = new Wave({ apiKey: process.env.WAVE_API_KEY! });
-
-const show = await wave.podcast.create({
-  title: "The WAVE Podcast",
-  description: "Weekly streaming industry news",
-  category: "Technology",
-});
-const episode = await wave.podcast.createEpisode({
-  podcast_id: show.id,
-  title: "Episode 1: Getting Started",
-  description: "An introduction to live streaming.",
-});
-await wave.podcast.publishEpisode(episode.id);
-```
-
-## Product example — Collab
-
-```typescript
-import { Wave } from "@wave-av/sdk";
-
-const wave = new Wave({ apiKey: process.env.WAVE_API_KEY! });
-
-const room = await wave.collab.createRoom({
-  name: "Project Review",
-  resource_type: "project",
-  resource_id: "proj_123",
-  settings: { voice_enabled: true, annotations_enabled: true },
-});
-console.log(`Room: ${room.id} (${room.participant_count} participants)`);
-```
-
-## Product example — Analytics (Pulse)
-
-```typescript
-import { Wave } from "@wave-av/sdk";
-
-const wave = new Wave({ apiKey: process.env.WAVE_API_KEY! });
-
-const viewers = await wave.pulse.getViewerAnalytics({ time_range: "24h" });
-console.log(`Peak concurrent: ${viewers.peak_concurrent}`);
-console.log(`Unique viewers: ${viewers.unique_viewers}`);
-
-const stream = await wave.pulse.getStreamAnalytics("stream_123", { time_range: "7d" });
-console.log(`Quality score: ${stream.quality_score}`);
-```
-
-## Product example — VOD (Vault)
-
-```typescript
-import { Wave } from "@wave-av/sdk";
-
-const wave = new Wave({ apiKey: process.env.WAVE_API_KEY! });
-
-const upload = await wave.vault.createUpload({
-  title: "Conference Keynote",
-  format: "mp4",
-  file_size_bytes: 524288000,
-});
-console.log(`Upload to: ${upload.upload_url}`);
-
-const usage = await wave.vault.getStorageUsage();
-console.log(`Storage: ${usage.usage_percent}% used`);
-```
-
-## Product example — Studio AI
-
-```typescript
-import { Wave } from "@wave-av/sdk";
-
-const wave = new Wave({ apiKey: process.env.WAVE_API_KEY! });
-
-const assistant = await wave.studioAI.startAssistant({
-  stream_id: "stream_123",
-  mode: "auto_director",
-  config: { automation_level: 75, auto_apply: false, confidence_threshold: 0.8, settings: {} },
-});
-const suggestions = await wave.studioAI.getSuggestion(assistant.id);
-console.log(`AI suggestion: ${suggestions.title} (${suggestions.confidence * 100}% confidence)`);
 ```
 
 ## Configuration
@@ -419,8 +311,8 @@ const { Wave } = require("@wave-av/sdk");
 
 ## Requirements
 
-- Node.js 18+
-- TypeScript 5.0+ (recommended 5.5+ for best subpath support)
+- Node.js 18+ (`engines.node` is `&gt;=18.0.0`)
+- TypeScript 4.7+ for subpath type resolution (`moduleResolution: node16`); this package is built with TypeScript 5.9
 
 ## Related packages
 
@@ -437,39 +329,24 @@ const { Wave } = require("@wave-av/sdk");
 
 | Capability | Status |
 | --- | --- |
-| Polls, Q&A, reactions, engagement via `wave.audience` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
 | Auto-captions, translation, burn-in via `wave.captions` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
-| Video chapters and markers via `wave.chapters` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
 | Video clips, exports, AI highlights via `wave.clips` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
-| Real-time collaboration rooms via `wave.collab` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
-| Third-party integrations, webhooks via `wave.connect` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
-| Monetization, subscriptions, tips, payouts via `wave.creator` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
-| Desktop Node app management via `wave.desktop` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
-| Social simulcasting, scheduled posts via `wave.distribution` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
-| CDN, edge workers, cache, routing rules via `wave.edge` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| Monetization, subscriptions, tips, payouts via `wave.creator` (SDK TypeScript surface; no fleet backend yet) | ![planned](https://img.shields.io/badge/planned-lightgrey?style=flat-square) |
 | Video editing, tracks, transitions, effects via `wave.editor` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
-| Desktop Node fleet management, health, commands via `wave.fleet` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
-| AI auto-directing (Autopilot), suggestions, overrides via `wave.ghost` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
-| Templates, plugins, graphics marketplace via `wave.marketplace` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
-| Multi-region failover, replication, topology via `wave.mesh` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
-| Voice calling, conferences, numbers via `wave.phone` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| Desktop Node fleet management, health, commands via `wave.fleet` (SDK TypeScript surface; no fleet backend yet) | ![planned](https://img.shields.io/badge/planned-lightgrey?style=flat-square) |
+| x402 and MPP card-rail agent payments with scope-gate and settlement-guard, shipped at the WAVE gateway; reachable from the SDK today via the base `WaveClient` request methods (no dedicated wrapper module yet) | ![ga](https://img.shields.io/badge/ga-brightgreen?style=flat-square) |
+| AI auto-directing (Autopilot), suggestions, overrides via `wave.ghost` (SDK TypeScript surface; no fleet backend yet) | ![planned](https://img.shields.io/badge/planned-lightgrey?style=flat-square) |
+| Multi-region failover, replication, topology via `wave.mesh` (SDK TypeScript surface; no fleet backend yet) | ![planned](https://img.shields.io/badge/planned-lightgrey?style=flat-square) |
+| Telephony bridging via `wave.phone` — core features are planned in the fleet SSOT, not yet shipped | ![planned](https://img.shields.io/badge/planned-lightgrey?style=flat-square) |
 | Live stream lifecycle, protocols, recordings, viewer metrics via `wave.pipeline` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
-| Podcast episodes, RSS, distribution via `wave.podcast` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
-| Virtual Device Bridge (NDI/ONVIF/VISCA/Dante to USB UVC/UAC) via `wave.prism` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
-| Analytics, BI dashboards, revenue metrics via `wave.pulse` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
-| Dynamic QR codes, analytics via `wave.qr` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
-| AI scene detection and shot classification via `wave.scene` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
-| Full-text, visual, and audio search via `wave.search` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
-| Sentiment and emotion analysis via `wave.sentiment` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
-| Digital signage displays, playlists via `wave.signage` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
-| Presentation-to-video conversion via `wave.slides` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
-| Multi-camera production, scenes, transitions, graphics, audio mixing via `wave.studio` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
-| AI production assistant, suggestions via `wave.studioAI` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| Podcast publishing/distribution via `wave.podcast` — core features are planned in the fleet SSOT, not yet shipped | ![planned](https://img.shields.io/badge/planned-lightgrey?style=flat-square) |
+| Virtual Device Bridge (NDI/ONVIF/VISCA/Dante to USB UVC/UAC) via `wave.prism` (SDK TypeScript surface; no fleet backend yet) | ![planned](https://img.shields.io/badge/planned-lightgrey?style=flat-square) |
+| Analytics, BI dashboards, revenue metrics via `wave.pulse` (SDK TypeScript surface; no fleet backend yet) | ![planned](https://img.shields.io/badge/planned-lightgrey?style=flat-square) |
+| Multi-camera production, scenes, transitions, graphics, audio mixing via `wave.studio` (SDK TypeScript surface; no fleet backend yet) | ![planned](https://img.shields.io/badge/planned-lightgrey?style=flat-square) |
 | Transcription with speaker diarization via `wave.transcribe` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
-| USB device relay and management via `wave.usb` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
-| Recording storage, VOD, archive policies via `wave.vault` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
-| Text-to-speech, voice cloning via `wave.voice` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
-| Zoom meetings, rooms, recordings, RTMS via `wave.zoom` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| Recording storage, VOD, archive policies via `wave.vault` (SDK TypeScript surface; no fleet backend yet) | ![planned](https://img.shields.io/badge/planned-lightgrey?style=flat-square) |
+| Text-to-speech via `wave.voice.synthesize()`; voice-clone methods exist as SDK client surface but are not backed by the wave-voice product yet | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| Agent routing (route/pool) and an OpenAI-compatible proxy for LLM/agent traffic, shipped at the WAVE gateway; reachable from the SDK today via the base `WaveClient` request methods (no dedicated wrapper module yet) | ![ga](https://img.shields.io/badge/ga-brightgreen?style=flat-square) |
 
 ## The receipts
 
@@ -477,13 +354,15 @@ Every claim below is checked by `npm run verify` against the live repo or endpoi
 
 | Claim | How it's verified |
 | --- | --- |
+| The base WaveClient exposes a generic protected request() method that any endpoint — including gateway/dispatch routes without a dedicated wrapper module — can be reached through | resolved by grepping `src/client.ts` |
 | Documentation surface is docs.wave.online | resolved by grepping `package.json` |
 | Licensed Apache-2.0 | resolved by grepping `package.json` |
-| 34 API modules covering streaming, production, device management, analytics, content, and monetization | resolved by grepping `package.json` |
+| 42 independently-importable API module subpaths are declared under package.json exports, plus the package root | resolved by grepping `package.json` |
 | Requires Node.js &gt;=18.0.0 | resolved by grepping `package.json` |
 | The npm package is published as @wave-av/sdk | resolved by grepping `package.json` |
 | Current package.json version is 2.1.0-next.0 | resolved by grepping `package.json` |
 | Each API module is independently importable via a package.json subpath export (e.g. @wave-av/sdk/pipeline) | resolved by grepping `package.json` |
+| wave.voice.synthesize() implements text-to-speech; the SDK also declares cloneVoice() client methods that are not backed by the wave-voice product | resolved by grepping `src/voice.ts` |
 | A single `Wave` client class in src/index.ts composes every API module as a readonly property | resolved by grepping `src/index.ts` |
 | Takes zod ^3.22.0 as a peer dependency for runtime validation | resolved by grepping `package.json` |
 
