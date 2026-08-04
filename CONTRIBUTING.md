@@ -42,6 +42,25 @@ pnpm build:types
 - Update docs if adding new API modules
 - All CI checks must pass before merge
 
+## Agent-authored pull requests
+
+This repo accepts PRs opened by an AI coding agent (e.g. a Cursor Cloud Agent session), scoped today
+to docs/config-only changes. These carry the same review bar as a person-authored PR — never relaxed
+because CI is green or the diff is small — plus a few controls specific to agent authorship:
+
+- **Reviewer:** Jake (repo owner) reads and approves every agent-authored PR before merge.
+- **Turnaround:** reviewed within 2 business days of opening. If that slips, the PR states so in a
+  comment rather than sitting silently stale.
+- **No auto-merge, no bot approval, no self-approval:** a green check or a bot's "approve" is never
+  sufficient on its own to merge an agent-authored PR. A human reads the diff and merges by hand.
+- **Draft status is never lifted by automation** — only a human reviewer marks an agent PR ready.
+- **Stale-close:** an agent-authored PR with no review activity for 14 days is closed with a comment
+  explaining why, rather than left open indefinitely.
+- **Compensating control for the audit-log gap:** the agent platform's own audit log does not capture
+  prompt text, terminal commands, or tool-call arguments — only the resulting diff. Because of that
+  gap, the reviewer reads the **full diff**, not a summary the agent wrote about its own change, and
+  does not treat the agent's PR description as a substitute for reading the code.
+
 ## Reporting issues
 
 - Use GitHub Issues for bugs and feature requests
