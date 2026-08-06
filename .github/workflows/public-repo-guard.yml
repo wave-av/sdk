@@ -200,14 +200,21 @@ jobs:
       || github.event_name == 'pull_request_review'
       || github.event_name == 'pull_request_review_comment'
     concurrency:
-      # Keyed on the specific PR / comment / issue rather than github.ref, because
-      # issue events all report the default branch and a ref-keyed group would let
-      # two comments cancel each other, leaving one unscanned.
+      # Keyed on the most specific identifier of the BODY under scan, not on the
+      # PR/issue or github.ref. Ordering matters: review-event payloads carry the
+      # PR object too, so `pull_request.number` first would fold every review
+      # comment and review summary on one PR into a single group — and GitHub
+      # keeps at most ONE pending run per group (even with cancel-in-progress:
+      # false), so a burst of review comments would silently drop some bodies
+      # unscanned. `comment.id` / `review.id` give each distinct body its own
+      # group; PR and issue events (which carry neither) fall through to their
+      # number, where sharing a group is CORRECT: successive body edits supersede
+      # each other, and the latest pending run always scans the current body.
       #
       # cancel-in-progress is deliberately FALSE. Every version of a body deserves a
       # verdict, the job is seconds long, and a cancelled check-run lingers on the
       # commit and makes an otherwise-green PR look broken.
-      group: public-repo-guard-body-${{ github.event.pull_request.number || github.event.comment.id || github.event.issue.number || github.ref }}
+      group: public-repo-guard-body-${{ github.event.comment.id || github.event.review.id || github.event.pull_request.number || github.event.issue.number || github.ref }}
       cancel-in-progress: false
     runs-on: ubuntu-latest
     steps:
