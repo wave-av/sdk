@@ -74,8 +74,13 @@ jobs:
     if: >-
       github.event_name != 'issues'
       && github.event_name != 'issue_comment'
+    # Keyed on the SHA being scanned, NOT the PR number: review events carry the
+    # PR's number too, so a number-keyed group let a review submitted mid-scan
+    # cancel the PR's in-flight tree scan. Two runs share a group only when they
+    # would scan the SAME tree (rapid body edits, review chatter on one head);
+    # a new push gets a new SHA, a new group, and a run nothing can cancel.
     concurrency:
-      group: public-repo-guard-tree-${{ github.event.pull_request.number || github.ref }}
+      group: public-repo-guard-tree-${{ github.event.pull_request.head.sha || github.sha }}
       cancel-in-progress: true
     runs-on: ubuntu-latest
     steps:
@@ -146,10 +151,28 @@ jobs:
       cancel-in-progress: false
     runs-on: ubuntu-latest
     steps:
+      # The gate's script comes from the base repo's DEFAULT BRANCH, never from
+      # the PR merge ref: body-guard exists to grade untrusted text, and a fork
+      # PR that edits body-policy.sh (say, to `exit 0`) must not get to grade its
+      # own body with its own scanner. Nothing else is needed from the tree: the
+      # text under scan comes from the event payload, not the checkout. Only the
+      # gate's own scripts are fetched: no reason to pay for the whole tree on
+      # every comment.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
-          # Only the gate's own scripts are needed — no reason to pay for the whole
-          # tree on every comment.
+          ref: ${{ github.event.repository.default_branch }}
+          path: trusted
+          sparse-checkout: scripts/public-repo-guard
+          sparse-checkout-cone-mode: false
+
+      # Bootstrap only: on the PR that installs the gate, the default branch does
+      # not have body-policy.sh yet, so fall back to the PR's own copy. Once the
+      # bundle is merged the trusted copy always exists, this step never runs,
+      # and a fork PR's edits to the script are ignored.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        if: ${{ hashFiles('trusted/scripts/public-repo-guard/body-policy.sh') == '' }}
+        with:
+          path: bootstrap
           sparse-checkout: scripts/public-repo-guard
           sparse-checkout-cone-mode: false
 
@@ -182,4 +205,11 @@ jobs:
       - name: body policy (PR / issue / comment / review text)
         env:
           GUARD_PRIVATE_REPOS: ${{ vars.GUARD_PRIVATE_REPOS }}
-        run: bash scripts/public-repo-guard/body-policy.sh "$RUNNER_TEMP/bodyscan/body.txt"
+        run: |
+          set -euo pipefail
+          script="trusted/scripts/public-repo-guard/body-policy.sh"
+          if [ ! -f "$script" ]; then
+            echo "::notice title=public-repo-guard (body-guard)::body-policy.sh is not on the default branch yet; bootstrap run using this PR's own copy."
+            script="bootstrap/scripts/public-repo-guard/body-policy.sh"
+          fi
+          bash "$script" "$RUNNER_TEMP/bodyscan/body.txt"
