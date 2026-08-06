@@ -226,11 +226,18 @@ jobs:
           sparse-checkout-cone-mode: false
 
       # Bootstrap only: on the PR that installs the gate, the default branch does
-      # not have body-policy.sh yet, so fall back to the PR's own copy. Once the
-      # bundle is merged the trusted copy always exists, this step never runs,
-      # and a fork PR's edits to the script are ignored.
+      # not have body-policy.sh yet, so fall back to the PR's own copy — but ONLY
+      # for a same-repo pull request. A same-repo author already has write access,
+      # so their copy grants nothing they do not have; a fork PR replacing
+      # body-policy.sh (say, with `exit 0`) must never get to grade its own body
+      # with its own scanner, even during the bootstrap window, so fork PRs (and
+      # every non-PR event) fail closed below instead of falling back. Once the
+      # bundle is merged the trusted copy always exists and this step never runs.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-        if: ${{ hashFiles('trusted/scripts/public-repo-guard/body-policy.sh') == '' }}
+        if: >-
+          hashFiles('trusted/scripts/public-repo-guard/body-policy.sh') == ''
+          && github.event_name == 'pull_request'
+          && github.event.pull_request.head.repo.full_name == github.repository
         with:
           path: bootstrap
           sparse-checkout: scripts/public-repo-guard
@@ -269,7 +276,15 @@ jobs:
           set -euo pipefail
           script="trusted/scripts/public-repo-guard/body-policy.sh"
           if [ ! -f "$script" ]; then
-            echo "::notice title=public-repo-guard (body-guard)::body-policy.sh is not on the default branch yet; bootstrap run using this PR's own copy."
-            script="bootstrap/scripts/public-repo-guard/body-policy.sh"
+            if [ -f "bootstrap/scripts/public-repo-guard/body-policy.sh" ]; then
+              echo "::notice title=public-repo-guard (body-guard)::body-policy.sh is not on the default branch yet; bootstrap run using this same-repo PR's own copy."
+              script="bootstrap/scripts/public-repo-guard/body-policy.sh"
+            else
+              # No trusted copy and no same-repo bootstrap copy: this is a fork
+              # PR (or a non-PR event) during the bootstrap window. Refuse to
+              # grade a body with a scanner the untrusted tree supplies.
+              echo "::error title=public-repo-guard (body-guard)::body-policy.sh is not on the default branch and this event's tree is untrusted; refusing to execute the PR's own scanner. Merge the guard bundle to the default branch first."
+              exit 1
+            fi
           fi
           bash "$script" "$RUNNER_TEMP/bodyscan/body.txt"

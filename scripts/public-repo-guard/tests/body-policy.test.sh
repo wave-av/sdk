@@ -14,8 +14,12 @@ TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
 # The names the real gate is configured with come from an org variable; the tests
-# pin their own so they are hermetic and do not depend on CI configuration.
-export GUARD_PRIVATE_REPOS="wave-gateway, wave-transports, agent-money"
+# pin their own so they are hermetic and do not depend on CI configuration. The
+# names (and every credential name / count in the fixtures below) are DELIBERATELY
+# synthetic: this file is public, and body-policy.sh's own rule is that real
+# private-repo names are never hardcoded. The tests only need self-consistency
+# between this variable and the fixture text.
+export GUARD_PRIVATE_REPOS="example-private-a, example-private-b, example-private-c"
 
 PASS=0; FAIL=0
 
@@ -39,13 +43,13 @@ echo "body-policy fixtures"
 
 # --- must BLOCK ---------------------------------------------------------------
 expect 1 'private repo + credential name' \
-  'Flip is live: WAVE_VIEWPORT_LEASE_SECRET is bound on wave-gateway now.'
+  'Flip is live: EXAMPLE_LEASE_SECRET is bound on example-private-a now.'
 expect 1 'private repo + credential name, reverse order' \
-  'The MOQ_JOIN_SECRET was added; wave-transports picks it up on deploy.'
+  'The EXAMPLE_JOIN_SECRET was added; example-private-b picks it up on deploy.'
 expect 1 'private repo + secret count' \
-  'wave-gateway went from 74 secrets to 75 after this change.'
+  'example-private-a went from 12 secrets to 13 after this change.'
 expect 1 'private repo + service binding' \
-  'This adds a service binding from the worker to agent-money for settlement.'
+  'This adds a service binding from the worker to example-private-c.'
 expect 1 'operator home path' \
   'Repro: run it from /Users/someoperator/Documents/notes and it fails.'  # enforce-ignore (fixture)
 expect 1 'internal-only marker' \
@@ -67,24 +71,24 @@ expect 1 'internal tailscale IP' \
 
 # --- must PASS (precision — these keep the gate deployable) -------------------
 expect 0 'bare private-repo cross-reference' \
-  'This is the companion change to wave-transports#260; merge that one first.'
+  'This is the companion change to example-private-b#260; merge that one first.'
 expect 0 'two private repos, no operational detail' \
-  'Both wave-gateway and wave-transports will need a follow-up for this.'
+  'Both example-private-a and example-private-b will need a follow-up for this.'
 expect 0 'credential NAME with no private repo nearby' \
   'The handler now reads SOME_API_TOKEN from the environment instead of a literal.'
 # Regression: a leading (?i) once spilled case-insensitivity across the whole
 # private-repo-ops pattern, so a lowercase everyday word like `api_key` counted
 # as operational detail and blocked any body that also named a private repo.
 expect 0 'lowercase identifier near a private repo is not operational detail' \
-  'Fix wave-gateway: the api_key header is now lowercase.'
+  'Fix example-private-a: the api_key header is now lowercase.'
 expect 0 'lowercase token word near a private repo is not operational detail' \
-  'Docs for wave-transports: pass your access_token to the client.'
+  'Docs for example-private-b: pass your access_token to the client.'
 expect 0 'public runner path is not an operator path' \
   'CI checks out to /home/runner/work/repo/repo before the scan runs.'  # enforce-ignore (fixture)
 expect 0 'talking about the control' \
   'body-policy blocks a private repo named next to a SECRET_TOKEN; that is intended.'
 expect 0 'explicit guard:allow with a reason' \
-  'Example for the docs: wave-gateway holds EXAMPLE_SECRET — guard:allow documented-example'
+  'Example for the docs: example-private-a holds EXAMPLE_SECRET — guard:allow documented-example'
 expect 0 'ordinary clean body' \
   'Bumps the draft revision and regenerates the fixtures. No behaviour change.'
 # Regression: the first CI run of this job failed on its own PR, because a review
