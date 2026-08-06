@@ -49,10 +49,19 @@ check() {
   # Filter with rg, not grep: BSD/macOS grep has no -P, so a `grep -P` allowlist
   # silently errors out locally while working on GNU/CI — the gate would then
   # disagree with itself depending on where it ran. rg is already required above.
+  # Credential and private-key formats are never allowlisted: a real secret must
+  # still block even when it appears in a policy example or an exempt line.
   local matches
-  matches="$(printf '%s' "$raw" \
-    | rg -vN -- 'guard:allow[[:space:]]+[^[:space:]]' \
-    | rg -vNiP -- "$ABOUT_THE_CONTROL" || true)"
+  case "$name" in
+    stripe-live-key|stripe-account|anthropic-key|github-pat|supabase-pat|aws-akid|private-key)
+      matches="$raw"
+      ;;
+    *)
+      matches="$(printf '%s' "$raw" \
+        | rg -vN -- 'guard:allow[[:space:]]+[^[:space:]]' \
+        | rg -vNiP -- "$ABOUT_THE_CONTROL" || true)"
+      ;;
+  esac
   [[ -z "$matches" ]] && return 0
   local count; count="$(printf '%s\n' "$matches" | grep -c '')"
   # Print the LINE NUMBER only — never the matched text. This annotation is itself
