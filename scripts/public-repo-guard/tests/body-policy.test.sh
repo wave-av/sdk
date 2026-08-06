@@ -67,6 +67,13 @@ expect 0 'two private repos, no operational detail' \
   'Both wave-gateway and wave-transports will need a follow-up for this.'
 expect 0 'credential NAME with no private repo nearby' \
   'The handler now reads SOME_API_TOKEN from the environment instead of a literal.'
+# Regression: a leading (?i) once spilled case-insensitivity across the whole
+# private-repo-ops pattern, so a lowercase everyday word like `api_key` counted
+# as operational detail and blocked any body that also named a private repo.
+expect 0 'lowercase identifier near a private repo is not operational detail' \
+  'Fix wave-gateway: the api_key header is now lowercase.'
+expect 0 'lowercase token word near a private repo is not operational detail' \
+  'Docs for wave-transports: pass your access_token to the client.'
 expect 0 'public runner path is not an operator path' \
   'CI checks out to /home/runner/work/repo/repo before the scan runs.'  # enforce-ignore (fixture)
 expect 0 'talking about the control' \

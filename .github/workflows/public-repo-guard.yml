@@ -51,11 +51,17 @@ permissions:
 jobs:
   guard:
     name: Secrets + content policy
-    # Skips issue/comment events (the tree scan has nothing to say about a comment,
-    # and the org should not pay for a gitleaks run every time anyone posts one) and
-    # skips `edited` (a title or body edit does not change the tree).
+    # Skips issue/comment events only (the tree scan has nothing to say about a
+    # comment, and their check-runs attach to the default branch, never a PR head,
+    # so that skip cannot mask a PR verdict). `edited` PR events deliberately DO
+    # run even though a body edit does not change the tree: a job-level skip still
+    # posts a fresh check-run with conclusion `skipped` against the same head SHA,
+    # and branch protection reads the LATEST check-run of a given name and treats
+    # `skipped` as passing — so skipping on `edited` let a body edit silently
+    # replace a failing tree verdict with a mergeable one. Re-scanning an
+    # unchanged tree is the cheap side of that trade.
     if: >-
-      (github.event_name == 'pull_request' && github.event.action != 'edited')
+      github.event_name == 'pull_request'
       || github.event_name == 'push'
       || github.event_name == 'workflow_dispatch'
     concurrency:
