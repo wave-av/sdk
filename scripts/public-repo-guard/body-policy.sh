@@ -161,8 +161,15 @@ if [[ -n "$_ALT" ]]; then
   # scoped to the repo-name alternation with (?i:...) — a leading (?i) would
   # spill across the whole pattern and make the deliberately SCREAMING_CASE-only
   # OPS_DETAIL match everyday prose like `api_key`.
+  #
+  # No \b brackets OPS_DETAIL in either direction. Its credential alternative
+  # cannot span an underscore, so inside a multi-part name like WAVE_API_TOKEN
+  # the only sub-match (API_TOKEN) sits after `_`, a word character, and a
+  # leading \b silently killed the name-first direction for exactly those
+  # names. The alternation's own anchors ([A-Z] start, keyword tail) already
+  # bound what it can touch, and the detail-then-name direction never had one.
   check BLOCK private-repo-ops \
-    "\\b(?i:${_ALT})\\b[^\\n]{0,140}?\\b${OPS_DETAIL}|${OPS_DETAIL}[^\\n]{0,140}?\\b(?i:${_ALT})\\b" \
+    "\\b(?i:${_ALT})\\b[^\\n]{0,140}?${OPS_DETAIL}|${OPS_DETAIL}[^\\n]{0,140}?\\b(?i:${_ALT})\\b" \
     'A private WAVE repo named alongside internal operational detail (credential name, secret binding, or secret count) — the wiring topology is not public'
 elif [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
   echo "::error title=public-repo-guard (private-repo-ops)::GUARD_PRIVATE_REPOS resolved empty in CI — the private-repo proximity rule would silently not run. Set the org/repo Actions variable vars.GUARD_PRIVATE_REPOS; failing closed rather than reporting a pass that enforces nothing."

@@ -46,6 +46,12 @@ expect 1 'private repo + credential name' \
   'Flip is live: EXAMPLE_LEASE_SECRET is bound on example-private-a now.'
 expect 1 'private repo + credential name, reverse order' \
   'The EXAMPLE_JOIN_SECRET was added; example-private-b picks it up on deploy.'
+# Regression: a \b before the credential name once killed the name-first
+# direction for multi-part names — inside EXAMPLE_API_TOKEN the pattern can only
+# match API_TOKEN, which sits after `_`, a word character. Note the line carries
+# no other operational phrase, so only the credential-name alternative can fire.
+expect 1 'private repo + multi-part credential name, name first' \
+  'example-private-a reads EXAMPLE_API_TOKEN at startup.'
 expect 1 'private repo + secret count' \
   'example-private-a went from 12 secrets to 13 after this change.'
 expect 1 'private repo + service binding' \
