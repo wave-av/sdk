@@ -36,6 +36,13 @@ on:
     types: [opened, edited]
   issue_comment:
     types: [created, edited]
+  # `issue_comment` only covers the top-level conversation. Inline diff comments
+  # and review summary bodies are separate surfaces, equally world-readable, and
+  # were the last body text nothing scanned.
+  pull_request_review:
+    types: [submitted, edited]
+  pull_request_review_comment:
+    types: [created, edited]
   push:
     branches: [main, master]
   workflow_dispatch:
@@ -53,19 +60,20 @@ permissions:
 jobs:
   guard:
     name: Secrets + content policy
-    # Skips issue/comment events only (the tree scan has nothing to say about a
-    # comment, and their check-runs attach to the default branch, never a PR head,
-    # so that skip cannot mask a PR verdict). `edited` PR events deliberately DO
-    # run even though a body edit does not change the tree: a job-level skip still
-    # posts a fresh check-run with conclusion `skipped` against the same head SHA,
-    # and branch protection reads the LATEST check-run of a given name and treats
-    # `skipped` as passing — so skipping on `edited` let a body edit silently
+    # Skips ONLY issues/issue_comment events (the tree scan has nothing to say
+    # about a comment, and their check-runs attach to the default branch, never a
+    # PR head, so that skip cannot mask a PR verdict). Every OTHER event runs the
+    # tree scan even when it cannot have changed the tree (`edited`, review
+    # events): those runs attach check-runs to the PR head SHA, a job-level skip
+    # still posts a fresh check-run with conclusion `skipped` there, and branch
+    # protection reads the LATEST check-run of a given name and treats `skipped`
+    # as passing — so skipping would let a body edit or review comment silently
     # replace a failing tree verdict with a mergeable one. Re-scanning an
-    # unchanged tree is the cheap side of that trade.
+    # unchanged tree is the cheap side of that trade. Written as a denylist so a
+    # future trigger fails toward scanning, not toward a green rubber stamp.
     if: >-
-      github.event_name == 'pull_request'
-      || github.event_name == 'push'
-      || github.event_name == 'workflow_dispatch'
+      github.event_name != 'issues'
+      && github.event_name != 'issue_comment'
     concurrency:
       group: public-repo-guard-tree-${{ github.event.pull_request.number || github.ref }}
       cancel-in-progress: true
@@ -109,18 +117,23 @@ jobs:
         run: bash scripts/public-repo-guard/tests/body-policy.test.sh
 
   # The other half of a public repo's surface. `guard` above scans the published
-  # TREE; a PR/issue/comment BODY is just as world-readable and, until this job,
-  # was scanned by nothing server-side. That gap was real, not theoretical: a PR
-  # was blocked for naming a private repo in wrangler.toml while the very same
+  # TREE; a PR/issue/comment/review BODY is just as world-readable and, until this
+  # job, was scanned by nothing server-side. That gap was real, not theoretical: a
+  # PR was blocked for naming a private repo in wrangler.toml while the very same
   # name, with more operational detail attached, sat unchallenged in its body.
   #
   # Honest about what it can and cannot do. On a PR this PREVENTS the merge. On an
-  # issue or comment the text is already public the moment it posts, so this is
-  # detection — it tells us to go redact, fast. Only the client-side pre-write hook
-  # can stop that class before publication.
+  # issue, comment, or review the text is already public the moment it posts, so
+  # this is detection — it tells us to go redact, fast. Only the client-side
+  # pre-write hook can stop that class before publication.
   body-guard:
     name: Body content policy
-    if: github.event_name == 'pull_request' || github.event_name == 'issues' || github.event_name == 'issue_comment'
+    if: >-
+      github.event_name == 'pull_request'
+      || github.event_name == 'issues'
+      || github.event_name == 'issue_comment'
+      || github.event_name == 'pull_request_review'
+      || github.event_name == 'pull_request_review_comment'
     concurrency:
       # Keyed on the specific PR / comment / issue rather than github.ref, because
       # issue events all report the default branch and a ref-keyed group would let
@@ -154,18 +167,19 @@ jobs:
           # An UNRECOGNIZED payload shape must fail, never quietly scan nothing and
           # report a pass. If the event schema ever moves, this job must go red
           # rather than become a green rubber stamp over an unscanned body.
-          if [ "$(jq -r 'has("pull_request") or has("issue") or has("comment")' "$GITHUB_EVENT_PATH")" != "true" ]; then
-            echo "::error title=public-repo-guard (body-guard)::Event payload contains no pull_request/issue/comment object — refusing to report a pass on an unscanned body."
+          if [ "$(jq -r 'has("pull_request") or has("issue") or has("comment") or has("review")' "$GITHUB_EVENT_PATH")" != "true" ]; then
+            echo "::error title=public-repo-guard (body-guard)::Event payload contains no pull_request/issue/comment/review object — refusing to report a pass on an unscanned body."
             exit 1
           fi
           jq -r '[.pull_request.title, .pull_request.body,
                   .issue.title, .issue.body,
-                  .comment.body]
+                  .comment.body,
+                  .review.body]
                  | map(select(. != null)) | join("\n")' \
             "$GITHUB_EVENT_PATH" > "$RUNNER_TEMP/bodyscan/body.txt"
           echo "scanning $(wc -l < "$RUNNER_TEMP/bodyscan/body.txt") line(s) of body text"
 
-      - name: body policy (PR / issue / comment text)
+      - name: body policy (PR / issue / comment / review text)
         env:
           GUARD_PRIVATE_REPOS: ${{ vars.GUARD_PRIVATE_REPOS }}
         run: bash scripts/public-repo-guard/body-policy.sh "$RUNNER_TEMP/bodyscan/body.txt"
