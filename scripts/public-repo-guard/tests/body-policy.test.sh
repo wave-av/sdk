@@ -103,6 +103,26 @@ expect 1 'marker USED unquoted still blocks' \
   'Attaching the internal-only rollout plan; do not share outside the team.'
 
 # --- fail closed --------------------------------------------------------------
+# GUARD_PRIVATE_REPOS is the one rule fed by configuration, so a configuration
+# mistake must go red in CI, never green: an unset/mis-typed org variable would
+# otherwise disable the headline rule while the check still reports a pass. The
+# silent skip stays local-only, where the org's private-repo list is unknowable.
+printf '%s\n' 'Bumps the draft revision. No behaviour change.' > "$TMP/clean.txt"
+# guardcfg <exit-code> <name> <env pairs...>
+guardcfg() {
+  local want="$1" name="$2"; shift 2
+  env -u GUARD_PRIVATE_REPOS -u GITHUB_ACTIONS "$@" bash "$SCRIPT" "$TMP/clean.txt" >/dev/null 2>&1
+  local rc=$?
+  if [[ "$rc" == "$want" ]]; then
+    PASS=$((PASS+1)); printf '  ok   %s → exit %s\n' "$name" "$want"
+  else
+    FAIL=$((FAIL+1)); printf '  FAIL %s — want exit %s, got %s\n' "$name" "$want" "$rc"
+  fi
+}
+guardcfg 2 'unset GUARD_PRIVATE_REPOS in CI fails closed'            GITHUB_ACTIONS=true
+guardcfg 2 'whitespace-only GUARD_PRIVATE_REPOS in CI fails closed'  GITHUB_ACTIONS=true GUARD_PRIVATE_REPOS=' , '
+guardcfg 0 'unset GUARD_PRIVATE_REPOS locally skips the rule'
+
 # Invoked directly, not through expect(): expect() always materializes a file, so
 # it cannot reach these paths. A gate that returns "OK" when it was handed nothing
 # to scan is the failure mode this whole file exists to prevent.

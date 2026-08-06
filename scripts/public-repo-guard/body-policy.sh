@@ -57,11 +57,21 @@ check() {
   # Filter with rg, not grep: BSD/macOS grep has no -P, so a `grep -P` allowlist
   # silently errors out locally while working on GNU/CI — the gate would then
   # disagree with itself depending on where it ran. rg is already required above.
+  # Each filter's exit code is checked the same way as the primary scan: 1 (all
+  # lines filtered) is a clean result, but >=2 is a scanner error and FAILS
+  # CLOSED — a swallowed filter error would empty `matches` and pass the rule.
   local matches
   if (( exempt )); then
-    matches="$(printf '%s' "$raw" \
-      | rg -vN -- 'guard:allow[[:space:]]+[^[:space:]]' \
-      | rg -vNiP -- "$ABOUT_THE_CONTROL" || true)"
+    matches="$(printf '%s' "$raw" | rg -vN -- 'guard:allow[[:space:]]+[^[:space:]]')"; rc=$?
+    if (( rc >= 2 )); then
+      echo "::error title=public-repo-guard ($name)::ripgrep failed (exit $rc) applying the guard:allow exemption for rule '$name' — failing closed."
+      exit 2
+    fi
+    matches="$(printf '%s' "$matches" | rg -vNiP -- "$ABOUT_THE_CONTROL")"; rc=$?
+    if (( rc >= 2 )); then
+      echo "::error title=public-repo-guard ($name)::ripgrep failed (exit $rc) applying the about-the-control exemption for rule '$name' — failing closed."
+      exit 2
+    fi
   else
     matches="$raw"
   fi
@@ -128,10 +138,16 @@ check BLOCK internal-marker  '(?<![“"'"'"'`])\b(internal[- ]only|do\s+not\s+(s
 # of what is wired to what, and it is the shape that actually leaked.
 #
 # Names are NOT hardcoded (this file is public); CI injects them via the
-# GUARD_PRIVATE_REPOS variable. Unset locally → this check is skipped.
+# GUARD_PRIVATE_REPOS variable. This is the one rule whose existence depends on
+# configuration, so its absence is graded by WHERE the script runs: unset locally
+# → skipped (developers cannot know the org's private-repo list, and a hook that
+# demands org secrets to run at all gets bypassed); unset or empty IN CI → exit 2.
+# Everything else in this file fails closed, and the headline rule must not be
+# the exception: a mis-typed or unset vars.GUARD_PRIVATE_REPOS would otherwise
+# turn the gate into a green rubber stamp that enforces nothing.
+OPS_DETAIL='(?:[A-Z][A-Z0-9]*_(?:SECRET|TOKEN|KEY|PASSWORD)|wrangler\s+secret|secret\s+(?:is\s+)?(?:bound|binding|list)|(?:is\s+)?bound\s+on|service\s+binding|\d{2,}\s+secrets)'
+_ALT=''
 if [[ -n "${GUARD_PRIVATE_REPOS:-}" ]]; then
-  OPS_DETAIL='(?:[A-Z][A-Z0-9]*_(?:SECRET|TOKEN|KEY|PASSWORD)|wrangler\s+secret|secret\s+(?:is\s+)?(?:bound|binding|list)|(?:is\s+)?bound\s+on|service\s+binding|\d{2,}\s+secrets)'
-  _ALT=''
   IFS=', ' read -r -a _PRIV <<< "$GUARD_PRIVATE_REPOS"
   for _name in "${_PRIV[@]}"; do
     [[ -z "$_name" ]] && continue
@@ -139,15 +155,18 @@ if [[ -n "${GUARD_PRIVATE_REPOS:-}" ]]; then
     _esc="$(printf '%s' "$_name" | sed -E 's/[][(){}.^$*+?|\\]/\\&/g')"
     _ALT="${_ALT:+$_ALT|}${_esc}"
   done
-  if [[ -n "$_ALT" ]]; then
-    # Both orders: name-then-detail and detail-then-name. Case-insensitivity is
-    # scoped to the repo-name alternation with (?i:...) — a leading (?i) would
-    # spill across the whole pattern and make the deliberately SCREAMING_CASE-only
-    # OPS_DETAIL match everyday prose like `api_key`.
-    check BLOCK private-repo-ops \
-      "\\b(?i:${_ALT})\\b[^\\n]{0,140}?\\b${OPS_DETAIL}|${OPS_DETAIL}[^\\n]{0,140}?\\b(?i:${_ALT})\\b" \
-      'A private WAVE repo named alongside internal operational detail (credential name, secret binding, or secret count) — the wiring topology is not public'
-  fi
+fi
+if [[ -n "$_ALT" ]]; then
+  # Both orders: name-then-detail and detail-then-name. Case-insensitivity is
+  # scoped to the repo-name alternation with (?i:...) — a leading (?i) would
+  # spill across the whole pattern and make the deliberately SCREAMING_CASE-only
+  # OPS_DETAIL match everyday prose like `api_key`.
+  check BLOCK private-repo-ops \
+    "\\b(?i:${_ALT})\\b[^\\n]{0,140}?\\b${OPS_DETAIL}|${OPS_DETAIL}[^\\n]{0,140}?\\b(?i:${_ALT})\\b" \
+    'A private WAVE repo named alongside internal operational detail (credential name, secret binding, or secret count) — the wiring topology is not public'
+elif [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
+  echo "::error title=public-repo-guard (private-repo-ops)::GUARD_PRIVATE_REPOS resolved empty in CI — the private-repo proximity rule would silently not run. Set the org/repo Actions variable vars.GUARD_PRIVATE_REPOS; failing closed rather than reporting a pass that enforces nothing."
+  exit 2
 fi
 
 if (( VIOLATIONS > 0 )); then
