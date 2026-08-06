@@ -1,0 +1,19 @@
+CONTRIBUTING.md
+  s_f24caa326b86f6::t_82e3ba2b5dde99 45-63
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "e21c7929637b831851132dd1157b7ec287b813e1",
+  "prompts": {},
+  "sessions": {
+    "s_f24caa326b86f6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "adc1828d-f1dc-483b-b7cd-a61bedf1dbc1",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Jake Fineman <jakefineman@gmail.com>"
+    }
+  }
+}
