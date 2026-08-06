@@ -57,6 +57,11 @@ expect 1 'internal-only marker' \
 AKID_FIXTURE="AKI""A1234567890ABCDEF"
 expect 1 'AWS access key id' \
   "The failing job had ${AKID_FIXTURE} configured."
+# Credential rules are --no-exempt: no line-level context makes a live key OK.
+expect 1 'guard:allow does NOT exempt a credential' \
+  "Example key: ${AKID_FIXTURE} — guard:allow documented-example"
+expect 1 'talking about the control does NOT exempt a credential' \
+  "body-policy caught ${AKID_FIXTURE} in a comment last week."
 expect 1 'internal tailscale IP' \
   'It resolves to 100.71.4.19 from inside the fleet.'
 

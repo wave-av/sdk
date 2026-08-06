@@ -19,7 +19,10 @@
 #
 # Allowlisting: a line carrying `guard:allow <reason>` is exempt (an accidental
 # leak never carries the marker; a deliberate one is visible in a public diff), as
-# is any line matching the ABOUT-THE-CONTROL allowlist below.
+# is any line matching the ABOUT-THE-CONTROL allowlist below. EXCEPTION: rules
+# declared `--no-exempt` (the credential formats) ignore both allowlists — a real
+# secret is never legitimate in prose, so no marker or discussion context can
+# make publishing one acceptable.
 set -uo pipefail
 
 FILE="${1:-}"
@@ -34,8 +37,13 @@ VIOLATIONS=0
 # from the client-side gate's allowlist, which was built for exactly this.
 ABOUT_THE_CONTROL='(public-repo-guard|body-policy|content-policy|public-github-write-gate|\bNDA\s+(gate|guard|policy|denylist|sweep|scan|hook)\b|\bno\s+NDA\b|responsib\w*\s+disclos|SECURITY\.md)'
 
-# check <BLOCK|WARN> <name> <regex> <why>
+# check [--no-exempt] <BLOCK|WARN> <name> <regex> <why>
+#   --no-exempt: skip the guard:allow / ABOUT_THE_CONTROL line exemptions. For
+#   credential formats: a live key is a leak even on a line that names this gate
+#   or carries an allow marker, so no line-level context may suppress the hit.
 check() {
+  local exempt=1
+  [[ "$1" == "--no-exempt" ]] && { exempt=0; shift; }
   local sev="$1" name="$2" re="$3" why="$4"
   [[ -z "$re" ]] && { echo "::error::body-policy: internal bug — empty regex for rule '$name'"; exit 2; }
   # rg exit: 0=match, 1=no match, >=2=real error → FAIL CLOSED. A gate that passes
@@ -50,9 +58,13 @@ check() {
   # silently errors out locally while working on GNU/CI — the gate would then
   # disagree with itself depending on where it ran. rg is already required above.
   local matches
-  matches="$(printf '%s' "$raw" \
-    | rg -vN -- 'guard:allow[[:space:]]+[^[:space:]]' \
-    | rg -vNiP -- "$ABOUT_THE_CONTROL" || true)"
+  if (( exempt )); then
+    matches="$(printf '%s' "$raw" \
+      | rg -vN -- 'guard:allow[[:space:]]+[^[:space:]]' \
+      | rg -vNiP -- "$ABOUT_THE_CONTROL" || true)"
+  else
+    matches="$raw"
+  fi
   [[ -z "$matches" ]] && return 0
   local count; count="$(printf '%s\n' "$matches" | grep -c '')"
   # Print the LINE NUMBER only — never the matched text. This annotation is itself
@@ -69,13 +81,16 @@ check() {
 }
 
 # --- Credential formats — never legitimate in prose --------------------------
-check BLOCK stripe-live-key  '(sk|rk)_live_[A-Za-z0-9]{16,}'                 'Live Stripe secret/restricted key'
-check BLOCK stripe-account   'acct_[A-Za-z0-9]{16,}'                         'Live Stripe account ID — financial infra, never publish'
-check BLOCK anthropic-key    'sk-ant-(api|admin)[0-9]{2}-[A-Za-z0-9_-]{20,}' 'Real Anthropic API/admin key'
-check BLOCK github-pat       'github_pat_[A-Za-z0-9_]{30,}'                  'GitHub fine-grained PAT'
-check BLOCK supabase-pat     'sbp_[a-f0-9]{40}'                              'Supabase personal access token'
-check BLOCK aws-akid         'AKIA[0-9A-Z]{16}'                              'AWS access key ID'
-check BLOCK private-key      '-----BEGIN [A-Z ]*PRIVATE KEY-----'            'Embedded private key material'
+# --no-exempt: these formats match REAL secrets, not discussion of secrets, so
+# neither `guard:allow` nor talking about the control may suppress a hit. If a
+# doc genuinely needs a key-shaped example, truncate it below the rule's floor.
+check --no-exempt BLOCK stripe-live-key  '(sk|rk)_live_[A-Za-z0-9]{16,}'                 'Live Stripe secret/restricted key'
+check --no-exempt BLOCK stripe-account   'acct_[A-Za-z0-9]{16,}'                         'Live Stripe account ID — financial infra, never publish'
+check --no-exempt BLOCK anthropic-key    'sk-ant-(api|admin)[0-9]{2}-[A-Za-z0-9_-]{20,}' 'Real Anthropic API/admin key'
+check --no-exempt BLOCK github-pat       'github_pat_[A-Za-z0-9_]{30,}'                  'GitHub fine-grained PAT'
+check --no-exempt BLOCK supabase-pat     'sbp_[a-f0-9]{40}'                              'Supabase personal access token'
+check --no-exempt BLOCK aws-akid         'AKIA[0-9A-Z]{16}'                              'AWS access key ID'
+check --no-exempt BLOCK private-key      '-----BEGIN [A-Z ]*PRIVATE KEY-----'            'Embedded private key material'
 
 # --- Infrastructure identifiers ----------------------------------------------
 # shellcheck disable=SC2016  # $CLOUDFLARE_ACCOUNT_ID is literal guidance text
