@@ -325,6 +325,16 @@ export { DrmAPI, createDrmAPI } from "./drm";
 export { RealtimeAPI, RealtimeChannel, createRealtimeAPI } from "./realtime";
 export * from "./realtime-types";
 
+// Enhance — AI video super-resolution (wave-gateway#799)
+export {
+  EnhanceAPI,
+  createEnhanceAPI,
+  type EnhanceModel,
+  type EnhanceOptions,
+  type EnhanceReceipt,
+  type EnhanceResult,
+} from "./enhance";
+
 // Perception — agentic live-media subscribe() control plane (#85)
 export {
   PerceptionAPI,
@@ -396,6 +406,7 @@ import { NotificationsAPI } from "./notifications";
 import { DrmAPI } from "./drm";
 import { RealtimeAPI } from "./realtime";
 import { PerceptionAPI } from "./perception";
+import { EnhanceAPI } from "./enhance";
 
 /**
  * Full WAVE SDK client with all APIs attached
@@ -456,6 +467,9 @@ export class Wave {
   // Perception — agentic live-media subscribe() control plane (#85)
   public readonly perception: PerceptionAPI;
 
+  // Enhance — AI video super-resolution (wave-gateway#799)
+  public readonly enhance: EnhanceAPI;
+
   constructor(config: WaveClientConfig) {
     this.client = new WaveClient(config);
 
@@ -511,6 +525,9 @@ export class Wave {
 
     // Perception (#85)
     this.perception = new PerceptionAPI(this.client);
+
+    // Enhance (wave-gateway#799)
+    this.enhance = new EnhanceAPI(this.client);
   }
 }
 
