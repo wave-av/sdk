@@ -25,8 +25,8 @@ export interface Voice extends Timestamps {
 export interface SynthesizeRequest {
   /** Text to convert to speech */
   text: string;
-  /** Voice ID to use */
-  voice_id: string;
+  /** Voice ID to use (optional — the gateway picks a default when omitted) */
+  voice_id?: string;
   /** Audio output format */
   format?: AudioFormat;
   /** Sample rate in Hz */

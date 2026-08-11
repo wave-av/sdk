@@ -43,11 +43,21 @@ export type * from './clips-types';
 
 /**
  * Create clip request
+ *
+ * Live contract (verified against api.wave.online): `source` is the recording
+ * id as a string, and `in`/`out` are relative time strings like `"5s"` or
+ * `"2m"`. The gateway rejects the older `{ type, id, start_time, end_time }`
+ * source object shape.
  */
 export interface CreateClipRequest {
   title: string;
   description?: string;
-  source: ClipSource;
+  /** Recording id to clip from (string, e.g. `"rec_abc123"`) */
+  source: string;
+  /** Start offset as a time string, e.g. `"5s"` or `"2m"` */
+  in: string;
+  /** End offset as a time string, e.g. `"10s"` or `"1m30s"` */
+  out: string;
   quality?: ClipQualityPreset;
   format?: ClipExportFormat;
   tags?: string[];

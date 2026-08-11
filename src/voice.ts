@@ -146,15 +146,40 @@ export class VoiceAPI {
   // ==========================================================================
 
   /**
-   * Synthesize text to speech
+   * Synthesize text to speech.
+   *
+   * Live contract (verified against api.wave.online): POST `/v1/voice` with a
+   * JSON body `{ text, voice_id? }` returns the audio bytes directly
+   * (`audio/mpeg`), not a JSON job object. The returned bytes are the
+   * synthesized speech.
    *
    * Requires: voice:synthesize permission
    */
-  async synthesize(request: SynthesizeRequest): Promise<SynthesisResult> {
-    return this.client.post<SynthesisResult>(
-      `${this.basePath}/synthesize`,
-      request
+  async synthesize(request: SynthesizeRequest): Promise<ArrayBuffer> {
+    const response = await fetch(
+      `${this.client['config'].baseUrl}${this.basePath}`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.client['config'].apiKey}`,
+          'Content-Type': 'application/json',
+          'Accept': 'audio/mpeg',
+          ...(this.client['config'].organizationId
+            ? { 'X-Organization-Id': this.client['config'].organizationId }
+            : {}),
+        },
+        body: JSON.stringify({
+          text: request.text,
+          ...(request.voice_id ? { voice_id: request.voice_id } : {}),
+        }),
+      }
     );
+
+    if (!response.ok) {
+      throw new Error(`Synthesis failed: ${response.status} ${response.statusText}`);
+    }
+
+    return response.arrayBuffer();
   }
 
   /**
