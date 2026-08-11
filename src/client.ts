@@ -212,6 +212,25 @@ export class WaveClient extends EventEmitter<WaveClientEvents> {
   }
 
   /**
+   * Make a POST request and return the response body as binary data.
+   */
+  async postArrayBuffer(
+    path: string,
+    body?: unknown,
+    options?: RequestOptions
+  ): Promise<ArrayBuffer> {
+    return this.request<ArrayBuffer>(
+      path,
+      {
+        ...options,
+        method: 'POST',
+        body: body ? JSON.stringify(body) : undefined,
+      },
+      'arrayBuffer'
+    );
+  }
+
+  /**
    * Make a PUT request
    */
   async put<T>(path: string, body?: unknown, options?: RequestOptions): Promise<T> {
@@ -249,9 +268,10 @@ export class WaveClient extends EventEmitter<WaveClientEvents> {
    */
   protected async request<T>(
     path: string,
-    options: RequestOptions = {}
+    options: RequestOptions = {},
+    responseType: 'json' | 'arrayBuffer' = 'json'
   ): Promise<T> {
-    const { params, noRetry, timeout: requestTimeout, responseType, ...fetchOptions } = options;
+    const { params, noRetry, timeout: requestTimeout, ...fetchOptions } = options;
 
     // Build URL with query parameters
     let url = `${this.config.baseUrl}${path}`;
@@ -289,7 +309,7 @@ export class WaveClient extends EventEmitter<WaveClientEvents> {
     options: RequestInit,
     maxRetries: number,
     timeout: number,
-    responseType: 'json' | 'arraybuffer' = 'json'
+    responseType: 'json' | 'arrayBuffer' = 'json'
   ): Promise<T> {
     const method = options.method || 'GET';
     let lastError: Error | null = null;
@@ -336,12 +356,11 @@ export class WaveClient extends EventEmitter<WaveClientEvents> {
 
         this.emit('request.success', url, method, duration);
 
-        // Binary responses (e.g. audio bytes) are returned as-is.
-        if (responseType === 'arraybuffer') {
-          return (await response.arrayBuffer()) as T;
+        // Parse response
+        if (responseType === 'arrayBuffer') {
+          return response.arrayBuffer() as Promise<T>;
         }
 
-        // Parse response
         const contentType = response.headers.get('content-type');
         if (contentType?.includes('application/json')) {
           return response.json() as Promise<T>;
