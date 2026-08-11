@@ -25,6 +25,11 @@ export interface RequestOptions extends RequestInit {
   timeout?: number;
   /** Query parameters */
   params?: Record<string, string | number | boolean | undefined>;
+  /**
+   * How to parse the response body (default: 'json').
+   * Use 'arraybuffer' for endpoints that return raw bytes (e.g. audio).
+   */
+  responseType?: 'json' | 'arraybuffer';
 }
 export interface WaveAPIErrorResponse {
   error: {

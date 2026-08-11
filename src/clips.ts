@@ -156,15 +156,12 @@ export interface ClipHighlight {
  * const client = new WaveClient({ apiKey: 'your-api-key' });
  * const clips = new ClipsAPI(client);
  *
- * // Create a clip from a stream
+ * // Create a clip from a recording
  * const clip = await clips.create({
  *   title: 'Best Moment',
- *   source: {
- *     type: 'stream',
- *     id: 'stream_123',
- *     start_time: 120,
- *     end_time: 150,
- *   },
+ *   source: 'rec_abc123',
+ *   in: '2m',
+ *   out: '2m30s',
  * });
  *
  * // Wait for processing
