@@ -14,7 +14,7 @@ import type {
   Timestamps,
   Metadata,
 } from './client';
-import type { ClipStatus, ClipExportFormat, ClipQualityPreset, ClipSource, Clip } from './clips-types';
+import type { ClipStatus, ClipExportFormat, ClipQualityPreset, Clip } from './clips-types';
 export type * from './clips-types';
 
 // ============================================================================
