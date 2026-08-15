@@ -1,7 +1,3 @@
-
-> generate
-> tsx scripts/generate.ts sdk
-
 <div align="center">
 
 # sdk
@@ -15,8 +11,8 @@
 </div>
 
 > This README is machine-generated from WAVE's grounded Single Source of Truth — every
-> factual claim below traces to a resolver, and those resolvers are checked against the live
-> repo and live endpoints in the SSOT pipeline. Nothing here is asserted without a receipt.
+> factual claim below traces to a resolver that `npm run verify` checks against the live
+> repo and live endpoints. Nothing here is asserted without a receipt.
 
 ---
 
@@ -74,7 +70,7 @@ const synthesis = await wave.voice.synthesize({
 
 ## The receipts
 
-Every claim below is resolved against the live repo or endpoint by the SSOT verifier — a non-`pass` verdict fails the gate.
+Every claim below is checked by `npm run verify` against the live repo or endpoint — a non-`pass` verdict fails the gate.
 
 | Claim | How it's verified |
 | --- | --- |
