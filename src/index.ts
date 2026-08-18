@@ -302,6 +302,8 @@ export { QrAPI, createQrAPI } from "./qr";
 
 // Audience API (P3)
 export { AudienceAPI, createAudienceAPI } from "./audience";
+export { RuntimeClient, RuntimeError } from "./runtime";
+export type { ChatMessage, ToolSpec, CompletionRequest, CompletionResponse, RuntimeClientOptions } from "./runtime";
 
 // Creator API (P3)
 export { CreatorAPI, createCreatorAPI } from "./creator";
