@@ -1,0 +1,54 @@
+/**
+ * `wave` CLI — thin arg parsing + dispatch over RuntimeClient.
+ *
+ * The human shell-control rung of the API-first ladder: the CLI does no HTTP of its own; it calls
+ * the SDK's RuntimeClient, so the door's contract lives in one place. Subcommands mirror the SDK:
+ * `models` (list), `complete <prompt>` (one-shot), `stream <prompt>` (SSE). Returns { code, out }
+ * so the bin entry and tests both consume the same function.
+ */
+import { RuntimeClient } from "./runtime";
+
+export interface WaveCliOptions {
+  baseUrl: string;
+  token?: string;
+}
+
+export interface WaveCliResult {
+  code: number;
+  out: string;
+}
+
+const USAGE = "usage: wave <models|complete|stream> [prompt]\n";
+
+export async function runWaveCli(argv: string[], opts: WaveCliOptions): Promise<WaveCliResult> {
+  const client = new RuntimeClient({ baseUrl: opts.baseUrl, token: opts.token });
+  const [cmd, ...rest] = argv;
+
+  switch (cmd) {
+    case "models": {
+      const models = await client.models();
+      return { code: 0, out: models.join("\n") + (models.length ? "\n" : "") };
+    }
+
+    case "complete": {
+      const prompt = rest.join(" ");
+      if (!prompt) return { code: 2, out: USAGE };
+      const res = await client.complete({ messages: [{ role: "user", content: prompt }] });
+      return { code: 0, out: (res.choices[0]?.message?.content ?? "") + "\n" };
+    }
+
+    case "stream": {
+      const prompt = rest.join(" ");
+      if (!prompt) return { code: 2, out: USAGE };
+      let out = "";
+      for await (const chunk of client.stream({ messages: [{ role: "user", content: prompt }] })) {
+        const delta = (chunk as { choices?: { delta?: { content?: string } }[] }).choices?.[0]?.delta?.content;
+        if (delta) out += delta;
+      }
+      return { code: 0, out: out + "\n" };
+    }
+
+    default:
+      return { code: 2, out: USAGE };
+  }
+}

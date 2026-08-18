@@ -303,6 +303,8 @@ export { QrAPI, createQrAPI } from "./qr";
 // Audience API (P3)
 export { AudienceAPI, createAudienceAPI } from "./audience";
 export { RuntimeClient, RuntimeError } from "./runtime";
+export { runWaveCli } from "./cli";
+export type { WaveCliOptions, WaveCliResult } from "./cli";
 export type { ChatMessage, ToolSpec, CompletionRequest, CompletionResponse, RuntimeClientOptions } from "./runtime";
 
 // Creator API (P3)
