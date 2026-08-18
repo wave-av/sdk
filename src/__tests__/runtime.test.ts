@@ -36,6 +36,22 @@ describe("RuntimeClient", () => {
     expect((init.headers as Record<string, string>).authorization).toBe("Bearer secret");
   });
 
+  it("forces the completion mode even when requested stream is conflicting or undefined", async () => {
+    const fetchMock = vi.fn(async () =>
+      fetchMock.mock.calls.length === 0
+        ? jsonResponse({ id: "x", object: "chat.completion", created: 1, model: "m", choices: [] })
+        : sseResponse(["data: [DONE]\\n\\n"]),
+    );
+    const c = new RuntimeClient({ baseUrl: "https://runtime.wave.online/v1", fetchImpl: fetchMock });
+    const request = { messages: [{ role: "user" as const, content: "hi" }], stream: true as boolean | undefined };
+
+    await c.complete(request);
+    expect(JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string).stream).toBe(false);
+
+    for await (const _delta of c.stream({ ...request, stream: false })) break;
+    expect(JSON.parse((fetchMock.mock.calls[1][1] as RequestInit).body as string).stream).toBe(true);
+  });
+
   it("throws RuntimeError with status on a non-2xx completion", async () => {
     const fetchMock = vi.fn(async () => jsonResponse({ error: { message: "auth" } }, 401));
     const c = new RuntimeClient({ baseUrl: "https://runtime.wave.online/v1", token: "bad", fetchImpl: fetchMock });
