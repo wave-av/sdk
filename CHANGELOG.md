@@ -5,3 +5,5 @@ All notable changes to this project are documented here. The format is based on
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+- Add the typed `RuntimeClient` for the OpenAI-compatible runtime API, including model listing, chat completions, SSE streaming, and bearer-token authentication.
