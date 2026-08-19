@@ -7,6 +7,7 @@
  * so the bin entry and tests both consume the same function.
  */
 import { RuntimeClient } from "./runtime";
+import { listProducts, ProductClient } from "./products";
 
 export interface WaveCliOptions {
   baseUrl: string;
@@ -18,7 +19,7 @@ export interface WaveCliResult {
   out: string;
 }
 
-const USAGE = "usage: wave <models|complete|stream> [prompt]\n";
+const USAGE = "usage: wave <models|complete|stream|products> [prompt] | wave product <id> <path>\n";
 
 export async function runWaveCli(argv: string[], opts: WaveCliOptions): Promise<WaveCliResult> {
   const client = new RuntimeClient({ baseUrl: opts.baseUrl, token: opts.token });
@@ -46,6 +47,19 @@ export async function runWaveCli(argv: string[], opts: WaveCliOptions): Promise<
         if (delta) out += delta;
       }
       return { code: 0, out: out + "\n" };
+    }
+
+    case "products": {
+      const rows = listProducts().map((p) => `${p.id}\t${p.phase}\t${p.surface}`);
+      return { code: 0, out: rows.join("\n") + "\n" };
+    }
+
+    case "product": {
+      const [id, path] = rest;
+      if (!id || !path) return { code: 2, out: "usage: wave product <id> <path>\n" };
+      const pc = new ProductClient({ productId: id, token: opts.token });
+      const res = await pc.call<unknown>(path, { method: "GET" });
+      return { code: 0, out: JSON.stringify(res, null, 2) + "\n" };
     }
 
     default:
