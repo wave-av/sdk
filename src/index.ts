@@ -304,6 +304,8 @@ export { QrAPI, createQrAPI } from "./qr";
 export { AudienceAPI, createAudienceAPI } from "./audience";
 export { RuntimeClient, RuntimeError } from "./runtime";
 export { runWaveCli } from "./cli";
+export { AutomationsClient } from "./automations";
+export type { AutomationDispatchResult, AutomationsClientOptions } from "./automations";
 export { handleMcpMessage, waveMcpTools } from "./mcp";
 export type { McpToolDef } from "./mcp";
 export type { WaveCliOptions, WaveCliResult } from "./cli";
