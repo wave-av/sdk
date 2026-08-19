@@ -52,7 +52,11 @@ export const CATALOG: Product[] = [
   { id: "dante", name: "Dante WAN Bridge", phase: "planned", surface: "https://dante.wave.online" },
   { id: "omt", name: "OMT native", phase: "scaffolded", surface: "https://omt.wave.online" },
   { id: "media-engine", name: "Media Engine", phase: "scaffolded", surface: "https://media.wave.online" },
-];
+].map((product) => Object.freeze(product)) as Product[];
+
+function copyProduct(product: Product): Product {
+  return { ...product };
+}
 
 export interface ProductClientOptions {
   productId?: string;
@@ -69,7 +73,7 @@ export class ProductClient {
   constructor(opts: ProductClientOptions) {
     const product = opts.product ?? resolveProduct(opts.productId ?? "");
     if (!product) throw new Error(`products: unknown product "${opts.productId}"`);
-    this.product = product;
+    this.product = copyProduct(product);
     this.token = opts.token;
     this.fetchImpl = opts.fetchImpl ?? fetch;
   }
@@ -85,10 +89,13 @@ export class ProductClient {
    * phase is NOT enforced here (a `planned` product 404s at the edge, which is the honest answer).
    */
   async call<T>(path: string, opts: { method?: "GET" | "POST" | "PUT" | "DELETE"; body?: unknown } = {}): Promise<T> {
-    const res = await this.fetchImpl(`${this.product.surface}${path}`, {
-      method: opts.method ?? "POST",
+    const method = opts.method ?? "POST";
+      const res = await this.fetchImpl(
+        `${this.product.surface.replace(/\/$/, "")}/${path.replace(/^\//, "")}`,
+      {
+          method,
       headers: this.headers(),
-      body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
+      ...(method !== "GET" && opts.body !== undefined ? { body: JSON.stringify(opts.body) } : {}),
     });
     if (!res.ok) throw new Error(`${this.product.id}: upstream ${res.status}`);
     const text = await res.text();
@@ -110,10 +117,11 @@ export class ProductClient {
 
 /** The full catalog (a copy, so callers can't mutate the module constant). */
 export function listProducts(): Product[] {
-  return [...CATALOG];
+  return CATALOG.map(copyProduct);
 }
 
 /** Resolve a product id → product. Undefined for an unknown id. */
 export function resolveProduct(id: string): Product | undefined {
-  return CATALOG.find((p) => p.id === id);
+  const product = CATALOG.find((p) => p.id === id);
+  return product ? copyProduct(product) : undefined;
 }
