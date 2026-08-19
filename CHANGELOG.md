@@ -5,3 +5,5 @@ All notable changes to this project are documented here. The format is based on
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+- Added the product catalog, product resolution/listing helpers, and catalog-driven `ProductClient`.
