@@ -1,0 +1,21 @@
+src/mcp.ts
+  s_2606de950a60c6::t_3974a1f9b57515 1-100
+src/__tests__/mcp.test.ts
+  s_2606de950a60c6::t_8cf5cb4cf7781f 1-60
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "6f572ece45e7be56817f400262285732c31ebe2d",
+  "prompts": {},
+  "sessions": {
+    "s_2606de950a60c6": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_fef439bb6ffePesTgCloA0Efke",
+        "model": "deepseek-v4-pro"
+      },
+      "human_author": "Jake Fineman <jakefineman@gmail.com>"
+    }
+  }
+}
