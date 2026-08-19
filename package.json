@@ -293,7 +293,7 @@
   },
   "peerDependencies": {
     "@opentelemetry/api": "^1.7.0",
-    "zod": "^3.22.0"
+    "zod": "^3.22.0 || ^4.4.3"
   },
   "peerDependenciesMeta": {
     "@opentelemetry/api": {
