@@ -1,3 +1,10 @@
+import { WaveClient } from './client.js';
+import { CreateProductionRequest, Production, UpdateProductionRequest, ListProductionsParams, SourceType, Source, LayoutType, SceneSource, TransitionConfig, Scene, Graphic, AudioMixChannel } from './studio-types.js';
+export { ProductionStatus, TransitionType } from './studio-types.js';
+import { PaginatedResponse } from './client-types.js';
+import 'eventemitter3';
+import './telemetry.js';
+
 /**
  * WAVE SDK - Studio API
  *
@@ -7,10 +14,8 @@
  * NOTE: This is a client SDK. All authorization checks are performed server-side.
  * The API will return 403 Forbidden if the user lacks required permissions.
  */
-import type { WaveClient, PaginatedResponse } from "./client";
-export * from './studio-types';
-import type { AudioMixChannel, CreateProductionRequest, Graphic, LayoutType, ListProductionsParams, Production, Scene, SceneSource, Source, SourceType, TransitionConfig, UpdateProductionRequest } from './studio-types';
-export declare class StudioAPI {
+
+declare class StudioAPI {
     private readonly client;
     private readonly basePath;
     constructor(client: WaveClient);
@@ -231,4 +236,6 @@ export declare class StudioAPI {
 /**
  * Create a Studio API instance
  */
-export declare function createStudioAPI(client: WaveClient): StudioAPI;
+declare function createStudioAPI(client: WaveClient): StudioAPI;
+
+export { AudioMixChannel, CreateProductionRequest, Graphic, LayoutType, ListProductionsParams, Production, Scene, SceneSource, Source, SourceType, StudioAPI, TransitionConfig, UpdateProductionRequest, createStudioAPI };

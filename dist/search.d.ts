@@ -1,3 +1,10 @@
+import { WaveClient } from './client.js';
+import { SearchRequest, SearchResponse, SearchResultType, SearchFilters, SearchResult, VisualSearchRequest, AudioSearchRequest, SearchSuggestion, IndexStatus } from './search-types.js';
+export { SearchFacet, SearchHighlight, SearchMode, SearchSortOrder } from './search-types.js';
+import { PaginationParams, PaginatedResponse } from './client-types.js';
+import 'eventemitter3';
+import './telemetry.js';
+
 /**
  * WAVE SDK - Search API
  *
@@ -6,10 +13,8 @@
  * NOTE: This is a client SDK. All authorization checks are performed server-side.
  * The API will return 403 Forbidden if the user lacks required permissions.
  */
-import type { WaveClient, PaginationParams, PaginatedResponse } from './client';
-export * from './search-types';
-import type { AudioSearchRequest, IndexStatus, SearchFilters, SearchRequest, SearchResponse, SearchResult, SearchResultType, SearchSuggestion, VisualSearchRequest } from './search-types';
-export declare class SearchAPI {
+
+declare class SearchAPI {
     private readonly client;
     private readonly basePath;
     constructor(client: WaveClient);
@@ -247,4 +252,6 @@ export declare class SearchAPI {
 /**
  * Create a Search API instance
  */
-export declare function createSearchAPI(client: WaveClient): SearchAPI;
+declare function createSearchAPI(client: WaveClient): SearchAPI;
+
+export { AudioSearchRequest, IndexStatus, SearchAPI, SearchFilters, SearchRequest, SearchResponse, SearchResult, SearchResultType, SearchSuggestion, VisualSearchRequest, createSearchAPI };

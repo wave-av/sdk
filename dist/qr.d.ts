@@ -1,11 +1,16 @@
+import { WaveClient } from './client.js';
+import { Timestamps, PaginationParams, PaginatedResponse } from './client-types.js';
+import 'eventemitter3';
+import './telemetry.js';
+
 /**
  * WAVE SDK - QR API
  *
  * Dynamic QR code generation, tracking, and analytics.
  */
-import type { WaveClient, PaginationParams, PaginatedResponse, Timestamps } from "./client";
-export type QRType = "url" | "stream" | "vcard" | "wifi" | "text" | "dynamic";
-export interface QRCode extends Timestamps {
+
+type QRType = "url" | "stream" | "vcard" | "wifi" | "text" | "dynamic";
+interface QRCode extends Timestamps {
     id: string;
     organization_id: string;
     type: QRType;
@@ -17,14 +22,14 @@ export interface QRCode extends Timestamps {
     style: QRStyle;
     expires_at?: string;
 }
-export interface QRStyle {
+interface QRStyle {
     foreground_color?: string;
     background_color?: string;
     logo_url?: string;
     error_correction: "L" | "M" | "Q" | "H";
     size_px?: number;
 }
-export interface QRAnalytics {
+interface QRAnalytics {
     qr_id: string;
     total_scans: number;
     unique_scans: number;
@@ -41,7 +46,7 @@ export interface QRAnalytics {
         count: number;
     }[];
 }
-export interface CreateQRRequest {
+interface CreateQRRequest {
     type: QRType;
     content: string;
     style?: Partial<QRStyle>;
@@ -56,7 +61,7 @@ export interface CreateQRRequest {
  * const analytics = await wave.qr.getAnalytics(qr.id);
  * ```
  */
-export declare class QrAPI {
+declare class QrAPI {
     private readonly client;
     private readonly basePath;
     constructor(client: WaveClient);
@@ -79,4 +84,6 @@ export declare class QrAPI {
         url: string;
     }>;
 }
-export declare function createQrAPI(client: WaveClient): QrAPI;
+declare function createQrAPI(client: WaveClient): QrAPI;
+
+export { type CreateQRRequest, type QRAnalytics, type QRCode, type QRStyle, type QRType, QrAPI, createQrAPI };

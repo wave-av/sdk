@@ -216,6 +216,16 @@
       "import": "./dist/telemetry.mjs",
       "require": "./dist/telemetry.js"
     },
+    "./mail": {
+      "types": "./dist/mail.d.ts",
+      "import": "./dist/mail.mjs",
+      "require": "./dist/mail.js"
+    },
+    "./meter": {
+      "types": "./dist/meter.d.ts",
+      "import": "./dist/meter.mjs",
+      "require": "./dist/meter.js"
+    },
     "./realtime": {
       "types": "./dist/realtime.d.ts",
       "import": "./dist/realtime.mjs",

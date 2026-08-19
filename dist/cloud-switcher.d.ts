@@ -1,3 +1,8 @@
+import { WaveClient } from './client.js';
+import 'eventemitter3';
+import './telemetry.js';
+import './client-types.js';
+
 /**
  * WAVE Cloud Switcher SDK
  *
@@ -5,8 +10,8 @@
  *
  * @packageDocumentation
  */
-import type { WaveClient } from './client';
-export interface SwitcherInstance {
+
+interface SwitcherInstance {
     readonly id: string;
     readonly name: string;
     readonly status: 'idle' | 'live' | 'error';
@@ -17,32 +22,32 @@ export interface SwitcherInstance {
     readonly tier: 'starter' | 'pro' | 'enterprise';
     readonly createdAt: string;
 }
-export interface SwitcherSource {
+interface SwitcherSource {
     readonly id: string;
     readonly type: 'webrtc' | 'srt' | 'ndi' | 'rtmp' | 'hls';
     readonly label: string;
     readonly status: 'connecting' | 'active' | 'error' | 'disconnected';
 }
-export interface TransitionOptions {
+interface TransitionOptions {
     readonly type: 'cut' | 'mix' | 'wipe' | 'dip' | 'dve';
     readonly durationMs?: number;
     readonly wipePattern?: string;
 }
-export interface CreateSwitcherOptions {
+interface CreateSwitcherOptions {
     readonly name: string;
     readonly resolution?: '720p' | '1080p' | '4k';
     readonly frameRate?: 30 | 60;
 }
-export interface AddSourceOptions {
+interface AddSourceOptions {
     readonly type: 'webrtc' | 'srt' | 'ndi' | 'rtmp';
     readonly label: string;
     readonly config: Record<string, unknown>;
 }
-export interface AddOutputOptions {
+interface AddOutputOptions {
     readonly type: 'rtmp' | 'srt' | 'hls' | 'recording';
     readonly config: Record<string, unknown>;
 }
-export declare class CloudSwitcherAPI {
+declare class CloudSwitcherAPI {
     private readonly client;
     private readonly basePath;
     constructor(client: WaveClient);
@@ -62,4 +67,6 @@ export declare class CloudSwitcherAPI {
     startRecording(switcherId: string): Promise<void>;
     stopRecording(switcherId: string): Promise<void>;
 }
-export declare function createCloudSwitcherAPI(client: WaveClient): CloudSwitcherAPI;
+declare function createCloudSwitcherAPI(client: WaveClient): CloudSwitcherAPI;
+
+export { type AddOutputOptions, type AddSourceOptions, CloudSwitcherAPI, type CreateSwitcherOptions, type SwitcherInstance, type SwitcherSource, type TransitionOptions, createCloudSwitcherAPI };

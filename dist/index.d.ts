@@ -1,3 +1,105 @@
+import { WaveClient } from './client.js';
+export { RateLimitError, WaveError, createClient } from './client.js';
+import { ClipsAPI } from './clips.js';
+export { ClipExport, ClipHighlight, CreateClipRequest, ExportClipRequest, ListClipsParams, UpdateClipRequest, createClipsAPI } from './clips.js';
+import { EditorAPI } from './editor.js';
+export { createEditorAPI } from './editor.js';
+import { VoiceAPI } from './voice.js';
+export { createVoiceAPI } from './voice.js';
+import { PhoneAPI } from './phone.js';
+export { createPhoneAPI } from './phone.js';
+import { CollabAPI } from './collab.js';
+export { createCollabAPI } from './collab.js';
+import { CaptionsAPI } from './captions.js';
+export { createCaptionsAPI } from './captions.js';
+import { ChaptersAPI } from './chapters.js';
+export { createChaptersAPI } from './chapters.js';
+import { StudioAIAPI } from './studio-ai.js';
+export { createStudioAIAPI } from './studio-ai.js';
+import { TranscribeAPI } from './transcribe.js';
+export { createTranscribeAPI } from './transcribe.js';
+import { SentimentAPI } from './sentiment.js';
+export { createSentimentAPI } from './sentiment.js';
+import { SearchAPI } from './search.js';
+export { createSearchAPI } from './search.js';
+import { SceneAPI } from './scene.js';
+export { createSceneAPI } from './scene.js';
+import { PipelineAPI } from './pipeline.js';
+export { createPipelineAPI } from './pipeline.js';
+import { StudioAPI } from './studio.js';
+export { createStudioAPI } from './studio.js';
+import { FleetAPI } from './fleet.js';
+export { createFleetAPI } from './fleet.js';
+import { GhostAPI } from './ghost.js';
+export { createGhostAPI } from './ghost.js';
+import { MeshAPI } from './mesh.js';
+export { createMeshAPI } from './mesh.js';
+import { EdgeAPI } from './edge.js';
+export { createEdgeAPI } from './edge.js';
+import { PulseAPI } from './pulse.js';
+export { createPulseAPI } from './pulse.js';
+import { PrismAPI } from './prism.js';
+export { createPrismAPI } from './prism.js';
+import { ZoomAPI } from './zoom.js';
+export { createZoomAPI } from './zoom.js';
+import { VaultAPI } from './vault.js';
+export { createVaultAPI } from './vault.js';
+import { MarketplaceAPI } from './marketplace.js';
+export { createMarketplaceAPI } from './marketplace.js';
+import { ConnectAPI } from './connect.js';
+export { createConnectAPI } from './connect.js';
+import { DistributionAPI } from './distribution.js';
+export { createDistributionAPI } from './distribution.js';
+import { DesktopAPI } from './desktop.js';
+export { createDesktopAPI } from './desktop.js';
+import { SignageAPI } from './signage.js';
+export { createSignageAPI } from './signage.js';
+import { QrAPI } from './qr.js';
+export { createQrAPI } from './qr.js';
+import { AudienceAPI } from './audience.js';
+export { createAudienceAPI } from './audience.js';
+import { CreatorAPI } from './creator.js';
+export { createCreatorAPI } from './creator.js';
+import { PodcastAPI } from './podcast.js';
+export { createPodcastAPI } from './podcast.js';
+import { SlidesAPI } from './slides.js';
+export { createSlidesAPI } from './slides.js';
+import { UsbAPI } from './usb.js';
+export { createUsbAPI } from './usb.js';
+import { NotificationsAPI } from './notifications.js';
+export { createNotificationsAPI } from './notifications.js';
+import { DrmAPI } from './drm.js';
+export { createDrmAPI } from './drm.js';
+import { RealtimeAPI } from './realtime.js';
+export { RealtimeChannel, createRealtimeAPI } from './realtime.js';
+export { PresenceMember, RealtimeChannelEvents, RealtimeConnectOptions, RealtimeFrame, WaveRealtimeEventName } from './realtime-types.js';
+import { MailAPI } from './mail.js';
+export { createMailAPI } from './mail.js';
+import { MeterAPI } from './meter.js';
+export { LedgerParams, RollupParams, createMeterAPI } from './meter.js';
+import { PerceptionAPI } from './perception.js';
+export { PerceptionAudioMode, PerceptionBatch, PerceptionFrame, PerceptionMeterBinding, PerceptionOptions, PerceptionSample, PerceptionSampleMode, PerceptionSubscription, PerceptionTransport, ReceiveDescriptor, SubscribeRequest, createPerceptionAPI } from './perception.js';
+export { TelemetryConfig, TelemetrySpanAttributes, initTelemetry, isTelemetryEnabled, resetTelemetry, withTelemetry, withTelemetrySync } from './telemetry.js';
+import { WaveClientConfig } from './client-types.js';
+export { MediaType, Metadata, PaginatedResponse, PaginationParams, RequestOptions, Timestamps, WaveAPIErrorResponse, WaveClientEvents } from './client-types.js';
+export { AIAssistant, AISuggestion, AssistantConfig, AssistantMode, AssistantStats, AudioMixSuggestion, EngagementInsight, GraphicsSuggestion, ListSuggestionsParams, ModerationAlert, SceneRecommendation, StartAssistantRequest, SuggestionAction, SuggestionPriority, SuggestionStatus, UpdateAssistantRequest } from './studio-ai-types.js';
+export { AddElementRequest, CreateProjectRequest, EditorProject, Effect, EffectType, Keyframe, ListProjectsParams, ProjectStatus, RenderJob, RenderOptions, TextAnimation, TextOverlay, TimelineElement, Track, TrackType, Transition, TransitionType, UpdateProjectRequest } from './editor-types.js';
+export { AnalysisStatus, BatchAnalysisRequest, CreateAnalysisRequest, EmotionScore, EmotionType, KeyMoment, ListAnalysesParams, SentimentAnalysis, SentimentLabel, SentimentSegment, SentimentSummary, SentimentTrend, SourceType, TopicSentiment } from './sentiment-types.js';
+export { Annotation, CollabRoom, Comment, CreateRoomRequest, CursorPosition, InviteRequest, ListRoomsParams, Participant, ParticipantPermissions, ParticipantRole, PresenceStatus, Reaction, RoomSettings, RoomStatus, Selection, UpdateRoomRequest } from './collab-types.js';
+export { AudioFeatures, CreateSceneDetectionRequest, ListSceneDetectionsParams, Scene, SceneBoundary, SceneComparison, SceneDetection, SceneDetectionStatus, SceneLabel, SceneType, Shot, ShotType, VisualFeatures } from './scene-types.js';
+export { AudioFormat, CloneVoiceRequest, ListVoicesParams, SynthesisResult, SynthesizeRequest, Voice, VoiceCloneJob, VoiceGender, VoiceModelType, VoiceSettings } from './voice-types.js';
+export { AudioSearchRequest, IndexStatus, SearchFacet, SearchFilters, SearchHighlight, SearchMode, SearchRequest, SearchResponse, SearchResult, SearchResultType, SearchSortOrder, SearchSuggestion, VisualSearchRequest } from './search-types.js';
+export { AvailablePhoneNumber, Call, CallDirection, CallStatus, Conference, ConferenceParticipant, ListCallsParams, MakeCallRequest, PhoneNumber, PhoneNumberCapabilities, PhoneNumberType, SearchNumbersRequest, UpdateCallRequest } from './phone-types.js';
+export { BurnInCaptionsRequest, BurnInJob, CaptionCue, CaptionFormat, CaptionStatus, CaptionStyle, CaptionTrack, CaptionWord, GenerateCaptionsRequest, ListCaptionsParams, TranslateCaptionsRequest, UpdateCaptionsRequest, UploadCaptionsRequest } from './captions-types.js';
+export { Chapter, ChapterSet, ChapterStatus, CreateChapterRequest, CreateChapterSetRequest, GenerateChaptersRequest, ListChapterSetsParams, UpdateChapterRequest, UpdateChapterSetRequest } from './chapters-types.js';
+export { Clip, ClipExportFormat, ClipQualityPreset, ClipSource, ClipStatus } from './clips-types.js';
+export { CreateTranscriptionRequest, ListTranscriptionsParams, Speaker, TranscriptExportFormat, Transcription, TranscriptionModel, TranscriptionSegment, TranscriptionStatus, TranscriptionWord, UpdateTranscriptionRequest } from './transcribe-types.js';
+export { MailReplyBody, MailSearchResult, MailSendRequest, SendResult, SmsRequest, SmsResult, TranscriptEmailRequest } from './mail-types.js';
+export { MeterChannels, MeterLedger, MeterLedgerRow, MeterMailChannel, MeterRealtimeChannel, MeterRollup, MeterRollupTotals, MeterSmsChannel, MeterStorageChannel, MeterVoiceChannel } from './meter-types.js';
+import 'eventemitter3';
+import './pipeline-types.js';
+import './studio-types.js';
+
 /**
  * WAVE SDK - Official TypeScript SDK
  *
@@ -6,99 +108,11 @@
  *
  * @packageDocumentation
  */
-export { WaveClient, createClient, WaveError, RateLimitError, type WaveClientConfig, type RequestOptions, type WaveAPIErrorResponse, type WaveClientEvents, type PaginationParams, type PaginatedResponse, type MediaType, type Timestamps, type Metadata, } from "./client";
-export { ClipsAPI, createClipsAPI, type Clip, type ClipStatus, type ClipExportFormat, type ClipQualityPreset, type ClipSource, type CreateClipRequest, type UpdateClipRequest, type ListClipsParams, type ExportClipRequest, type ClipExport, type ClipHighlight, } from "./clips";
-export { EditorAPI, createEditorAPI, type EditorProject, type ProjectStatus, type Track, type TrackType, type TimelineElement, type Transition, type TransitionType, type Effect, type EffectType, type Keyframe, type TextOverlay, type TextAnimation, type CreateProjectRequest, type UpdateProjectRequest, type AddElementRequest, type RenderOptions, type RenderJob, type ListProjectsParams, } from "./editor";
-export { VoiceAPI, createVoiceAPI, type Voice, type VoiceModelType, type VoiceGender, type AudioFormat, type SynthesizeRequest, type SynthesisResult, type CloneVoiceRequest, type VoiceCloneJob, type ListVoicesParams, type VoiceSettings, } from "./voice";
-export { PhoneAPI, createPhoneAPI, type PhoneNumber, type PhoneNumberType, type PhoneNumberCapabilities, type Call, type CallStatus, type CallDirection, type MakeCallRequest, type UpdateCallRequest, type Conference, type ConferenceParticipant, type SearchNumbersRequest, type AvailablePhoneNumber, type ListCallsParams, } from "./phone";
-export { CollabAPI, createCollabAPI, type CollabRoom, type RoomStatus, type RoomSettings, type Participant, type ParticipantRole, type ParticipantPermissions, type PresenceStatus, type CursorPosition, type Selection, type Comment, type Reaction, type Annotation, type CreateRoomRequest, type UpdateRoomRequest, type InviteRequest, type ListRoomsParams, } from "./collab";
-export { CaptionsAPI, createCaptionsAPI, type CaptionTrack, type CaptionStatus, type CaptionFormat, type CaptionCue, type CaptionWord, type CaptionStyle, type GenerateCaptionsRequest, type UploadCaptionsRequest, type UpdateCaptionsRequest, type TranslateCaptionsRequest, type BurnInCaptionsRequest, type BurnInJob, type ListCaptionsParams, } from "./captions";
-export { ChaptersAPI, createChaptersAPI, type Chapter, type ChapterSet, type ChapterStatus, type GenerateChaptersRequest, type CreateChapterSetRequest, type CreateChapterRequest, type UpdateChapterRequest, type UpdateChapterSetRequest, type ListChapterSetsParams, } from "./chapters";
-export { StudioAIAPI, createStudioAIAPI, type AIAssistant, type AssistantMode, type AssistantConfig, type AssistantStats, type AISuggestion, type SuggestionPriority, type SuggestionStatus, type SuggestionAction, type SceneRecommendation, type GraphicsSuggestion, type AudioMixSuggestion, type ModerationAlert, type EngagementInsight, type StartAssistantRequest, type UpdateAssistantRequest, type ListSuggestionsParams, } from "./studio-ai";
-export { TranscribeAPI, createTranscribeAPI, type Transcription, type TranscriptionStatus, type TranscriptionModel, type TranscriptionSegment, type TranscriptionWord, type Speaker, type CreateTranscriptionRequest, type UpdateTranscriptionRequest, type ListTranscriptionsParams, type TranscriptExportFormat, } from "./transcribe";
-export { SentimentAPI, createSentimentAPI, type SentimentAnalysis, type AnalysisStatus, type SentimentLabel, type EmotionType, type SourceType, type SentimentSegment, type EmotionScore, type SentimentTrend, type SentimentSummary, type KeyMoment, type TopicSentiment, type CreateAnalysisRequest, type BatchAnalysisRequest, type ListAnalysesParams, } from "./sentiment";
-export { SearchAPI, createSearchAPI, type SearchResult, type SearchResultType, type SearchMode, type SearchSortOrder, type SearchHighlight, type SearchFacet, type SearchSuggestion, type SearchRequest, type SearchFilters, type SearchResponse, type VisualSearchRequest, type AudioSearchRequest, type IndexStatus, } from "./search";
-export { SceneAPI, createSceneAPI, type SceneDetection, type SceneDetectionStatus, type Scene, type SceneType, type Shot, type ShotType, type SceneLabel, type VisualFeatures, type AudioFeatures, type SceneBoundary, type CreateSceneDetectionRequest, type ListSceneDetectionsParams, type SceneComparison, } from "./scene";
-export { PipelineAPI, createPipelineAPI } from "./pipeline";
-export { StudioAPI, createStudioAPI } from "./studio";
-export { FleetAPI, createFleetAPI } from "./fleet";
-export { GhostAPI, createGhostAPI } from "./ghost";
-export { MeshAPI, createMeshAPI } from "./mesh";
-export { EdgeAPI, createEdgeAPI } from "./edge";
-export { PulseAPI, createPulseAPI } from "./pulse";
-export { PrismAPI, createPrismAPI } from "./prism";
-export { ZoomAPI, createZoomAPI } from "./zoom";
-export { VaultAPI, createVaultAPI } from "./vault";
-export { MarketplaceAPI, createMarketplaceAPI } from "./marketplace";
-export { ConnectAPI, createConnectAPI } from "./connect";
-export { DistributionAPI, createDistributionAPI } from "./distribution";
-export { DesktopAPI, createDesktopAPI } from "./desktop";
-export { SignageAPI, createSignageAPI } from "./signage";
-export { QrAPI, createQrAPI } from "./qr";
-export { AudienceAPI, createAudienceAPI } from "./audience";
-export { CreatorAPI, createCreatorAPI } from "./creator";
-export { PodcastAPI, createPodcastAPI } from "./podcast";
-export { SlidesAPI, createSlidesAPI } from "./slides";
-export { UsbAPI, createUsbAPI } from "./usb";
-export { NotificationsAPI, createNotificationsAPI } from "./notifications";
-export { DrmAPI, createDrmAPI } from "./drm";
-export { withTelemetry, withTelemetrySync, initTelemetry, resetTelemetry, isTelemetryEnabled, type TelemetryConfig, type TelemetrySpanAttributes, } from "./telemetry";
-import type { WaveClientConfig } from "./client";
-import { WaveClient } from "./client";
-import { ClipsAPI } from "./clips";
-import { EditorAPI } from "./editor";
-import { VoiceAPI } from "./voice";
-import { PhoneAPI } from "./phone";
-import { CollabAPI } from "./collab";
-import { CaptionsAPI } from "./captions";
-import { ChaptersAPI } from "./chapters";
-import { StudioAIAPI } from "./studio-ai";
-import { TranscribeAPI } from "./transcribe";
-import { SentimentAPI } from "./sentiment";
-import { SearchAPI } from "./search";
-import { SceneAPI } from "./scene";
-import { PipelineAPI } from "./pipeline";
-import { StudioAPI } from "./studio";
-import { FleetAPI } from "./fleet";
-import { GhostAPI } from "./ghost";
-import { MeshAPI } from "./mesh";
-import { EdgeAPI } from "./edge";
-import { PulseAPI } from "./pulse";
-import { PrismAPI } from "./prism";
-import { ZoomAPI } from "./zoom";
-import { VaultAPI } from "./vault";
-import { MarketplaceAPI } from "./marketplace";
-import { ConnectAPI } from "./connect";
-import { DistributionAPI } from "./distribution";
-import { DesktopAPI } from "./desktop";
-import { SignageAPI } from "./signage";
-import { QrAPI } from "./qr";
-import { AudienceAPI } from "./audience";
-import { CreatorAPI } from "./creator";
-import { PodcastAPI } from "./podcast";
-import { SlidesAPI } from "./slides";
-import { UsbAPI } from "./usb";
-import { NotificationsAPI } from "./notifications";
-import { DrmAPI } from "./drm";
+
 /**
  * Full WAVE SDK client with all APIs attached
- *
- * @example
- * ```typescript
- * import { Wave } from '@wave/sdk';
- *
- * const wave = new Wave({
- *   apiKey: process.env.WAVE_API_KEY!,
- *   organizationId: 'org_123',
- * });
- *
- * // Use any API
- * const streams = await wave.pipeline.list();
- * const clips = await wave.clips.list();
- * await wave.prism.discoverSources();
- * ```
  */
-export declare class Wave {
+declare class Wave {
     readonly client: WaveClient;
     readonly clips: ClipsAPI;
     readonly editor: EditorAPI;
@@ -135,10 +149,15 @@ export declare class Wave {
     readonly usb: UsbAPI;
     readonly notifications: NotificationsAPI;
     readonly drm: DrmAPI;
+    readonly realtime: RealtimeAPI;
+    readonly mail: MailAPI;
+    readonly meter: MeterAPI;
+    readonly perception: PerceptionAPI;
     constructor(config: WaveClientConfig);
 }
 /**
  * Create a full Wave SDK instance
  */
-export declare function createWave(config: WaveClientConfig): Wave;
-export default Wave;
+declare function createWave(config: WaveClientConfig): Wave;
+
+export { AudienceAPI, CaptionsAPI, ChaptersAPI, ClipsAPI, CollabAPI, ConnectAPI, CreatorAPI, DesktopAPI, DistributionAPI, DrmAPI, EdgeAPI, EditorAPI, FleetAPI, GhostAPI, MailAPI, MarketplaceAPI, MeshAPI, MeterAPI, NotificationsAPI, PerceptionAPI, PhoneAPI, PipelineAPI, PodcastAPI, PrismAPI, PulseAPI, QrAPI, RealtimeAPI, SceneAPI, SearchAPI, SentimentAPI, SignageAPI, SlidesAPI, StudioAIAPI, StudioAPI, TranscribeAPI, UsbAPI, VaultAPI, VoiceAPI, Wave, WaveClient, WaveClientConfig, ZoomAPI, createWave, Wave as default };
