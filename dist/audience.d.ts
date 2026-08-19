@@ -1,11 +1,16 @@
+import { WaveClient } from './client.js';
+import 'eventemitter3';
+import './telemetry.js';
+import './client-types.js';
+
 /**
  * WAVE SDK - Audience API
  *
  * Interactive audience engagement: polls, Q&A, reactions, and engagement metrics.
  */
-import type { WaveClient } from "./client";
-export type PollStatus = "draft" | "active" | "closed";
-export interface Poll {
+
+type PollStatus = "draft" | "active" | "closed";
+interface Poll {
     id: string;
     stream_id: string;
     question: string;
@@ -18,13 +23,13 @@ export interface Poll {
     created_at: string;
     updated_at: string;
 }
-export interface PollOption {
+interface PollOption {
     id: string;
     text: string;
     vote_count: number;
     percentage: number;
 }
-export interface QASession {
+interface QASession {
     id: string;
     stream_id: string;
     status: "active" | "paused" | "closed";
@@ -33,7 +38,7 @@ export interface QASession {
     moderated: boolean;
     created_at: string;
 }
-export interface Question {
+interface Question {
     id: string;
     session_id: string;
     text: string;
@@ -44,13 +49,13 @@ export interface Question {
     pinned: boolean;
     created_at: string;
 }
-export interface ReactionBurst {
+interface ReactionBurst {
     stream_id: string;
     type: "like" | "love" | "fire" | "clap" | "laugh" | "wow";
     count: number;
     timestamp: string;
 }
-export interface EngagementMetrics {
+interface EngagementMetrics {
     stream_id: string;
     active_participants: number;
     chat_rate_per_minute: number;
@@ -59,7 +64,7 @@ export interface EngagementMetrics {
     qa_questions: number;
     peak_engagement_at: string;
 }
-export interface CreatePollRequest {
+interface CreatePollRequest {
     stream_id: string;
     question: string;
     options: string[];
@@ -67,7 +72,7 @@ export interface CreatePollRequest {
     show_results?: boolean;
     duration_seconds?: number;
 }
-export interface CreateQARequest {
+interface CreateQARequest {
     stream_id: string;
     allow_anonymous?: boolean;
     moderated?: boolean;
@@ -81,7 +86,7 @@ export interface CreateQARequest {
  * const metrics = await wave.audience.getEngagementMetrics(streamId);
  * ```
  */
-export declare class AudienceAPI {
+declare class AudienceAPI {
     private readonly client;
     private readonly basePath;
     constructor(client: WaveClient);
@@ -101,4 +106,6 @@ export declare class AudienceAPI {
     getReactionMetrics(streamId: string): Promise<ReactionBurst[]>;
     getEngagementMetrics(streamId: string): Promise<EngagementMetrics>;
 }
-export declare function createAudienceAPI(client: WaveClient): AudienceAPI;
+declare function createAudienceAPI(client: WaveClient): AudienceAPI;
+
+export { AudienceAPI, type CreatePollRequest, type CreateQARequest, type EngagementMetrics, type Poll, type PollOption, type PollStatus, type QASession, type Question, type ReactionBurst, createAudienceAPI };

@@ -1,3 +1,9 @@
+import { WaveClient } from './client.js';
+import { ClipExportFormat, ClipSource, ClipQualityPreset, Clip, ClipStatus } from './clips-types.js';
+import { Timestamps, Metadata, PaginationParams, PaginatedResponse } from './client-types.js';
+import 'eventemitter3';
+import './telemetry.js';
+
 /**
  * WAVE SDK - Clips API
  *
@@ -6,56 +12,26 @@
  * NOTE: This is a client SDK. All authorization checks are performed server-side.
  * The API will return 403 Forbidden if the user lacks required permissions.
  */
-import type { WaveClient, PaginationParams, PaginatedResponse, Timestamps, Metadata } from './client';
+
 /**
  * Clip status
  */
-export type ClipStatus = 'pending' | 'processing' | 'ready' | 'failed' | 'deleted';
 /**
  * Clip export format
  */
-export type ClipExportFormat = 'mp4' | 'webm' | 'mov' | 'gif' | 'mp3' | 'wav';
 /**
  * Clip quality preset
  */
-export type ClipQualityPreset = 'low' | 'medium' | 'high' | 'source' | 'custom';
 /**
  * Clip source reference
  */
-export interface ClipSource {
-    type: 'stream' | 'recording' | 'upload';
-    id: string;
-    start_time: number;
-    end_time: number;
-}
 /**
  * Clip object
  */
-export interface Clip extends Timestamps {
-    id: string;
-    organization_id: string;
-    title: string;
-    description?: string;
-    source: ClipSource;
-    status: ClipStatus;
-    duration: number;
-    thumbnail_url?: string;
-    playback_url?: string;
-    download_url?: string;
-    file_size?: number;
-    width?: number;
-    height?: number;
-    frame_rate?: number;
-    bitrate?: number;
-    codec?: string;
-    tags?: string[];
-    metadata?: Metadata;
-    error?: string;
-}
 /**
  * Create clip request
  */
-export interface CreateClipRequest {
+interface CreateClipRequest {
     title: string;
     description?: string;
     source: ClipSource;
@@ -71,7 +47,7 @@ export interface CreateClipRequest {
 /**
  * Update clip request
  */
-export interface UpdateClipRequest {
+interface UpdateClipRequest {
     title?: string;
     description?: string;
     tags?: string[];
@@ -80,7 +56,7 @@ export interface UpdateClipRequest {
 /**
  * List clips filters
  */
-export interface ListClipsParams extends PaginationParams {
+interface ListClipsParams extends PaginationParams {
     status?: ClipStatus;
     source_type?: 'stream' | 'recording' | 'upload';
     source_id?: string;
@@ -93,7 +69,7 @@ export interface ListClipsParams extends PaginationParams {
 /**
  * Export clip request
  */
-export interface ExportClipRequest {
+interface ExportClipRequest {
     format: ClipExportFormat;
     quality?: ClipQualityPreset;
     /** Custom resolution (e.g., "1920x1080") */
@@ -113,7 +89,7 @@ export interface ExportClipRequest {
 /**
  * Export job status
  */
-export interface ClipExport extends Timestamps {
+interface ClipExport extends Timestamps {
     id: string;
     clip_id: string;
     status: 'pending' | 'processing' | 'ready' | 'failed';
@@ -126,7 +102,7 @@ export interface ClipExport extends Timestamps {
 /**
  * Auto-highlight result
  */
-export interface ClipHighlight {
+interface ClipHighlight {
     start_time: number;
     end_time: number;
     score: number;
@@ -163,7 +139,7 @@ export interface ClipHighlight {
  * console.log('Clip ready:', ready.playback_url);
  * ```
  */
-export declare class ClipsAPI {
+declare class ClipsAPI {
     private readonly client;
     private readonly basePath;
     constructor(client: WaveClient);
@@ -255,4 +231,6 @@ export declare class ClipsAPI {
 /**
  * Create a Clips API instance
  */
-export declare function createClipsAPI(client: WaveClient): ClipsAPI;
+declare function createClipsAPI(client: WaveClient): ClipsAPI;
+
+export { Clip, type ClipExport, ClipExportFormat, type ClipHighlight, ClipQualityPreset, ClipSource, ClipStatus, ClipsAPI, type CreateClipRequest, type ExportClipRequest, type ListClipsParams, type UpdateClipRequest, createClipsAPI };

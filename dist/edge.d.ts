@@ -1,11 +1,16 @@
+import { WaveClient } from './client.js';
+import { PaginationParams, PaginatedResponse, Timestamps } from './client-types.js';
+import 'eventemitter3';
+import './telemetry.js';
+
 /**
  * WAVE SDK - Edge API
  *
  * Edge computing, CDN operations, and worker deployment.
  */
-import type { WaveClient, PaginationParams, PaginatedResponse, Timestamps } from "./client";
-export type EdgeNodeStatus = "active" | "draining" | "offline" | "updating";
-export interface EdgeNode extends Timestamps {
+
+type EdgeNodeStatus = "active" | "draining" | "offline" | "updating";
+interface EdgeNode extends Timestamps {
     id: string;
     name: string;
     region: string;
@@ -16,7 +21,7 @@ export interface EdgeNode extends Timestamps {
     active_workers: number;
     bandwidth_mbps: number;
 }
-export interface EdgeWorker extends Timestamps {
+interface EdgeWorker extends Timestamps {
     id: string;
     name: string;
     node_id: string;
@@ -27,7 +32,7 @@ export interface EdgeWorker extends Timestamps {
     invocations: number;
     last_deployed_at: string;
 }
-export interface WorkerConfig {
+interface WorkerConfig {
     name: string;
     runtime: "v8" | "wasm" | "node";
     script: string;
@@ -35,7 +40,7 @@ export interface WorkerConfig {
     environment?: Record<string, string>;
     memory_limit_mb?: number;
 }
-export interface EdgeMetrics {
+interface EdgeMetrics {
     node_id: string;
     requests_per_second: number;
     bandwidth_mbps: number;
@@ -46,7 +51,7 @@ export interface EdgeMetrics {
     error_rate: number;
     timestamp: string;
 }
-export interface CDNPop {
+interface CDNPop {
     id: string;
     location: string;
     provider: string;
@@ -55,7 +60,7 @@ export interface CDNPop {
     hit_ratio: number;
     connections: number;
 }
-export interface RoutingRule {
+interface RoutingRule {
     id: string;
     pattern: string;
     target: string;
@@ -63,7 +68,7 @@ export interface RoutingRule {
     weight?: number;
     region_affinity?: string;
 }
-export interface DeployWorkerRequest {
+interface DeployWorkerRequest {
     name: string;
     runtime: "v8" | "wasm" | "node";
     script: string;
@@ -71,7 +76,7 @@ export interface DeployWorkerRequest {
     environment?: Record<string, string>;
     memory_limit_mb?: number;
 }
-export interface ListEdgeNodesParams extends PaginationParams {
+interface ListEdgeNodesParams extends PaginationParams {
     region?: string;
     status?: EdgeNodeStatus;
     provider?: string;
@@ -86,7 +91,7 @@ export interface ListEdgeNodesParams extends PaginationParams {
  * await wave.edge.purgeCache(['/assets/*']);
  * ```
  */
-export declare class EdgeAPI {
+declare class EdgeAPI {
     private readonly client;
     private readonly basePath;
     constructor(client: WaveClient);
@@ -109,4 +114,6 @@ export declare class EdgeAPI {
     removeRoutingRule(ruleId: string): Promise<void>;
     getLatencyMap(): Promise<Record<string, number>>;
 }
-export declare function createEdgeAPI(client: WaveClient): EdgeAPI;
+declare function createEdgeAPI(client: WaveClient): EdgeAPI;
+
+export { type CDNPop, type DeployWorkerRequest, EdgeAPI, type EdgeMetrics, type EdgeNode, type EdgeNodeStatus, type EdgeWorker, type ListEdgeNodesParams, type RoutingRule, type WorkerConfig, createEdgeAPI };

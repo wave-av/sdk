@@ -1,12 +1,17 @@
+import { WaveClient } from './client.js';
+import { PaginationParams, PaginatedResponse, Timestamps } from './client-types.js';
+import 'eventemitter3';
+import './telemetry.js';
+
 /**
  * WAVE SDK - Connect API
  *
  * Third-party integration and webhook management.
  */
-import type { WaveClient, PaginationParams, PaginatedResponse, Timestamps } from "./client";
-export type IntegrationStatus = "active" | "inactive" | "error" | "pending_auth";
-export type IntegrationType = "oauth" | "api_key" | "webhook" | "native";
-export interface Integration extends Timestamps {
+
+type IntegrationStatus = "active" | "inactive" | "error" | "pending_auth";
+type IntegrationType = "oauth" | "api_key" | "webhook" | "native";
+interface Integration extends Timestamps {
     id: string;
     organization_id: string;
     name: string;
@@ -18,7 +23,7 @@ export interface Integration extends Timestamps {
     last_sync_at?: string;
     error_message?: string;
 }
-export interface WebhookEndpoint extends Timestamps {
+interface WebhookEndpoint extends Timestamps {
     id: string;
     integration_id: string;
     url: string;
@@ -26,7 +31,7 @@ export interface WebhookEndpoint extends Timestamps {
     status: "active" | "inactive";
     secret: string;
 }
-export interface WebhookDelivery {
+interface WebhookDelivery {
     id: string;
     webhook_id: string;
     event: string;
@@ -37,17 +42,17 @@ export interface WebhookDelivery {
     next_retry_at?: string;
     created_at: string;
 }
-export interface EnableIntegrationRequest {
+interface EnableIntegrationRequest {
     provider: string;
     type: IntegrationType;
     config?: Record<string, unknown>;
     scopes?: string[];
 }
-export interface CreateWebhookRequest {
+interface CreateWebhookRequest {
     url: string;
     events: string[];
 }
-export interface ListIntegrationsParams extends PaginationParams {
+interface ListIntegrationsParams extends PaginationParams {
     status?: IntegrationStatus;
     provider?: string;
     type?: IntegrationType;
@@ -61,7 +66,7 @@ export interface ListIntegrationsParams extends PaginationParams {
  * const webhook = await wave.connect.createWebhook(integrationId, { url: "https://...", events: ["stream.started"] });
  * ```
  */
-export declare class ConnectAPI {
+declare class ConnectAPI {
     private readonly client;
     private readonly basePath;
     constructor(client: WaveClient);
@@ -85,4 +90,6 @@ export declare class ConnectAPI {
     listDeliveries(webhookId: string, params?: PaginationParams): Promise<PaginatedResponse<WebhookDelivery>>;
     retryDelivery(deliveryId: string): Promise<WebhookDelivery>;
 }
-export declare function createConnectAPI(client: WaveClient): ConnectAPI;
+declare function createConnectAPI(client: WaveClient): ConnectAPI;
+
+export { ConnectAPI, type CreateWebhookRequest, type EnableIntegrationRequest, type Integration, type IntegrationStatus, type IntegrationType, type ListIntegrationsParams, type WebhookDelivery, type WebhookEndpoint, createConnectAPI };

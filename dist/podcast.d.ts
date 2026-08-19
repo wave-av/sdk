@@ -1,12 +1,17 @@
+import { WaveClient } from './client.js';
+import { Timestamps, PaginationParams, PaginatedResponse } from './client-types.js';
+import 'eventemitter3';
+import './telemetry.js';
+
 /**
  * WAVE SDK - Podcast API
  *
  * Podcast production, episode management, and distribution.
  */
-import type { WaveClient, PaginationParams, PaginatedResponse, Timestamps } from "./client";
-export type EpisodeStatus = "draft" | "processing" | "published" | "scheduled" | "failed";
-export type DistributionTarget = "spotify" | "apple" | "google" | "amazon" | "overcast";
-export interface Podcast extends Timestamps {
+
+type EpisodeStatus = "draft" | "processing" | "published" | "scheduled" | "failed";
+type DistributionTarget = "spotify" | "apple" | "google" | "amazon" | "overcast";
+interface Podcast extends Timestamps {
     id: string;
     organization_id: string;
     title: string;
@@ -22,7 +27,7 @@ export interface Podcast extends Timestamps {
     subscriber_count: number;
     episode_count: number;
 }
-export interface Episode extends Timestamps {
+interface Episode extends Timestamps {
     id: string;
     podcast_id: string;
     title: string;
@@ -37,7 +42,7 @@ export interface Episode extends Timestamps {
     scheduled_at?: string;
     tags?: string[];
 }
-export interface PodcastAnalytics {
+interface PodcastAnalytics {
     podcast_id: string;
     total_downloads: number;
     unique_listeners: number;
@@ -51,12 +56,12 @@ export interface PodcastAnalytics {
         count: number;
     }[];
 }
-export interface PodcastDistribution {
+interface PodcastDistribution {
     target: DistributionTarget;
     status: "connected" | "pending" | "error";
     url?: string;
 }
-export interface CreatePodcastRequest {
+interface CreatePodcastRequest {
     title: string;
     description: string;
     category: string;
@@ -65,7 +70,7 @@ export interface CreatePodcastRequest {
     author?: string;
     email?: string;
 }
-export interface CreateEpisodeRequest {
+interface CreateEpisodeRequest {
     podcast_id: string;
     title: string;
     description: string;
@@ -85,7 +90,7 @@ export interface CreateEpisodeRequest {
  * await wave.podcast.distribute(podcast.id, ["spotify", "apple"]);
  * ```
  */
-export declare class PodcastAPI {
+declare class PodcastAPI {
     private readonly client;
     private readonly basePath;
     constructor(client: WaveClient);
@@ -110,4 +115,6 @@ export declare class PodcastAPI {
     distribute(podcastId: string, targets: DistributionTarget[]): Promise<PodcastDistribution[]>;
     getDistributionStatus(podcastId: string): Promise<PodcastDistribution[]>;
 }
-export declare function createPodcastAPI(client: WaveClient): PodcastAPI;
+declare function createPodcastAPI(client: WaveClient): PodcastAPI;
+
+export { type CreateEpisodeRequest, type CreatePodcastRequest, type DistributionTarget, type Episode, type EpisodeStatus, type Podcast, PodcastAPI, type PodcastAnalytics, type PodcastDistribution, createPodcastAPI };

@@ -325,6 +325,37 @@ export { DrmAPI, createDrmAPI } from "./drm";
 export { RealtimeAPI, RealtimeChannel, createRealtimeAPI } from "./realtime";
 export * from "./realtime-types";
 
+// Mail API (E5 — comms productization)
+export {
+  MailAPI,
+  createMailAPI,
+  type MailSendRequest,
+  type MailReplyBody,
+  type MailSearchResult,
+  type TranscriptEmailRequest,
+  type SmsRequest,
+  type SmsResult,
+  type SendResult,
+} from "./mail";
+
+// Meter API (E5 — comms productization, meter:read)
+export {
+  MeterAPI,
+  createMeterAPI,
+  type LedgerParams,
+  type RollupParams,
+  type MeterLedger,
+  type MeterLedgerRow,
+  type MeterChannels,
+  type MeterMailChannel,
+  type MeterVoiceChannel,
+  type MeterSmsChannel,
+  type MeterRealtimeChannel,
+  type MeterStorageChannel,
+  type MeterRollup,
+  type MeterRollupTotals,
+} from "./meter";
+
 // Perception — agentic live-media subscribe() control plane (#85)
 export {
   PerceptionAPI,
@@ -395,6 +426,8 @@ import { UsbAPI } from "./usb";
 import { NotificationsAPI } from "./notifications";
 import { DrmAPI } from "./drm";
 import { RealtimeAPI } from "./realtime";
+import { MailAPI } from "./mail";
+import { MeterAPI } from "./meter";
 import { PerceptionAPI } from "./perception";
 
 /**
@@ -453,6 +486,12 @@ export class Wave {
   // Realtime — live control & event plane (WebSocket)
   public readonly realtime: RealtimeAPI;
 
+  // Mail API (E5 — comms productization)
+  public readonly mail: MailAPI;
+
+  // Meter API (E5 — comms productization, meter:read)
+  public readonly meter: MeterAPI;
+
   // Perception — agentic live-media subscribe() control plane (#85)
   public readonly perception: PerceptionAPI;
 
@@ -508,6 +547,12 @@ export class Wave {
 
     // Realtime
     this.realtime = new RealtimeAPI(this.client);
+
+    // Mail (E5)
+    this.mail = new MailAPI(this.client);
+
+    // Meter (E5)
+    this.meter = new MeterAPI(this.client);
 
     // Perception (#85)
     this.perception = new PerceptionAPI(this.client);

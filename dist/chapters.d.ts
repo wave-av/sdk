@@ -1,3 +1,10 @@
+import { WaveClient } from './client.js';
+import { GenerateChaptersRequest, ChapterSet, CreateChapterSetRequest, UpdateChapterSetRequest, ListChapterSetsParams, CreateChapterRequest, Chapter, UpdateChapterRequest } from './chapters-types.js';
+export { ChapterStatus } from './chapters-types.js';
+import { PaginatedResponse } from './client-types.js';
+import 'eventemitter3';
+import './telemetry.js';
+
 /**
  * WAVE SDK - Chapters API
  *
@@ -6,148 +13,38 @@
  * NOTE: This is a client SDK. All authorization checks are performed server-side.
  * The API will return 403 Forbidden if the user lacks required permissions.
  */
-import type { WaveClient, PaginationParams, PaginatedResponse, Timestamps, Metadata } from './client';
+
 /**
  * Chapter status
  */
-export type ChapterStatus = 'pending' | 'processing' | 'ready' | 'failed';
 /**
  * Chapter
  */
-export interface Chapter extends Timestamps {
-    id: string;
-    media_id: string;
-    title: string;
-    description?: string;
-    start_time: number;
-    end_time?: number;
-    thumbnail_url?: string;
-    order: number;
-    is_auto_generated: boolean;
-    confidence?: number;
-    metadata?: Metadata;
-}
 /**
  * Chapter set (collection of chapters for a media)
  */
-export interface ChapterSet extends Timestamps {
-    id: string;
-    organization_id: string;
-    media_id: string;
-    media_type: 'video' | 'audio' | 'stream';
-    name: string;
-    status: ChapterStatus;
-    is_default: boolean;
-    is_auto_generated: boolean;
-    chapters: Chapter[];
-    chapter_count: number;
-    error?: string;
-    metadata?: Metadata;
-}
 /**
  * Generate chapters request
  */
-export interface GenerateChaptersRequest {
-    media_id: string;
-    media_type: 'video' | 'audio' | 'stream';
-    name?: string;
-    /** Minimum chapter duration in seconds */
-    min_duration?: number;
-    /** Maximum number of chapters */
-    max_chapters?: number;
-    /** Detection method */
-    method?: 'scene' | 'topic' | 'combined';
-    /** Use transcript for topic detection */
-    use_transcript?: boolean;
-    /** Caption track ID if using transcript */
-    caption_track_id?: string;
-    /** Generate thumbnails for chapters */
-    generate_thumbnails?: boolean;
-    /** Set as default chapter set */
-    set_as_default?: boolean;
-    /** Webhook URL for completion */
-    webhook_url?: string;
-    metadata?: Metadata;
-}
 /**
  * Create chapter set request
  */
-export interface CreateChapterSetRequest {
-    media_id: string;
-    media_type: 'video' | 'audio' | 'stream';
-    name: string;
-    chapters: CreateChapterRequest[];
-    set_as_default?: boolean;
-    metadata?: Metadata;
-}
 /**
  * Create chapter request
  */
-export interface CreateChapterRequest {
-    title: string;
-    description?: string;
-    start_time: number;
-    end_time?: number;
-    thumbnail_url?: string;
-    metadata?: Metadata;
-}
 /**
  * Update chapter request
  */
-export interface UpdateChapterRequest {
-    title?: string;
-    description?: string;
-    start_time?: number;
-    end_time?: number;
-    thumbnail_url?: string;
-    order?: number;
-    metadata?: Metadata;
-}
 /**
  * Update chapter set request
  */
-export interface UpdateChapterSetRequest {
-    name?: string;
-    is_default?: boolean;
-    metadata?: Metadata;
-}
 /**
  * List chapter sets params
  */
-export interface ListChapterSetsParams extends PaginationParams {
-    media_id?: string;
-    media_type?: 'video' | 'audio' | 'stream';
-    status?: ChapterStatus;
-    is_auto_generated?: boolean;
-}
 /**
  * Chapters API client
- *
- * All operations require appropriate permissions. Authorization is enforced
- * server-side - the API returns 403 if the authenticated user lacks access.
- *
- * @example
- * ```typescript
- * import { WaveClient } from '@wave/sdk';
- * import { ChaptersAPI } from '@wave/sdk/chapters';
- *
- * const client = new WaveClient({ apiKey: 'your-api-key' });
- * const chapters = new ChaptersAPI(client);
- *
- * // Generate chapters automatically
- * const chapterSet = await chapters.generate({
- *   media_id: 'video_123',
- *   media_type: 'video',
- *   method: 'combined',
- *   generate_thumbnails: true,
- * });
- *
- * // Wait for processing
- * const ready = await chapters.waitForReady(chapterSet.id);
- * console.log('Chapters:', ready.chapters);
- * ```
  */
-export declare class ChaptersAPI {
+declare class ChaptersAPI {
     private readonly client;
     private readonly basePath;
     constructor(client: WaveClient);
@@ -312,4 +209,6 @@ export declare class ChaptersAPI {
 /**
  * Create a Chapters API instance
  */
-export declare function createChaptersAPI(client: WaveClient): ChaptersAPI;
+declare function createChaptersAPI(client: WaveClient): ChaptersAPI;
+
+export { Chapter, ChapterSet, ChaptersAPI, CreateChapterRequest, CreateChapterSetRequest, GenerateChaptersRequest, ListChapterSetsParams, UpdateChapterRequest, UpdateChapterSetRequest, createChaptersAPI };

@@ -1,3 +1,10 @@
+import { WaveClient } from './client.js';
+import { CreateSceneDetectionRequest, SceneDetection, ListSceneDetectionsParams, SceneType, Scene, SceneLabel, SceneBoundary, Shot, ShotType, SceneComparison } from './scene-types.js';
+export { AudioFeatures, SceneDetectionStatus, VisualFeatures } from './scene-types.js';
+import { PaginatedResponse, PaginationParams } from './client-types.js';
+import 'eventemitter3';
+import './telemetry.js';
+
 /**
  * WAVE SDK - Scene AI API
  *
@@ -6,10 +13,8 @@
  * NOTE: This is a client SDK. All authorization checks are performed server-side.
  * The API will return 403 Forbidden if the user lacks required permissions.
  */
-import type { WaveClient, PaginationParams, PaginatedResponse } from './client';
-import type { CreateSceneDetectionRequest, ListSceneDetectionsParams, Scene, SceneBoundary, SceneComparison, SceneDetection, SceneLabel, SceneType, Shot, ShotType } from './scene-types';
-export * from './scene-types';
-export declare class SceneAPI {
+
+declare class SceneAPI {
     private readonly client;
     private readonly basePath;
     constructor(client: WaveClient);
@@ -210,4 +215,6 @@ export declare class SceneAPI {
 /**
  * Create a Scene API instance
  */
-export declare function createSceneAPI(client: WaveClient): SceneAPI;
+declare function createSceneAPI(client: WaveClient): SceneAPI;
+
+export { CreateSceneDetectionRequest, ListSceneDetectionsParams, Scene, SceneAPI, SceneBoundary, SceneComparison, SceneDetection, SceneLabel, SceneType, Shot, ShotType, createSceneAPI };

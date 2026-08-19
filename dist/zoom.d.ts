@@ -1,10 +1,15 @@
+import { WaveClient } from './client.js';
+import { PaginationParams, PaginatedResponse, Timestamps } from './client-types.js';
+import 'eventemitter3';
+import './telemetry.js';
+
 /**
  * WAVE SDK - Zoom API
  *
  * Zoom meeting, Zoom Room, and RTMS integration.
  */
-import type { WaveClient, PaginationParams, PaginatedResponse, Timestamps } from "./client";
-export interface ZoomMeeting {
+
+interface ZoomMeeting {
     id: string;
     topic: string;
     type: "instant" | "scheduled" | "recurring";
@@ -18,7 +23,7 @@ export interface ZoomMeeting {
     rtms_enabled: boolean;
     created_at: string;
 }
-export interface ZoomRoom {
+interface ZoomRoom {
     id: string;
     name: string;
     location?: string;
@@ -29,7 +34,7 @@ export interface ZoomRoom {
     camera_count: number;
     microphone_count: number;
 }
-export interface ZoomRecording extends Timestamps {
+interface ZoomRecording extends Timestamps {
     id: string;
     meeting_id: string;
     type: "cloud" | "rtms";
@@ -38,7 +43,7 @@ export interface ZoomRecording extends Timestamps {
     duration_seconds: number;
     file_size_bytes: number;
 }
-export interface CreateMeetingRequest {
+interface CreateMeetingRequest {
     topic: string;
     type?: "instant" | "scheduled" | "recurring";
     duration_minutes?: number;
@@ -47,7 +52,7 @@ export interface CreateMeetingRequest {
     rtms_enabled?: boolean;
     password?: string;
 }
-export interface ListMeetingsParams extends PaginationParams {
+interface ListMeetingsParams extends PaginationParams {
     status?: string;
     type?: string;
     host_id?: string;
@@ -62,7 +67,7 @@ export interface ListMeetingsParams extends PaginationParams {
  * const rooms = await wave.zoom.listRooms();
  * ```
  */
-export declare class ZoomAPI {
+declare class ZoomAPI {
     private readonly client;
     private readonly basePath;
     constructor(client: WaveClient);
@@ -88,4 +93,6 @@ export declare class ZoomAPI {
         stream_url?: string;
     }>;
 }
-export declare function createZoomAPI(client: WaveClient): ZoomAPI;
+declare function createZoomAPI(client: WaveClient): ZoomAPI;
+
+export { type CreateMeetingRequest, type ListMeetingsParams, ZoomAPI, type ZoomMeeting, type ZoomRecording, type ZoomRoom, createZoomAPI };
