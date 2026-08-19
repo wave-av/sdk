@@ -14,9 +14,11 @@ function fakeDevbox(): string {
 if [ "$1" = "list" ] && [ "$2" = "-o" ] && [ "$3" = "json" ]; then
   echo '[{"id":"lh93avfpmuadc","name":"agent-computer","size":"S"}]'
 elif [ "$1" = "exec" ]; then
-  echo "exec:$3"
+  shift 3
+  echo "exec:$*"
 elif [ "$1" = "ssh" ]; then
-  echo "ssh:$3"
+  shift 3
+  echo "ssh:$*"
 else
   echo "unknown" >&2; exit 2
 fi
