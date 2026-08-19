@@ -1,0 +1,25 @@
+{
+  "name": "wave-runtime",
+  "version": "0.1.0",
+  "description": "WAVE Runtime — one runtime underneath any harness: model inference, capability custody, the agent computer, and event automations. Bundles the four agent skills + the wave-runtime MCP server so an agent host can drive the whole platform from one install.",
+  "author": { "name": "WAVE" },
+  "repository": "https://github.com/wave-av/sdk",
+  "license": "SEE LICENSE IN LICENSE",
+  "skills": [
+    "skills/wave-runtime/SKILL.md",
+    "skills/wave-custody/SKILL.md",
+    "skills/wave-computer/SKILL.md",
+    "skills/wave-automations/SKILL.md"
+  ],
+  "mcpServers": {
+    "wave-runtime": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["dist/mcp-server.js"],
+      "env": {
+        "WAVE_RUNTIME_URL": "https://runtime.wave.online/v1",
+        "WAVE_RUNTIME_TOKEN": "{env:DISPATCH_PROOF_BEARER}"
+      }
+    }
+  }
+}
