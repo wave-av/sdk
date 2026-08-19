@@ -8,7 +8,7 @@ description: Manage WAVE capability grants — grant/revoke/inspect an agent's s
 An agent exercises an opaque, revocable capability — never a raw token. The gateway's `CapabilityAccount` DO holds ciphertext-only credentials; the exercise path is grant → egress fence → in-memory decrypt → call → sanitized receipt.
 
 ## Concepts
-- A **grant** is per-user, per-resource-instance (e.g. `wave-av/wave-gateway`), with `allowedActions`, a hard `expiresAt`, and a `revocationId`. Least-privilege + revocable + time-bounded.
+- A **grant** is per-user, per-resource-instance (e.g. `acme/api`), with `allowedActions`, a hard `expiresAt`, and a `revocationId`. Least-privilege + revocable + time-bounded.
 - **Exercise** = check grant (active / not-expired / instance / action) → egress fence (exact-match allowlist) → decrypt token in-memory → outbound call (token only in Authorization header) → name-only receipt.
 - **Crypto-shred** destroys the wrapped DEK → ciphertext unrecoverable → `TOKEN_UNRECOVERABLE`.
 
