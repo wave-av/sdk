@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { writeFileSync, chmodSync } from "node:fs";
+import { writeFileSync, chmodSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
@@ -8,6 +8,7 @@ import { ComputerClient } from "../computer";
 function fakeDevbox(): string {
   // A fake `devbox` that honors the exact args the client sends, for deterministic tests.
   const dir = join(tmpdir(), `fake-devbox-${Math.random().toString(36).slice(2)}`);
+  mkdirSync(dir, { recursive: true });
   const p = join(dir, "devbox");
   const script = `#!/bin/bash
 if [ "$1" = "list" ] && [ "$2" = "-o" ] && [ "$3" = "json" ]; then
@@ -46,6 +47,7 @@ describe("ComputerClient", () => {
 
   it("throws when list fails (non-zero exit)", () => {
     const dir = join(tmpdir(), `fake-devbox-fail-${Math.random().toString(36).slice(2)}`);
+  mkdirSync(dir, { recursive: true });
     const p = join(dir, "devbox");
     writeFileSync(p, "#!/bin/bash\nexit 1\n");
     chmodSync(p, 0o755);
