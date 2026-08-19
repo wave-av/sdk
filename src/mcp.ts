@@ -8,6 +8,7 @@
  */
 
 import { RuntimeClient } from "./runtime";
+import { createInterface } from "node:readline";
 
 export interface McpToolDef {
   name: string;
@@ -96,5 +97,26 @@ export async function handleMcpMessage(client: RuntimeClient, message: unknown):
 
     default:
       return { jsonrpc: "2.0", id: req.id ?? null, error: { code: -32601, message: `Method not found: ${req.method}` } };
+  }
+}
+
+/**
+ * Run the stdio loop: read newline-delimited JSON-RPC from stdin, handle each message, write the
+ * response (when non-null) to stdout. This is the bin entry the plugin manifest points its
+ * `command` at. Resolves on stdin EOF.
+ */
+export async function runMcpServer(client: RuntimeClient): Promise<void> {
+  const rl = createInterface({ input: process.stdin, crlfDelay: Infinity });
+  for await (const line of rl) {
+    if (!line.trim()) continue;
+    let message: unknown;
+    try {
+      message = JSON.parse(line);
+    } catch {
+      process.stdout.write(JSON.stringify({ jsonrpc: "2.0", id: null, error: { code: -32700, message: "Parse error" } }) + "\n");
+      continue;
+    }
+    const response = await handleMcpMessage(client, message);
+    if (response !== null) process.stdout.write(JSON.stringify(response) + "\n");
   }
 }
