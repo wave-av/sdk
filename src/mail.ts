@@ -61,7 +61,9 @@ export class MailAPI {
    * returns 402.
    */
   async send(request: MailSendRequest): Promise<SendResult> {
-    return this.client.post<SendResult>(`${this.basePath}/mail/send`, request);
+    return this.client.post<SendResult>(`${this.basePath}/mail/send`, request, {
+      noRetry: true,
+    });
   }
 
   /** Reply to an existing message by its `messageId`. */
@@ -69,6 +71,7 @@ export class MailAPI {
     return this.client.post<SendResult>(
       `${this.basePath}/mail/reply/${messageId}`,
       body,
+        { noRetry: true },
     );
   }
 
@@ -84,12 +87,15 @@ export class MailAPI {
     return this.client.post<SendResult>(
       `${this.basePath}/transcripts/email`,
       request,
+        { noRetry: true },
     );
   }
 
   /** Send an SMS message. */
   async sms(request: SmsRequest): Promise<SmsResult> {
-    return this.client.post<SmsResult>(`${this.basePath}/sms/send`, request);
+    return this.client.post<SmsResult>(`${this.basePath}/sms/send`, request, {
+      noRetry: true,
+    });
   }
 }
 
