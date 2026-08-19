@@ -304,6 +304,8 @@ export { QrAPI, createQrAPI } from "./qr";
 export { AudienceAPI, createAudienceAPI } from "./audience";
 export { RuntimeClient, RuntimeError } from "./runtime";
 export { runWaveCli } from "./cli";
+export { ComputerClient } from "./computer";
+export type { Devbox, ComputerExecResult, ComputerClientOptions } from "./computer";
 export { CustodyClient } from "./custody";
 export type { CapabilityGrant, GrantStatus, ExerciseRequest, ExerciseReceipt, CustodyClientOptions } from "./custody";
 export { AutomationsClient } from "./automations";
