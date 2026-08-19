@@ -2,7 +2,7 @@
  * WAVE SDK - Meter Types
  *
  * Types for the metering ledger and rollup surfaces. Shapes mirror the live
- * wave-gateway D1 meter tables; fields may be added as new channels land.
+ * live WAVE metering surfaces; fields may be added as new channels land.
  */
 
 /** Per-channel usage in a ledger row. */
