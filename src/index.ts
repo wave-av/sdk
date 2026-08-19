@@ -302,6 +302,18 @@ export { QrAPI, createQrAPI } from "./qr";
 
 // Audience API (P3)
 export { AudienceAPI, createAudienceAPI } from "./audience";
+export { RuntimeClient, RuntimeError } from "./runtime";
+export { runWaveCli } from "./cli";
+export { ComputerClient } from "./computer";
+export type { Devbox, ComputerExecResult, ComputerClientOptions } from "./computer";
+export { CustodyClient } from "./custody";
+export type { CapabilityGrant, GrantStatus, ExerciseRequest, ExerciseReceipt, CustodyClientOptions } from "./custody";
+export { AutomationsClient } from "./automations";
+export type { AutomationDispatchResult, AutomationsClientOptions } from "./automations";
+export { handleMcpMessage, waveMcpTools } from "./mcp";
+export type { McpToolDef } from "./mcp";
+export type { WaveCliOptions, WaveCliResult } from "./cli";
+export type { ChatMessage, ToolSpec, CompletionRequest, CompletionResponse, RuntimeClientOptions } from "./runtime";
 
 // Creator API (P3)
 export { CreatorAPI, createCreatorAPI } from "./creator";
