@@ -46,6 +46,7 @@ const synthesis = await wave.voice.synthesize({
 ```
 
 ## Capabilities
+- **Pricing Pages** — create/list/read tier manifests (pricing.wave.online/<slug> hosted pages; scopes pricing:write/pricing:read)
 
 | Capability | Status |
 | --- | --- |

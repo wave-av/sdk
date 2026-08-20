@@ -370,6 +370,18 @@ export {
   type MeterRollupTotals,
 } from "./meter";
 
+// Pricing Pages API (pricing-pages E0/E1 — pricing:read / pricing:write)
+export {
+  PricingAPI,
+  createPricingAPI,
+  type PricingTier,
+  type PricingManifest,
+  type ManifestCreateResult,
+  type ManifestListEntry,
+  type ManifestList,
+  type ManifestRead,
+} from "./pricing";
+
 // Perception — agentic live-media subscribe() control plane (#85)
 export {
   PerceptionAPI,
@@ -442,6 +454,7 @@ import { DrmAPI } from "./drm";
 import { RealtimeAPI } from "./realtime";
 import { MailAPI } from "./mail";
 import { MeterAPI } from "./meter";
+import { PricingAPI } from "./pricing";
 import { PerceptionAPI } from "./perception";
 
 /**
@@ -505,6 +518,7 @@ export class Wave {
 
   // Meter API (E5 — comms productization, meter:read)
   public readonly meter: MeterAPI;
+  public readonly pricing: PricingAPI;
 
   // Perception — agentic live-media subscribe() control plane (#85)
   public readonly perception: PerceptionAPI;
@@ -567,6 +581,7 @@ export class Wave {
 
     // Meter (E5)
     this.meter = new MeterAPI(this.client);
+    this.pricing = new PricingAPI(this.client);
 
     // Perception (#85)
     this.perception = new PerceptionAPI(this.client);
