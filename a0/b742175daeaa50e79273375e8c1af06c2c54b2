@@ -1,0 +1,26 @@
+README.md
+  h_af5ac1a9798224 49
+package.json
+  h_af5ac1a9798224 233-237,321
+src/__tests__/pricing.test.ts
+  h_af5ac1a9798224 1-37
+src/__tests__/sdk-exports.test.ts
+  h_af5ac1a9798224 22-25
+src/index.ts
+  h_af5ac1a9798224 371-382,455,519,582
+src/pricing-types.ts
+  h_af5ac1a9798224 1-57
+src/pricing.ts
+  h_af5ac1a9798224 1-65
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "a0b742175daeaa50e79273375e8c1af06c2c54b2",
+  "prompts": {},
+  "humans": {
+    "h_af5ac1a9798224": {
+      "author": "Jake Fineman <jakefineman@gmail.com>"
+    }
+  }
+}
