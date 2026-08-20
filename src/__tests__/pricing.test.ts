@@ -26,8 +26,8 @@ describe("PricingAPI", () => {
   it("reads one manifest with an encoded slug", async () => {
     const get = vi.fn(async () => ({ org: "acme", slug: "acme-news", status: "published", updated_at: "t", manifest: {} }));
     const api = new PricingAPI(clientWith(vi.fn(), get));
-    await api.getManifest("acme-news");
-    expect(get).toHaveBeenCalledWith("/v1/pricing/manifests/acme-news");
+    await api.getManifest("acme news");
+    expect(get).toHaveBeenCalledWith("/v1/pricing/manifests/acme%20news");
   });
 
   it("factory returns a PricingAPI", () => {
@@ -35,3 +35,4 @@ describe("PricingAPI", () => {
     expect(api).toBeInstanceOf(PricingAPI);
   });
 });
+;
