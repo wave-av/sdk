@@ -19,6 +19,10 @@ describe("@wave/sdk exports", () => {
     expect(SDK.WaveClient).toBeDefined();
     expect(typeof SDK.WaveClient).toBe("function");
   });
+  it("exports PricingAPI", () => {
+    expect(SDK.PricingAPI).toBeDefined();
+    expect(SDK.createPricingAPI).toBeDefined();
+  });
 
   it("exports createClient factory", () => {
     expect(SDK.createClient).toBeDefined();

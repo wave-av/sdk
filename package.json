@@ -230,6 +230,11 @@
       "types": "./dist/realtime.d.ts",
       "import": "./dist/realtime.mjs",
       "require": "./dist/realtime.js"
+    },
+    "./pricing": {
+      "types": "./dist/pricing.d.ts",
+      "import": "./dist/pricing.mjs",
+      "require": "./dist/pricing.js"
     }
   },
   "files": [
