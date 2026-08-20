@@ -7,7 +7,7 @@
  * never a silent repricing.
  *
  * Requires scopes `pricing:write` (create) and `pricing:read` (list/get).
- * Hosted pages render at pricing.wave.online/<slug> for published manifests.
+ * Hosted pages render at `pricing.wave.online/<slug>` for published manifests.
  */
 
 import type { WaveClient } from "./client";
