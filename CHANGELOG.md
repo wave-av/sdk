@@ -5,3 +5,5 @@ All notable changes to this project are documented here. The format is based on
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+- **Pricing Pages** — create/list/read tier manifests (`pricing.wave.online/<slug>` hosted pages; scopes `pricing:write`/`pricing:read`)
