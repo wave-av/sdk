@@ -8,6 +8,7 @@
  */
 
 import { RuntimeClient } from "./runtime";
+import { listProducts } from "./products";
 import { createInterface } from "node:readline";
 
 export interface McpToolDef {
@@ -35,6 +36,11 @@ export function waveMcpTools(): McpToolDef[] {
         },
         required: ["prompt"],
       },
+    },
+    {
+      name: "wave_products",
+      description: "List every WAVE product surface (id, phase, surface URL) — the catalog that drives the product plane",
+      inputSchema: { type: "object", properties: {} },
     },
   ];
 }
@@ -91,6 +97,10 @@ export async function handleMcpMessage(client: RuntimeClient, message: unknown):
         }
         const res = await client.complete({ messages: [{ role: "user", content: args.prompt }], ...(args.model ? { model: args.model } : {}) });
         return result(req.id, { content: textContent(res.choices[0]?.message?.content ?? ""), isError: false });
+      }
+      if (name === "wave_products") {
+        const rows = listProducts().map((p) => `${p.id}\t${p.phase}\t${p.surface}`);
+        return result(req.id, { content: textContent(rows.join("\n")), isError: false });
       }
       return result(req.id, { content: textContent(`error: unknown tool "${name}"`), isError: true });
     }

@@ -310,6 +310,8 @@ export { CustodyClient } from "./custody";
 export type { CapabilityGrant, GrantStatus, ExerciseRequest, ExerciseReceipt, CustodyClientOptions } from "./custody";
 export { AutomationsClient } from "./automations";
 export type { AutomationDispatchResult, AutomationsClientOptions } from "./automations";
+export { ProductClient, CATALOG, listProducts, resolveProduct } from "./products";
+export type { Product, ProductPhase, ProductClientOptions } from "./products";
 export { handleMcpMessage, waveMcpTools } from "./mcp";
 export type { McpToolDef } from "./mcp";
 export type { WaveCliOptions, WaveCliResult } from "./cli";
