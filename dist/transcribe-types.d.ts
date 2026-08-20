@@ -1,3 +1,6 @@
+import { Metadata, PaginationParams, Timestamps } from './client-types.js';
+import './telemetry.js';
+
 /**
  * WAVE SDK - Transcribe API
  *
@@ -6,19 +9,19 @@
  * NOTE: This is a client SDK. All authorization checks are performed server-side.
  * The API will return 403 Forbidden if the user lacks required permissions.
  */
-import type { PaginationParams, Timestamps, Metadata } from './client';
+
 /**
  * Transcription status
  */
-export type TranscriptionStatus = 'pending' | 'processing' | 'ready' | 'failed';
+type TranscriptionStatus = 'pending' | 'processing' | 'ready' | 'failed';
 /**
  * Transcription model
  */
-export type TranscriptionModel = 'standard' | 'enhanced' | 'whisper-large' | 'whisper-medium' | 'medical' | 'legal';
+type TranscriptionModel = 'standard' | 'enhanced' | 'whisper-large' | 'whisper-medium' | 'medical' | 'legal';
 /**
  * Transcription job
  */
-export interface Transcription extends Timestamps {
+interface Transcription extends Timestamps {
     id: string;
     organization_id: string;
     source_url?: string;
@@ -39,7 +42,7 @@ export interface Transcription extends Timestamps {
 /**
  * Transcription segment
  */
-export interface TranscriptionSegment {
+interface TranscriptionSegment {
     id: string;
     start_time: number;
     end_time: number;
@@ -52,7 +55,7 @@ export interface TranscriptionSegment {
 /**
  * Word-level transcription
  */
-export interface TranscriptionWord {
+interface TranscriptionWord {
     word: string;
     start_time: number;
     end_time: number;
@@ -62,7 +65,7 @@ export interface TranscriptionWord {
 /**
  * Speaker info
  */
-export interface Speaker {
+interface Speaker {
     id: number;
     label: string;
     segments_count: number;
@@ -72,7 +75,7 @@ export interface Speaker {
 /**
  * Create transcription request
  */
-export interface CreateTranscriptionRequest {
+interface CreateTranscriptionRequest {
     /** Source URL to transcribe */
     source_url?: string;
     /** Source type */
@@ -104,13 +107,13 @@ export interface CreateTranscriptionRequest {
 /**
  * Update transcription request
  */
-export interface UpdateTranscriptionRequest {
+interface UpdateTranscriptionRequest {
     metadata?: Metadata;
 }
 /**
  * List transcriptions params
  */
-export interface ListTranscriptionsParams extends PaginationParams {
+interface ListTranscriptionsParams extends PaginationParams {
     status?: TranscriptionStatus;
     source_type?: 'upload' | 'url' | 'stream' | 'recording';
     language?: string;
@@ -121,33 +124,6 @@ export interface ListTranscriptionsParams extends PaginationParams {
 /**
  * Export format
  */
-export type TranscriptExportFormat = 'txt' | 'json' | 'srt' | 'vtt' | 'docx' | 'pdf';
-/**
- * Transcribe API client
- *
- * All operations require appropriate permissions. Authorization is enforced
- * server-side - the API returns 403 if the authenticated user lacks access.
- *
- * @example
- * ```typescript
- * import { WaveClient } from '@wave/sdk';
- * import { TranscribeAPI } from '@wave/sdk/transcribe';
- *
- * const client = new WaveClient({ apiKey: 'your-api-key' });
- * const transcribe = new TranscribeAPI(client);
- *
- * // Transcribe a video
- * const job = await transcribe.create({
- *   source_url: 'https://example.com/video.mp4',
- *   source_type: 'url',
- *   language: 'en',
- *   speaker_diarization: true,
- * });
- *
- * // Wait for completion
- * const result = await transcribe.waitForReady(job.id);
- *
- * // Get the transcript
- * const segments = await transcribe.getSegments(result.id);
- * ```
- */
+type TranscriptExportFormat = 'txt' | 'json' | 'srt' | 'vtt' | 'docx' | 'pdf';
+
+export type { CreateTranscriptionRequest, ListTranscriptionsParams, Speaker, TranscriptExportFormat, Transcription, TranscriptionModel, TranscriptionSegment, TranscriptionStatus, TranscriptionWord, UpdateTranscriptionRequest };

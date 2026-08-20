@@ -34,9 +34,12 @@ __export(index_exports, {
   EditorAPI: () => EditorAPI,
   FleetAPI: () => FleetAPI,
   GhostAPI: () => GhostAPI,
+  MailAPI: () => MailAPI,
   MarketplaceAPI: () => MarketplaceAPI,
   MeshAPI: () => MeshAPI,
+  MeterAPI: () => MeterAPI,
   NotificationsAPI: () => NotificationsAPI,
+  PerceptionAPI: () => PerceptionAPI,
   PhoneAPI: () => PhoneAPI,
   PipelineAPI: () => PipelineAPI,
   PodcastAPI: () => PodcastAPI,
@@ -44,6 +47,8 @@ __export(index_exports, {
   PulseAPI: () => PulseAPI,
   QrAPI: () => QrAPI,
   RateLimitError: () => RateLimitError,
+  RealtimeAPI: () => RealtimeAPI,
+  RealtimeChannel: () => RealtimeChannel,
   SceneAPI: () => SceneAPI,
   SearchAPI: () => SearchAPI,
   SentimentAPI: () => SentimentAPI,
@@ -74,15 +79,19 @@ __export(index_exports, {
   createEditorAPI: () => createEditorAPI,
   createFleetAPI: () => createFleetAPI,
   createGhostAPI: () => createGhostAPI,
+  createMailAPI: () => createMailAPI,
   createMarketplaceAPI: () => createMarketplaceAPI,
   createMeshAPI: () => createMeshAPI,
+  createMeterAPI: () => createMeterAPI,
   createNotificationsAPI: () => createNotificationsAPI,
+  createPerceptionAPI: () => createPerceptionAPI,
   createPhoneAPI: () => createPhoneAPI,
   createPipelineAPI: () => createPipelineAPI,
   createPodcastAPI: () => createPodcastAPI,
   createPrismAPI: () => createPrismAPI,
   createPulseAPI: () => createPulseAPI,
   createQrAPI: () => createQrAPI,
+  createRealtimeAPI: () => createRealtimeAPI,
   createSceneAPI: () => createSceneAPI,
   createSearchAPI: () => createSearchAPI,
   createSentimentAPI: () => createSentimentAPI,
@@ -198,6 +207,13 @@ function withTelemetrySync(operationName, fn, attributes) {
 }
 
 // src/client.ts
+var RETRYABLE_ERROR_CODES = /* @__PURE__ */ new Set([
+  "RATE_LIMITED",
+  "TIMEOUT",
+  "NETWORK_ERROR",
+  "SERVICE_UNAVAILABLE",
+  "INTERNAL_ERROR"
+]);
 var WaveError = class extends Error {
   code;
   statusCode;
@@ -213,10 +229,25 @@ var WaveError = class extends Error {
     this.details = details;
     this.retryable = this.isRetryable(statusCode, code);
   }
+  /**
+   * Determine whether an error is safe to retry.
+   *
+   * Conservative by design: only transient, server-side or throttling
+   * conditions are retryable. Client errors (4xx other than 408/429) are
+   * treated as permanent so we never re-issue a request the server has
+   * already rejected on its merits (e.g. 400/401/403/404).
+   */
   isRetryable(statusCode, code) {
-    if (statusCode === 429) return true;
-    if (statusCode >= 500 && statusCode < 600) return true;
-    if (["TIMEOUT", "NETWORK_ERROR", "SERVICE_UNAVAILABLE"].includes(code)) {
+    if (statusCode >= 500) {
+      return true;
+    }
+    if (statusCode === 429 || statusCode === 408) {
+      return true;
+    }
+    if (statusCode === 0) {
+      return true;
+    }
+    if (RETRYABLE_ERROR_CODES.has(code)) {
       return true;
     }
     return false;
@@ -250,6 +281,17 @@ var WaveClient = class extends import_eventemitter3.EventEmitter {
     if (config.telemetry) {
       initTelemetry(config.telemetry);
     }
+  }
+  /**
+   * Connection info for transports that bypass the HTTP client (e.g. the Realtime WebSocket plane,
+   * which can't route each frame through request()). Exposes the caller's own API key + base URL.
+   */
+  getConnectionInfo() {
+    return {
+      apiKey: this.config.apiKey,
+      baseUrl: this.config.baseUrl,
+      organizationId: this.config.organizationId || void 0
+    };
   }
   // ==========================================================================
   // HTTP Methods
@@ -433,43 +475,61 @@ var WaveClient = class extends import_eventemitter3.EventEmitter {
     return headers;
   }
   /**
-   * Parse error response
+   * Parse an error response body into a WaveError (or subclass).
+   *
+   * Reads the JSON error envelope (see WaveAPIErrorResponse) when present and
+   * tolerates non-JSON / empty bodies, falling back to the HTTP status text.
+   * The returned error's `retryable` flag is derived from status + code via
+   * WaveError's own logic, so callers can branch on `error.retryable`.
    */
   async parseErrorResponse(response) {
+    const statusCode = response.status;
     const requestId = response.headers.get("x-request-id") || void 0;
+    let code = `HTTP_${statusCode}`;
+    let message = response.statusText || `Request failed with status ${statusCode}`;
+    let details;
+    let bodyRequestId;
     try {
       const body = await response.json();
-      return new WaveError(
-        body.error?.message || `HTTP ${response.status}`,
-        body.error?.code || `HTTP_${response.status}`,
-        response.status,
-        requestId || body.request_id,
-        body.error?.details
-      );
+      if (body && typeof body === "object" && body.error) {
+        code = body.error.code || code;
+        message = body.error.message || message;
+        details = body.error.details;
+      }
+      bodyRequestId = body?.request_id;
     } catch {
-      return new WaveError(
-        `HTTP ${response.status}: ${response.statusText}`,
-        `HTTP_${response.status}`,
-        response.status,
-        requestId
-      );
     }
+    return new WaveError(message, code, statusCode, requestId ?? bodyRequestId, details);
   }
   /**
-   * Parse Retry-After header
+   * Parse the `Retry-After` response header into a delay in **milliseconds**
+   * (the unit expected by `sleep()` and produced by `calculateBackoff()`).
+   *
+   * Supports both forms defined by RFC 7231:
+   *   - delta-seconds (e.g. `Retry-After: 120`)
+   *   - HTTP-date     (e.g. `Retry-After: Wed, 21 Oct 2025 07:28:00 GMT`)
+   *
+   * Falls back to the base backoff delay (1000ms) when the header is missing
+   * or malformed.
    */
   parseRetryAfter(response) {
-    const retryAfter = response.headers.get("retry-after");
-    if (!retryAfter) return 1e3;
-    const seconds = parseInt(retryAfter, 10);
-    if (!isNaN(seconds)) {
-      return seconds * 1e3;
+    const defaultDelayMs = 1e3;
+    const header = response.headers.get("retry-after");
+    if (!header) {
+      return defaultDelayMs;
     }
-    const date = new Date(retryAfter);
-    if (!isNaN(date.getTime())) {
-      return Math.max(0, date.getTime() - Date.now());
+    const trimmed = header.trim();
+    if (/^\d+$/.test(trimmed)) {
+      const seconds = Number(trimmed);
+      if (Number.isFinite(seconds)) {
+        return seconds * 1e3;
+      }
     }
-    return 1e3;
+    const dateMs = Date.parse(header);
+    if (!Number.isNaN(dateMs)) {
+      return Math.max(0, dateMs - Date.now());
+    }
+    return defaultDelayMs;
   }
   /**
    * Calculate exponential backoff delay
@@ -5544,6 +5604,221 @@ function createDrmAPI(client) {
   return new DrmAPI(client);
 }
 
+// src/realtime.ts
+var import_eventemitter32 = require("eventemitter3");
+var DEFAULT_WS = "wss://realtime.wave.online";
+function httpOrigin(wsUrl) {
+  return wsUrl.replace(/^ws/i, "http").replace(/\/+$/, "");
+}
+var RealtimeChannel = class extends import_eventemitter32.EventEmitter {
+  constructor(channel, apiKey, opts = {}) {
+    super();
+    this.channel = channel;
+    this.apiKey = apiKey;
+    this.opts = opts;
+    this.wsBase = (opts.url || DEFAULT_WS).replace(/\/+$/, "");
+    this.httpBase = httpOrigin(this.wsBase);
+    this.open();
+  }
+  channel;
+  apiKey;
+  opts;
+  ws = null;
+  closedByUser = false;
+  attempt = 0;
+  wsBase;
+  httpBase;
+  url() {
+    const u = new URL(`${this.wsBase}/v1/connect`);
+    u.searchParams.set("channel", this.channel);
+    if (this.opts.as) u.searchParams.set("as", this.opts.as);
+    u.searchParams.set("access_token", this.apiKey);
+    return u.toString();
+  }
+  open() {
+    const ws = new WebSocket(this.url());
+    this.ws = ws;
+    ws.addEventListener("open", () => {
+      this.attempt = 0;
+      this.emit("open");
+    });
+    ws.addEventListener("message", (ev) => {
+      let frame;
+      try {
+        frame = JSON.parse(typeof ev.data === "string" ? ev.data : "");
+      } catch {
+        return;
+      }
+      this.emit("message", frame);
+      if (frame.type === "join" && frame.member) this.emit("join", frame.member);
+      else if (frame.type === "leave" && frame.member) this.emit("leave", frame.member);
+      else if (frame.type === "presence" && frame.members) this.emit("presence", frame.members);
+      else if (frame.type === "welcome" && frame.members) this.emit("presence", frame.members);
+      else if (frame.type === "message" && frame.event) this.emit(frame.event, frame.data, frame);
+    });
+    ws.addEventListener("error", () => this.emit("error", new Error("realtime socket error")));
+    ws.addEventListener("close", (ev) => {
+      this.emit("close", { code: ev.code, reason: ev.reason });
+      if (!this.closedByUser && (this.opts.reconnect ?? true)) this.scheduleReconnect();
+    });
+  }
+  scheduleReconnect() {
+    const max = this.opts.maxBackoffMs ?? 15e3;
+    const delay = Math.min(max, 500 * 2 ** this.attempt++);
+    setTimeout(() => {
+      if (!this.closedByUser) this.open();
+    }, delay);
+  }
+  /** Publish an event to this channel over the socket (fire-and-forget). */
+  send(event, data) {
+    this.ws?.send(JSON.stringify({ op: "publish", event, data }));
+  }
+  /** Request the current presence list (arrives as a 'presence' event). */
+  requestPresence() {
+    this.ws?.send(JSON.stringify({ op: "presence" }));
+  }
+  /** Close the socket and stop reconnecting. */
+  close() {
+    this.closedByUser = true;
+    this.ws?.close();
+    this.removeAllListeners();
+  }
+};
+var RealtimeAPI = class {
+  apiKey;
+  wsBase;
+  httpBase;
+  constructor(client, opts = {}) {
+    const info = client.getConnectionInfo();
+    this.apiKey = info.apiKey;
+    this.wsBase = (opts.url || DEFAULT_WS).replace(/\/+$/, "");
+    this.httpBase = httpOrigin(this.wsBase);
+  }
+  /** Subscribe to a channel; returns a RealtimeChannel (EventEmitter). */
+  connect(channel, opts = {}) {
+    return new RealtimeChannel(channel, this.apiKey, { url: this.wsBase, ...opts });
+  }
+  /** Publish one event to a channel via REST (for producers that don't hold a socket). */
+  async publish(channel, event, data) {
+    const r = await fetch(`${this.httpBase}/v1/channels/${encodeURIComponent(channel)}/publish`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${this.apiKey}`, "content-type": "application/json" },
+      body: JSON.stringify({ event, data })
+    });
+    return await r.json();
+  }
+  /** Current presence for a channel (REST). */
+  async presence(channel) {
+    const r = await fetch(`${this.httpBase}/v1/channels/${encodeURIComponent(channel)}/presence`, {
+      headers: { Authorization: `Bearer ${this.apiKey}` }
+    });
+    return await r.json();
+  }
+  /** Recent event history for a channel (REST, last-N ≤ 50). */
+  async history(channel, limit = 50) {
+    const r = await fetch(`${this.httpBase}/v1/channels/${encodeURIComponent(channel)}/history?limit=${limit}`, {
+      headers: { Authorization: `Bearer ${this.apiKey}` }
+    });
+    return await r.json();
+  }
+};
+function createRealtimeAPI(client, opts) {
+  return new RealtimeAPI(client, opts);
+}
+
+// src/mail.ts
+var MailAPI = class {
+  client;
+  basePath = "/v1";
+  constructor(client) {
+    this.client = client;
+  }
+  /**
+   * Send an email.
+   *
+   * Sub-cent sends are x402-USDC-settled; without a settled receipt the server
+   * returns 402.
+   */
+  async send(request) {
+    return this.client.post(`${this.basePath}/mail/send`, request);
+  }
+  /** Reply to an existing message by its `messageId`. */
+  async reply(messageId, body) {
+    return this.client.post(
+      `${this.basePath}/mail/reply/${messageId}`,
+      body
+    );
+  }
+  /** Full-text search across mail threads. */
+  async search(q) {
+    return this.client.get(`${this.basePath}/mail/search`, {
+      params: { q }
+    });
+  }
+  /** Send a transcript email (the E1 comms productization surface). */
+  async transcriptEmail(request) {
+    return this.client.post(
+      `${this.basePath}/transcripts/email`,
+      request
+    );
+  }
+  /** Send an SMS message. */
+  async sms(request) {
+    return this.client.post(`${this.basePath}/sms/send`, request);
+  }
+};
+function createMailAPI(client) {
+  return new MailAPI(client);
+}
+
+// src/meter.ts
+var MeterAPI = class {
+  client;
+  basePath = "/v1/meter";
+  constructor(client) {
+    this.client = client;
+  }
+  /** Fetch ledger rows for the given time window and optional channel filter. */
+  async ledger(params) {
+    return this.client.get(`${this.basePath}/ledger`, {
+      params
+    });
+  }
+  /** Fetch aggregated rollup totals for the given period. */
+  async rollup(params) {
+    return this.client.get(`${this.basePath}/ledger/rollup`, {
+      params
+    });
+  }
+};
+function createMeterAPI(client) {
+  return new MeterAPI(client);
+}
+
+// src/perception.ts
+var PerceptionAPI = class {
+  client;
+  basePath = "/v1/perception";
+  constructor(client) {
+    this.client = client;
+  }
+  /** Open a perception session over any transport. Returns the receive descriptor + subscription id + meter binding. */
+  async subscribe(request) {
+    return this.client.post(`${this.basePath}/subscribe`, request);
+  }
+  /** Close a subscription (idempotent control-plane close ack). `id` is the `psub_…` from {@link subscribe}. */
+  async unsubscribe(subscriptionId) {
+    await this.client.delete(`${this.basePath}/subscribe/${subscriptionId}`);
+  }
+  /** The single populated receive URL for a subscription, regardless of transport (convenience for receivers). */
+  static receiveUrl(sub) {
+    return sub.receive.whep_url ?? sub.receive.srt_url;
+  }
+};
+function createPerceptionAPI(client) {
+  return new PerceptionAPI(client);
+}
+
 // src/index.ts
 var Wave = class {
   client;
@@ -5588,6 +5863,14 @@ var Wave = class {
   // Cross-cutting
   notifications;
   drm;
+  // Realtime — live control & event plane (WebSocket)
+  realtime;
+  // Mail API (E5 — comms productization)
+  mail;
+  // Meter API (E5 — comms productization, meter:read)
+  meter;
+  // Perception — agentic live-media subscribe() control plane (#85)
+  perception;
   constructor(config) {
     this.client = new WaveClient(config);
     this.clips = new ClipsAPI(this.client);
@@ -5625,6 +5908,10 @@ var Wave = class {
     this.usb = new UsbAPI(this.client);
     this.notifications = new NotificationsAPI(this.client);
     this.drm = new DrmAPI(this.client);
+    this.realtime = new RealtimeAPI(this.client);
+    this.mail = new MailAPI(this.client);
+    this.meter = new MeterAPI(this.client);
+    this.perception = new PerceptionAPI(this.client);
   }
 };
 function createWave(config) {
@@ -5647,9 +5934,12 @@ var index_default = Wave;
   EditorAPI,
   FleetAPI,
   GhostAPI,
+  MailAPI,
   MarketplaceAPI,
   MeshAPI,
+  MeterAPI,
   NotificationsAPI,
+  PerceptionAPI,
   PhoneAPI,
   PipelineAPI,
   PodcastAPI,
@@ -5657,6 +5947,8 @@ var index_default = Wave;
   PulseAPI,
   QrAPI,
   RateLimitError,
+  RealtimeAPI,
+  RealtimeChannel,
   SceneAPI,
   SearchAPI,
   SentimentAPI,
@@ -5687,15 +5979,19 @@ var index_default = Wave;
   createEditorAPI,
   createFleetAPI,
   createGhostAPI,
+  createMailAPI,
   createMarketplaceAPI,
   createMeshAPI,
+  createMeterAPI,
   createNotificationsAPI,
+  createPerceptionAPI,
   createPhoneAPI,
   createPipelineAPI,
   createPodcastAPI,
   createPrismAPI,
   createPulseAPI,
   createQrAPI,
+  createRealtimeAPI,
   createSceneAPI,
   createSearchAPI,
   createSentimentAPI,

@@ -1,3 +1,10 @@
+import { WaveClient } from './client.js';
+import { CreateTranscriptionRequest, Transcription, UpdateTranscriptionRequest, ListTranscriptionsParams, TranscriptionSegment, Speaker, TranscriptExportFormat, TranscriptionModel } from './transcribe-types.js';
+export { TranscriptionStatus, TranscriptionWord } from './transcribe-types.js';
+import { PaginatedResponse, PaginationParams } from './client-types.js';
+import 'eventemitter3';
+import './telemetry.js';
+
 /**
  * WAVE SDK - Transcribe API
  *
@@ -6,10 +13,8 @@
  * NOTE: This is a client SDK. All authorization checks are performed server-side.
  * The API will return 403 Forbidden if the user lacks required permissions.
  */
-import type { WaveClient, PaginationParams, PaginatedResponse } from './client';
-export * from './transcribe-types';
-import type { CreateTranscriptionRequest, ListTranscriptionsParams, Speaker, TranscriptExportFormat, Transcription, TranscriptionModel, TranscriptionSegment, UpdateTranscriptionRequest } from './transcribe-types';
-export declare class TranscribeAPI {
+
+declare class TranscribeAPI {
     private readonly client;
     private readonly basePath;
     constructor(client: WaveClient);
@@ -215,4 +220,6 @@ export declare class TranscribeAPI {
 /**
  * Create a Transcribe API instance
  */
-export declare function createTranscribeAPI(client: WaveClient): TranscribeAPI;
+declare function createTranscribeAPI(client: WaveClient): TranscribeAPI;
+
+export { CreateTranscriptionRequest, ListTranscriptionsParams, Speaker, TranscribeAPI, TranscriptExportFormat, Transcription, TranscriptionModel, TranscriptionSegment, UpdateTranscriptionRequest, createTranscribeAPI };

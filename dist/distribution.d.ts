@@ -1,12 +1,17 @@
+import { WaveClient } from './client.js';
+import { Timestamps, PaginationParams, PaginatedResponse } from './client-types.js';
+import 'eventemitter3';
+import './telemetry.js';
+
 /**
  * WAVE SDK - Distribution API
  *
  * Social media distribution, simulcasting, and scheduled publishing.
  */
-import type { WaveClient, PaginationParams, PaginatedResponse, Timestamps } from "./client";
-export type DestinationType = "youtube" | "twitch" | "facebook" | "linkedin" | "twitter" | "tiktok" | "instagram" | "custom_rtmp";
-export type DestinationStatus = "connected" | "disconnected" | "streaming" | "error";
-export interface Destination extends Timestamps {
+
+type DestinationType = "youtube" | "twitch" | "facebook" | "linkedin" | "twitter" | "tiktok" | "instagram" | "custom_rtmp";
+type DestinationStatus = "connected" | "disconnected" | "streaming" | "error";
+interface Destination extends Timestamps {
     id: string;
     organization_id: string;
     name: string;
@@ -17,7 +22,7 @@ export interface Destination extends Timestamps {
     platform_channel_id?: string;
     auto_start: boolean;
 }
-export interface SimulcastSession {
+interface SimulcastSession {
     id: string;
     stream_id: string;
     destinations: SimulcastTarget[];
@@ -25,13 +30,13 @@ export interface SimulcastSession {
     started_at: string;
     stopped_at?: string;
 }
-export interface SimulcastTarget {
+interface SimulcastTarget {
     destination_id: string;
     status: "streaming" | "error" | "pending";
     viewer_count?: number;
     error_message?: string;
 }
-export interface ScheduledPost extends Timestamps {
+interface ScheduledPost extends Timestamps {
     id: string;
     organization_id: string;
     title: string;
@@ -42,7 +47,7 @@ export interface ScheduledPost extends Timestamps {
     status: "scheduled" | "publishing" | "published" | "failed";
     published_urls?: Record<string, string>;
 }
-export interface AddDestinationRequest {
+interface AddDestinationRequest {
     name: string;
     type: DestinationType;
     rtmp_url?: string;
@@ -50,7 +55,7 @@ export interface AddDestinationRequest {
     platform_channel_id?: string;
     auto_start?: boolean;
 }
-export interface ListDestinationsParams extends PaginationParams {
+interface ListDestinationsParams extends PaginationParams {
     type?: DestinationType;
     status?: DestinationStatus;
 }
@@ -63,7 +68,7 @@ export interface ListDestinationsParams extends PaginationParams {
  * await wave.distribution.startSimulcast(streamId, [destId1, destId2]);
  * ```
  */
-export declare class DistributionAPI {
+declare class DistributionAPI {
     private readonly client;
     private readonly basePath;
     constructor(client: WaveClient);
@@ -89,4 +94,6 @@ export declare class DistributionAPI {
         destination_id?: string;
     }): Promise<Record<string, unknown>>;
 }
-export declare function createDistributionAPI(client: WaveClient): DistributionAPI;
+declare function createDistributionAPI(client: WaveClient): DistributionAPI;
+
+export { type AddDestinationRequest, type Destination, type DestinationStatus, type DestinationType, DistributionAPI, type ListDestinationsParams, type ScheduledPost, type SimulcastSession, type SimulcastTarget, createDistributionAPI };

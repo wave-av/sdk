@@ -1,3 +1,10 @@
+import { WaveClient } from './client.js';
+import { StartAssistantRequest, AIAssistant, UpdateAssistantRequest, AssistantMode, AssistantStats, ListSuggestionsParams, AISuggestion, SceneRecommendation, GraphicsSuggestion, AudioMixSuggestion, ModerationAlert, EngagementInsight } from './studio-ai-types.js';
+export { AssistantConfig, SuggestionAction, SuggestionPriority, SuggestionStatus } from './studio-ai-types.js';
+import { PaginationParams, PaginatedResponse } from './client-types.js';
+import 'eventemitter3';
+import './telemetry.js';
+
 /**
  * WAVE SDK - Studio AI API
  *
@@ -6,10 +13,8 @@
  * NOTE: This is a client SDK. All authorization checks are performed server-side.
  * The API will return 403 Forbidden if the user lacks required permissions.
  */
-import type { WaveClient, PaginationParams, PaginatedResponse } from './client';
-import type { AIAssistant, AISuggestion, AssistantMode, AssistantStats, AudioMixSuggestion, EngagementInsight, GraphicsSuggestion, ListSuggestionsParams, ModerationAlert, SceneRecommendation, StartAssistantRequest, UpdateAssistantRequest } from './studio-ai-types';
-export * from './studio-ai-types';
-export declare class StudioAIAPI {
+
+declare class StudioAIAPI {
     private readonly client;
     private readonly basePath;
     constructor(client: WaveClient);
@@ -215,4 +220,6 @@ export declare class StudioAIAPI {
 /**
  * Create a Studio AI API instance
  */
-export declare function createStudioAIAPI(client: WaveClient): StudioAIAPI;
+declare function createStudioAIAPI(client: WaveClient): StudioAIAPI;
+
+export { AIAssistant, AISuggestion, AssistantMode, AssistantStats, AudioMixSuggestion, EngagementInsight, GraphicsSuggestion, ListSuggestionsParams, ModerationAlert, SceneRecommendation, StartAssistantRequest, StudioAIAPI, UpdateAssistantRequest, createStudioAIAPI };

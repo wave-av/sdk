@@ -1,12 +1,17 @@
+import { WaveClient } from './client.js';
+import { PaginationParams, PaginatedResponse, Timestamps } from './client-types.js';
+import 'eventemitter3';
+import './telemetry.js';
+
 /**
  * WAVE SDK - Marketplace API
  *
  * Template, plugin, and asset marketplace.
  */
-import type { WaveClient, PaginationParams, PaginatedResponse, Timestamps } from "./client";
-export type ItemType = "template" | "plugin" | "graphic" | "transition" | "audio_effect" | "theme";
-export type ItemStatus = "draft" | "review" | "published" | "rejected" | "deprecated";
-export interface MarketplaceItem extends Timestamps {
+
+type ItemType = "template" | "plugin" | "graphic" | "transition" | "audio_effect" | "theme";
+type ItemStatus = "draft" | "review" | "published" | "rejected" | "deprecated";
+interface MarketplaceItem extends Timestamps {
     id: string;
     name: string;
     description: string;
@@ -24,7 +29,7 @@ export interface MarketplaceItem extends Timestamps {
     tags?: string[];
     category: string;
 }
-export interface InstalledItem {
+interface InstalledItem {
     id: string;
     item_id: string;
     organization_id: string;
@@ -32,14 +37,14 @@ export interface InstalledItem {
     installed_at: string;
     auto_update: boolean;
 }
-export interface Review extends Timestamps {
+interface Review extends Timestamps {
     id: string;
     item_id: string;
     user_id: string;
     rating: number;
     comment: string;
 }
-export interface ListItemsParams extends PaginationParams {
+interface ListItemsParams extends PaginationParams {
     type?: ItemType;
     category?: string;
     min_rating?: number;
@@ -48,7 +53,7 @@ export interface ListItemsParams extends PaginationParams {
     order_by?: string;
     order?: "asc" | "desc";
 }
-export interface PublishRequest {
+interface PublishRequest {
     name: string;
     description: string;
     type: ItemType;
@@ -68,7 +73,7 @@ export interface PublishRequest {
  * await wave.marketplace.install(items.data[0].id);
  * ```
  */
-export declare class MarketplaceAPI {
+declare class MarketplaceAPI {
     private readonly client;
     private readonly basePath;
     constructor(client: WaveClient);
@@ -87,4 +92,6 @@ export declare class MarketplaceAPI {
     }): Promise<Review>;
     search(query: string, params?: ListItemsParams): Promise<PaginatedResponse<MarketplaceItem>>;
 }
-export declare function createMarketplaceAPI(client: WaveClient): MarketplaceAPI;
+declare function createMarketplaceAPI(client: WaveClient): MarketplaceAPI;
+
+export { type InstalledItem, type ItemStatus, type ItemType, type ListItemsParams, MarketplaceAPI, type MarketplaceItem, type PublishRequest, type Review, createMarketplaceAPI };

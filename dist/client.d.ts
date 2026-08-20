@@ -1,101 +1,68 @@
+import { EventEmitter } from 'eventemitter3';
+import { TelemetryConfig } from './telemetry.js';
+import { WaveClientEvents, WaveClientConfig, RequestOptions } from './client-types.js';
+export { MediaType, Metadata, PaginatedResponse, PaginationParams, Timestamps, WaveAPIErrorResponse } from './client-types.js';
+
 /**
  * WAVE SDK - Base API Client
  *
  * Core HTTP client with authentication, rate limiting, and retry logic.
  */
-import { EventEmitter } from 'eventemitter3';
-import type { TelemetryConfig } from './telemetry';
+
 /**
  * SDK configuration options
  */
-export interface WaveClientConfig {
-    /** API key for authentication */
-    apiKey: string;
-    /** Organization ID for tenant isolation */
-    organizationId?: string;
-    /** Base URL for the API (default: https://api.wave.online) */
-    baseUrl?: string;
-    /** Request timeout in milliseconds (default: 30000) */
-    timeout?: number;
-    /** Maximum retry attempts for failed requests (default: 3) */
-    maxRetries?: number;
-    /** Enable debug logging */
-    debug?: boolean;
-    /** Custom headers to include in all requests */
-    customHeaders?: Record<string, string>;
-    /** Optional telemetry configuration for OpenTelemetry integration */
-    telemetry?: TelemetryConfig;
-}
 /**
  * Request options for individual API calls
  */
-export interface RequestOptions extends RequestInit {
-    /** Skip retry logic for this request */
-    noRetry?: boolean;
-    /** Custom timeout for this request */
-    timeout?: number;
-    /** Query parameters */
-    params?: Record<string, string | number | boolean | undefined>;
-}
 /**
  * API error response structure
  */
-export interface WaveAPIErrorResponse {
-    error: {
-        code: string;
-        message: string;
-        details?: Record<string, unknown>;
-    };
-    request_id?: string;
-}
 /**
  * WAVE SDK Error class
  */
-export declare class WaveError extends Error {
+declare class WaveError extends Error {
     readonly code: string;
     readonly statusCode: number;
     readonly requestId?: string;
     readonly details?: Record<string, unknown>;
     readonly retryable: boolean;
     constructor(message: string, code: string, statusCode: number, requestId?: string, details?: Record<string, unknown>);
+    /**
+     * Determine whether an error is safe to retry.
+     *
+     * Conservative by design: only transient, server-side or throttling
+     * conditions are retryable. Client errors (4xx other than 408/429) are
+     * treated as permanent so we never re-issue a request the server has
+     * already rejected on its merits (e.g. 400/401/403/404).
+     */
     private isRetryable;
 }
 /**
  * Rate limit error with retry information
  */
-export declare class RateLimitError extends WaveError {
+declare class RateLimitError extends WaveError {
     readonly retryAfter: number;
     constructor(message: string, retryAfter: number, requestId?: string);
 }
-export interface WaveClientEvents {
-    'request.start': (url: string, method: string) => void;
-    'request.success': (url: string, method: string, duration: number) => void;
-    'request.error': (url: string, method: string, error: Error) => void;
-    'request.retry': (url: string, method: string, attempt: number, delay: number) => void;
-    'rate_limit.hit': (retryAfter: number) => void;
-}
 /**
  * WAVE API Base Client
- *
- * Handles authentication, rate limiting, and retry logic for all API requests.
- *
- * @example
- * ```typescript
- * const client = new WaveClient({
- *   apiKey: process.env.WAVE_API_KEY!,
- *   organizationId: 'org_123',
- * });
- *
- * // Make a request
- * const response = await client.get('/v1/clips');
- * ```
  */
-export declare class WaveClient extends EventEmitter<WaveClientEvents> {
+declare class WaveClient extends EventEmitter<WaveClientEvents> {
     protected readonly config: Required<Omit<WaveClientConfig, 'customHeaders' | 'telemetry'>> & {
         customHeaders: Record<string, string>;
         telemetry?: TelemetryConfig;
     };
     constructor(config: WaveClientConfig);
+    /**
+     * Connection info for transports that bypass the HTTP client (e.g. the Realtime WebSocket plane,
+     * which can't route each frame through request()). Exposes the caller's own API key + base URL.
+     */
+    getConnectionInfo(): {
+        apiKey: string;
+        baseUrl: string;
+        organizationId?: string;
+    };
     /**
      * Make a GET request
      */
@@ -133,11 +100,24 @@ export declare class WaveClient extends EventEmitter<WaveClientEvents> {
      */
     private buildHeaders;
     /**
-     * Parse error response
+     * Parse an error response body into a WaveError (or subclass).
+     *
+     * Reads the JSON error envelope (see WaveAPIErrorResponse) when present and
+     * tolerates non-JSON / empty bodies, falling back to the HTTP status text.
+     * The returned error's `retryable` flag is derived from status + code via
+     * WaveError's own logic, so callers can branch on `error.retryable`.
      */
     private parseErrorResponse;
     /**
-     * Parse Retry-After header
+     * Parse the `Retry-After` response header into a delay in **milliseconds**
+     * (the unit expected by `sleep()` and produced by `calculateBackoff()`).
+     *
+     * Supports both forms defined by RFC 7231:
+     *   - delta-seconds (e.g. `Retry-After: 120`)
+     *   - HTTP-date     (e.g. `Retry-After: Wed, 21 Oct 2025 07:28:00 GMT`)
+     *
+     * Falls back to the base backoff delay (1000ms) when the header is missing
+     * or malformed.
      */
     private parseRetryAfter;
     /**
@@ -156,36 +136,6 @@ export declare class WaveClient extends EventEmitter<WaveClientEvents> {
 /**
  * Create a new WAVE client instance
  */
-export declare function createClient(config: WaveClientConfig): WaveClient;
-/**
- * Standard pagination parameters
- */
-export interface PaginationParams {
-    limit?: number;
-    offset?: number;
-    cursor?: string;
-}
-/**
- * Standard paginated response
- */
-export interface PaginatedResponse<T> {
-    data: T[];
-    total: number;
-    has_more: boolean;
-    next_cursor?: string;
-}
-/**
- * Media types supported by WAVE
- */
-export type MediaType = 'video' | 'audio' | 'image';
-/**
- * Standard timestamp fields
- */
-export interface Timestamps {
-    created_at: string;
-    updated_at: string;
-}
-/**
- * Standard metadata object
- */
-export type Metadata = Record<string, string | number | boolean>;
+declare function createClient(config: WaveClientConfig): WaveClient;
+
+export { RateLimitError, RequestOptions, WaveClient, WaveClientConfig, WaveClientEvents, WaveError, createClient };

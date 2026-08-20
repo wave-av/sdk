@@ -1,3 +1,10 @@
+import { WaveClient } from './client.js';
+import { CreateProjectRequest, EditorProject, UpdateProjectRequest, ListProjectsParams, TrackType, Track, AddElementRequest, TimelineElement, Transition, Effect, RenderOptions, RenderJob } from './editor-types.js';
+export { EffectType, Keyframe, ProjectStatus, TextAnimation, TextOverlay, TransitionType } from './editor-types.js';
+import { PaginatedResponse, PaginationParams } from './client-types.js';
+import 'eventemitter3';
+import './telemetry.js';
+
 /**
  * WAVE SDK - Editor API
  *
@@ -6,10 +13,8 @@
  * NOTE: This is a client SDK. All authorization checks are performed server-side.
  * The API will return 403 Forbidden if the user lacks required permissions.
  */
-import type { WaveClient, PaginationParams, PaginatedResponse } from './client';
-export * from './editor-types';
-import type { AddElementRequest, CreateProjectRequest, EditorProject, Effect, ListProjectsParams, RenderJob, RenderOptions, TimelineElement, Track, TrackType, Transition, UpdateProjectRequest } from './editor-types';
-export declare class EditorAPI {
+
+declare class EditorAPI {
     private readonly client;
     private readonly basePath;
     constructor(client: WaveClient);
@@ -203,4 +208,6 @@ export declare class EditorAPI {
 /**
  * Create an Editor API instance
  */
-export declare function createEditorAPI(client: WaveClient): EditorAPI;
+declare function createEditorAPI(client: WaveClient): EditorAPI;
+
+export { AddElementRequest, CreateProjectRequest, EditorAPI, EditorProject, Effect, ListProjectsParams, RenderJob, RenderOptions, TimelineElement, Track, TrackType, Transition, UpdateProjectRequest, createEditorAPI };

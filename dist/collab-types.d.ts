@@ -1,3 +1,6 @@
+import { Timestamps, Metadata, PaginationParams } from './client-types.js';
+import './telemetry.js';
+
 /**
  * WAVE SDK - Collab API
  *
@@ -6,23 +9,23 @@
  * NOTE: This is a client SDK. All authorization checks are performed server-side.
  * The API will return 403 Forbidden if the user lacks required permissions.
  */
-import type { PaginationParams, Timestamps, Metadata } from './client';
+
 /**
  * Collaboration room status
  */
-export type RoomStatus = 'active' | 'closed' | 'archived';
+type RoomStatus = 'active' | 'closed' | 'archived';
 /**
  * Participant role in collaboration
  */
-export type ParticipantRole = 'owner' | 'editor' | 'commenter' | 'viewer';
+type ParticipantRole = 'owner' | 'editor' | 'commenter' | 'viewer';
 /**
  * Presence status
  */
-export type PresenceStatus = 'online' | 'away' | 'busy' | 'offline';
+type PresenceStatus = 'online' | 'away' | 'busy' | 'offline';
 /**
  * Collaboration room
  */
-export interface CollabRoom extends Timestamps {
+interface CollabRoom extends Timestamps {
     id: string;
     organization_id: string;
     name: string;
@@ -40,7 +43,7 @@ export interface CollabRoom extends Timestamps {
 /**
  * Room settings
  */
-export interface RoomSettings {
+interface RoomSettings {
     voice_enabled: boolean;
     video_enabled: boolean;
     screen_share_enabled: boolean;
@@ -52,7 +55,7 @@ export interface RoomSettings {
 /**
  * Room participant
  */
-export interface Participant extends Timestamps {
+interface Participant extends Timestamps {
     id: string;
     room_id: string;
     user_id: string;
@@ -67,7 +70,7 @@ export interface Participant extends Timestamps {
 /**
  * Participant permissions
  */
-export interface ParticipantPermissions {
+interface ParticipantPermissions {
     can_edit: boolean;
     can_comment: boolean;
     can_invite: boolean;
@@ -77,7 +80,7 @@ export interface ParticipantPermissions {
 /**
  * Cursor position for presence
  */
-export interface CursorPosition {
+interface CursorPosition {
     x: number;
     y: number;
     element_id?: string;
@@ -86,7 +89,7 @@ export interface CursorPosition {
 /**
  * Selection range
  */
-export interface Selection {
+interface Selection {
     start: number;
     end: number;
     element_id?: string;
@@ -95,7 +98,7 @@ export interface Selection {
 /**
  * Comment
  */
-export interface Comment extends Timestamps {
+interface Comment extends Timestamps {
     id: string;
     room_id: string;
     user_id: string;
@@ -115,7 +118,7 @@ export interface Comment extends Timestamps {
 /**
  * Reaction
  */
-export interface Reaction {
+interface Reaction {
     emoji: string;
     user_id: string;
     created_at: string;
@@ -123,7 +126,7 @@ export interface Reaction {
 /**
  * Annotation
  */
-export interface Annotation extends Timestamps {
+interface Annotation extends Timestamps {
     id: string;
     room_id: string;
     user_id: string;
@@ -137,7 +140,7 @@ export interface Annotation extends Timestamps {
 /**
  * Create room request
  */
-export interface CreateRoomRequest {
+interface CreateRoomRequest {
     name: string;
     description?: string;
     resource_type: 'project' | 'clip' | 'document' | 'stream';
@@ -150,7 +153,7 @@ export interface CreateRoomRequest {
 /**
  * Update room request
  */
-export interface UpdateRoomRequest {
+interface UpdateRoomRequest {
     name?: string;
     description?: string;
     settings?: Partial<RoomSettings>;
@@ -159,7 +162,7 @@ export interface UpdateRoomRequest {
 /**
  * Invite request
  */
-export interface InviteRequest {
+interface InviteRequest {
     email?: string;
     user_id?: string;
     role: ParticipantRole;
@@ -168,37 +171,10 @@ export interface InviteRequest {
 /**
  * List rooms params
  */
-export interface ListRoomsParams extends PaginationParams {
+interface ListRoomsParams extends PaginationParams {
     status?: RoomStatus;
     resource_type?: 'project' | 'clip' | 'document' | 'stream';
     resource_id?: string;
 }
-/**
- * Collab API client
- *
- * All operations require appropriate permissions. Authorization is enforced
- * server-side - the API returns 403 if the authenticated user lacks access.
- *
- * @example
- * ```typescript
- * import { WaveClient } from '@wave/sdk';
- * import { CollabAPI } from '@wave/sdk/collab';
- *
- * const client = new WaveClient({ apiKey: 'your-api-key' });
- * const collab = new CollabAPI(client);
- *
- * // Create a collaboration room for a project
- * const room = await collab.createRoom({
- *   name: 'Project Review',
- *   resource_type: 'project',
- *   resource_id: 'project_123',
- *   settings: {
- *     voice_enabled: true,
- *     annotations_enabled: true,
- *   },
- * });
- *
- * // Get join token for real-time connection
- * const token = await collab.getJoinToken(room.id);
- * ```
- */
+
+export type { Annotation, CollabRoom, Comment, CreateRoomRequest, CursorPosition, InviteRequest, ListRoomsParams, Participant, ParticipantPermissions, ParticipantRole, PresenceStatus, Reaction, RoomSettings, RoomStatus, Selection, UpdateRoomRequest };

@@ -56,7 +56,7 @@ describe("@wave/sdk exports", () => {
     expect(typeof SDK.createWave).toBe("function");
   });
 
-  it("Wave class instantiates with all 34 API modules", () => {
+  it("Wave class instantiates with all 36 API modules", () => {
     const wave = new SDK.Wave({ apiKey: "test-key" });
 
     // Existing P3 (12)
@@ -104,6 +104,12 @@ describe("@wave/sdk exports", () => {
 
     // Perception (#85)
     expect(wave.perception).toBeInstanceOf(SDK.PerceptionAPI);
+
+    // Mail (E5)
+    expect(wave.mail).toBeInstanceOf(SDK.MailAPI);
+
+    // Meter (E5)
+    expect(wave.meter).toBeInstanceOf(SDK.MeterAPI);
   });
 
   // =========================================================================
@@ -151,6 +157,10 @@ describe("@wave/sdk exports", () => {
     "UsbAPI",
     // Perception (#85)
     "PerceptionAPI",
+    // Mail (E5)
+    "MailAPI",
+    // Meter (E5)
+    "MeterAPI",
   ];
 
   it.each(expectedAPIs)("exports %s class", (apiName) => {
@@ -195,6 +205,8 @@ describe("@wave/sdk exports", () => {
     "createSlidesAPI",
     "createUsbAPI",
     "createPerceptionAPI",
+    "createMailAPI",
+    "createMeterAPI",
   ];
 
   it.each(expectedFactories)("exports %s factory", (factoryName) => {
@@ -220,12 +232,12 @@ describe("@wave/sdk exports", () => {
   // Module count verification
   // =========================================================================
 
-  it("has exactly 35 API module classes (34 + Wave)", () => {
-    expect(expectedAPIs.length).toBe(34);
+  it("has exactly 36 API module classes (34 + 2 new E5)", () => {
+    expect(expectedAPIs.length).toBe(36);
   });
 
-  it("has exactly 34 factory functions", () => {
-    expect(expectedFactories.length).toBe(34);
+  it("has exactly 36 factory functions", () => {
+    expect(expectedFactories.length).toBe(36);
   });
 
   it("total named exports exceeds 80", () => {

@@ -1,13 +1,18 @@
+import { WaveClient } from './client.js';
+import { Timestamps, PaginationParams, PaginatedResponse } from './client-types.js';
+import 'eventemitter3';
+import './telemetry.js';
+
 /**
  * WAVE SDK - Slides API
  *
  * Presentation to video conversion with narration and transitions.
  */
-import type { WaveClient, PaginationParams, PaginatedResponse, Timestamps } from "./client";
-export type ConversionStatus = "pending" | "processing" | "ready" | "failed";
-export type SlideFormat = "pptx" | "pdf" | "google_slides" | "keynote";
-export type TransitionPreset = "none" | "fade" | "slide" | "zoom" | "morph";
-export interface Conversion extends Timestamps {
+
+type ConversionStatus = "pending" | "processing" | "ready" | "failed";
+type SlideFormat = "pptx" | "pdf" | "google_slides" | "keynote";
+type TransitionPreset = "none" | "fade" | "slide" | "zoom" | "morph";
+interface Conversion extends Timestamps {
     id: string;
     organization_id: string;
     title: string;
@@ -22,13 +27,13 @@ export interface Conversion extends Timestamps {
     progress_percent: number;
     error?: string;
 }
-export interface SlideNarration {
+interface SlideNarration {
     slide_index: number;
     text: string;
     voice_id?: string;
     duration_seconds?: number;
 }
-export interface ConvertRequest {
+interface ConvertRequest {
     title: string;
     input_url: string;
     input_format: SlideFormat;
@@ -47,7 +52,7 @@ export interface ConvertRequest {
  * const ready = await wave.slides.waitForReady(conversion.id);
  * ```
  */
-export declare class SlidesAPI {
+declare class SlidesAPI {
     private readonly client;
     private readonly basePath;
     constructor(client: WaveClient);
@@ -65,4 +70,6 @@ export declare class SlidesAPI {
         timeout?: number;
     }): Promise<Conversion>;
 }
-export declare function createSlidesAPI(client: WaveClient): SlidesAPI;
+declare function createSlidesAPI(client: WaveClient): SlidesAPI;
+
+export { type Conversion, type ConversionStatus, type ConvertRequest, type SlideFormat, type SlideNarration, SlidesAPI, type TransitionPreset, createSlidesAPI };

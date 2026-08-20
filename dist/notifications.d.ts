@@ -1,13 +1,18 @@
+import { WaveClient } from './client.js';
+import { PaginationParams, PaginatedResponse, Timestamps } from './client-types.js';
+import 'eventemitter3';
+import './telemetry.js';
+
 /**
  * WAVE SDK - Notifications API
  *
  * User notification preferences, delivery channels, and notification management.
  */
-import type { WaveClient, PaginationParams, PaginatedResponse, Timestamps } from "./client";
-export type NotificationChannel = "in_app" | "email" | "push" | "sms" | "slack" | "webhook";
-export type NotificationStatus = "unread" | "read" | "archived";
-export type NotificationPriority = "low" | "normal" | "high" | "urgent";
-export interface Notification extends Timestamps {
+
+type NotificationChannel = "in_app" | "email" | "push" | "sms" | "slack" | "webhook";
+type NotificationStatus = "unread" | "read" | "archived";
+type NotificationPriority = "low" | "normal" | "high" | "urgent";
+interface Notification extends Timestamps {
     id: string;
     user_id: string;
     type: string;
@@ -20,7 +25,7 @@ export interface Notification extends Timestamps {
     metadata?: Record<string, unknown>;
     read_at?: string;
 }
-export interface NotificationPreferences {
+interface NotificationPreferences {
     user_id: string;
     channels: Record<NotificationChannel, boolean>;
     categories: Record<string, {
@@ -34,7 +39,7 @@ export interface NotificationPreferences {
     };
     digest_frequency?: "realtime" | "hourly" | "daily" | "weekly";
 }
-export interface ListNotificationsParams extends PaginationParams {
+interface ListNotificationsParams extends PaginationParams {
     status?: NotificationStatus;
     type?: string;
     priority?: NotificationPriority;
@@ -52,7 +57,7 @@ export interface ListNotificationsParams extends PaginationParams {
  * const prefs = await wave.notifications.getPreferences();
  * ```
  */
-export declare class NotificationsAPI {
+declare class NotificationsAPI {
     private readonly client;
     private readonly basePath;
     constructor(client: WaveClient);
@@ -79,4 +84,6 @@ export declare class NotificationsAPI {
     /** Update notification preferences. */
     updatePreferences(preferences: Partial<NotificationPreferences>): Promise<NotificationPreferences>;
 }
-export declare function createNotificationsAPI(client: WaveClient): NotificationsAPI;
+declare function createNotificationsAPI(client: WaveClient): NotificationsAPI;
+
+export { type ListNotificationsParams, type Notification, type NotificationChannel, type NotificationPreferences, type NotificationPriority, type NotificationStatus, NotificationsAPI, createNotificationsAPI };
