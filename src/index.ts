@@ -338,6 +338,8 @@ export { DrmAPI, createDrmAPI } from "./drm";
 // Realtime — the live control & event plane (WebSocket)
 export { RealtimeAPI, RealtimeChannel, createRealtimeAPI } from "./realtime";
 export * from "./realtime-types";
+export { TranscriptAPI } from "./transcripts";
+export type { Transcript, TranscriptList, TranscriptMessage } from "./transcripts";
 
 // Mail API (E5 — comms productization)
 export {
@@ -452,6 +454,7 @@ import { UsbAPI } from "./usb";
 import { NotificationsAPI } from "./notifications";
 import { DrmAPI } from "./drm";
 import { RealtimeAPI } from "./realtime";
+import { TranscriptAPI } from "./transcripts";
 import { MailAPI } from "./mail";
 import { MeterAPI } from "./meter";
 import { PricingAPI } from "./pricing";
@@ -512,6 +515,9 @@ export class Wave {
 
   // Realtime — live control & event plane (WebSocket)
   public readonly realtime: RealtimeAPI;
+
+  // Transcripts — the voice-agent transcript (list + read over the transcripts/* surface)
+  public readonly transcripts: TranscriptAPI;
 
   // Mail API (E5 — comms productization)
   public readonly mail: MailAPI;
@@ -575,6 +581,9 @@ export class Wave {
 
     // Realtime
     this.realtime = new RealtimeAPI(this.client);
+
+    // Transcripts — the voice-agent transcript (list + read)
+    this.transcripts = new TranscriptAPI(this.client);
 
     // Mail (E5)
     this.mail = new MailAPI(this.client);

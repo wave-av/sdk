@@ -8,6 +8,8 @@
  */
 import { RuntimeClient } from "./runtime";
 import { listProducts, ProductClient } from "./products";
+import { TranscriptAPI } from "./transcripts";
+import { WaveClient } from "./client";
 
 export interface WaveCliOptions {
   baseUrl: string;
@@ -60,6 +62,21 @@ export async function runWaveCli(argv: string[], opts: WaveCliOptions): Promise<
       const pc = new ProductClient({ productId: id, token: opts.token });
       const res = await pc.call<unknown>(path, { method: "GET" });
       return { code: 0, out: JSON.stringify(res, null, 2) + "\n" };
+    }
+
+    case "transcripts": {
+      const [sub, org, room, session] = rest;
+      if (!opts.token) return { code: 2, out: "wave transcripts: an API key is required\n" };
+      const api = new TranscriptAPI(new WaveClient({ apiKey: opts.token, baseUrl: opts.baseUrl }));
+      if (sub === "list" && org) {
+        const res = await api.list(org);
+        return { code: 0, out: JSON.stringify(res, null, 2) + "\n" };
+      }
+      if (sub === "get" && org && room && session) {
+        const res = await api.get(org, room, session);
+        return { code: 0, out: JSON.stringify(res, null, 2) + "\n" };
+      }
+      return { code: 2, out: "usage: wave transcripts <list <org> | get <org> <room> <session>>\n" };
     }
 
     default:
