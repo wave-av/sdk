@@ -45,6 +45,286 @@ const synthesis = await wave.voice.synthesize({
 });
 ```
 
+## API modules — Core streaming
+
+| API | Access | Status | Description |
+| --- | --- | --- | --- |
+| `wave.pipeline` | `PipelineAPI` | lib | Live stream lifecycle, protocols, recordings, viewer metrics |
+| `wave.studio` | `StudioAPI` | planned | Multi-camera production, scenes, transitions, graphics, audio mixing |
+
+## API modules — Enterprise
+
+| API | Access | Status | Description |
+| --- | --- | --- | --- |
+| `wave.fleet` | `FleetAPI` | planned | Desktop Node fleet management, health, commands |
+| `wave.ghost` | `GhostAPI` | planned | AI auto-directing (Autopilot), suggestions, overrides |
+| `wave.mesh` | `MeshAPI` | planned | Multi-region failover, replication, topology |
+| `wave.edge` | `EdgeAPI` | sdk-surface | CDN, edge workers, cache, routing rules |
+| `wave.pulse` | `PulseAPI` | planned | Analytics, BI dashboards, revenue metrics |
+| `wave.prism` | `PrismAPI` | planned | Virtual Device Bridge (NDI/ONVIF/VISCA/Dante to USB UVC/UAC) |
+| `wave.zoom` | `ZoomAPI` | sdk-surface | Zoom meetings, rooms, recordings, RTMS |
+
+## API modules — Content & commerce
+
+| API | Access | Status | Description |
+| --- | --- | --- | --- |
+| `wave.clips` | `ClipsAPI` | lib | Video clips, exports, AI highlights |
+| `wave.editor` | `EditorAPI` | lib | Video editing, tracks, transitions, effects |
+| `wave.voice` | `VoiceAPI` | lib | Text-to-speech via `synthesize()`; voice-clone methods are SDK surface only |
+| `wave.phone` | `PhoneAPI` | planned | Voice calling, conferences, numbers |
+| `wave.collab` | `CollabAPI` | sdk-surface | Real-time collaboration rooms |
+| `wave.captions` | `CaptionsAPI` | lib | Auto-captions, translation, burn-in |
+| `wave.chapters` | `ChaptersAPI` | sdk-surface | Video chapters and markers |
+| `wave.studioAI` | `StudioAIAPI` | sdk-surface | AI production assistant, suggestions |
+| `wave.transcribe` | `TranscribeAPI` | lib | Transcription with speaker diarization |
+| `wave.sentiment` | `SentimentAPI` | sdk-surface | Sentiment and emotion analysis |
+| `wave.search` | `SearchAPI` | sdk-surface | Full-text, visual, and audio search |
+| `wave.scene` | `SceneAPI` | sdk-surface | AI scene detection and shot classification |
+| `wave.vault` | `VaultAPI` | planned | Recording storage, VOD, archive policies |
+| `wave.marketplace` | `MarketplaceAPI` | sdk-surface | Templates, plugins, graphics marketplace |
+| `wave.connect` | `ConnectAPI` | sdk-surface | Third-party integrations, webhooks |
+| `wave.distribution` | `DistributionAPI` | sdk-surface | Social simulcasting, scheduled posts |
+| `wave.desktop` | `DesktopAPI` | sdk-surface | Desktop Node app management |
+| `wave.signage` | `SignageAPI` | sdk-surface | Digital signage displays, playlists |
+| `wave.qr` | `QrAPI` | sdk-surface | Dynamic QR codes, analytics |
+| `wave.audience` | `AudienceAPI` | sdk-surface | Polls, Q&A, reactions, engagement |
+| `wave.creator` | `CreatorAPI` | planned | Monetization, subscriptions, tips, payouts |
+
+## API modules — Specialized
+
+| API | Access | Status | Description |
+| --- | --- | --- | --- |
+| `wave.podcast` | `PodcastAPI` | planned | Podcast episodes, RSS, distribution |
+| `wave.slides` | `SlidesAPI` | sdk-surface | Presentation-to-video conversion |
+| `wave.usb` | `UsbAPI` | sdk-surface | USB device relay and management |
+
+## API modules — Platform
+
+| API | Access | Status | Description |
+| --- | --- | --- | --- |
+| `wave.drm` | `DrmAPI` | sdk-surface | Digital Rights Management: content protection with Widevine, FairPlay, and PlayReady |
+| `wave.notifications` | `NotificationsAPI` | sdk-surface | User notification preferences, delivery channels, and notification management |
+| `wave.perception` | `PerceptionAPI` | sdk-surface | Agentic live-media perception: one `subscribe()` verb attaches an agent to any live stream |
+| `wave.realtime` | `RealtimeAPI` | sdk-surface | Control & event plane: presence, pub/sub broadcast, and the streaming-event bus |
+
+## What the Status column means
+
+`lib` — the TypeScript client surface exists AND a live fleet backend serves it today. `planned` — the client surface exists, the backend does not yet; calling it will not work against production. `sdk-surface` — the client module is exported and typed, but this repo's SSOT declares no backend status for it, so treat it as unproven. Statuses come from `.wave/repo.json`, the same file this README is generated from.
+
+## Product example — Streams (Pipeline)
+
+```typescript
+import { Wave } from "@wave-av/sdk";
+
+const wave = new Wave({ apiKey: process.env.WAVE_API_KEY! });
+
+const stream = await wave.pipeline.create({
+  title: "My Live Stream",
+  protocol: "webrtc",
+  recording_enabled: true,
+});
+await wave.pipeline.start(stream.id);
+const live = await wave.pipeline.waitForLive(stream.id);
+console.log(`Playback: ${live.playback_url}`);
+await wave.pipeline.stop(stream.id);
+```
+
+## Product example — Clips
+
+```typescript
+import { Wave } from "@wave-av/sdk";
+
+const wave = new Wave({ apiKey: process.env.WAVE_API_KEY! });
+
+const clip = await wave.clips.create({
+  title: "Best Moment",
+  source: { type: "stream", id: "stream_123", start_time: 120, end_time: 150 },
+});
+const ready = await wave.clips.waitForReady(clip.id);
+console.log(`Clip URL: ${ready.playback_url}`);
+```
+
+## Product example — Captions
+
+```typescript
+import { Wave } from "@wave-av/sdk";
+
+const wave = new Wave({ apiKey: process.env.WAVE_API_KEY! });
+
+const track = await wave.captions.generate({
+  media_id: "video_123",
+  media_type: "video",
+  language: "en",
+  speaker_diarization: true,
+});
+const ready = await wave.captions.waitForReady(track.id);
+await wave.captions.translate(ready.id, { target_language: "es" });
+```
+
+## Product example — Voice
+
+```typescript
+import { Wave } from "@wave-av/sdk";
+
+const wave = new Wave({ apiKey: process.env.WAVE_API_KEY! });
+
+const voices = await wave.voice.listVoices({ language: "en" });
+const result = await wave.voice.synthesize({
+  text: "Welcome to WAVE live streaming.",
+  voice_id: voices.data[0].id,
+  format: "mp3",
+});
+const audio = await wave.voice.waitForSynthesis(result.id);
+console.log(`Audio: ${audio.audio_url}`);
+```
+
+## Product example — Transcription
+
+```typescript
+import { Wave } from "@wave-av/sdk";
+
+const wave = new Wave({ apiKey: process.env.WAVE_API_KEY! });
+
+const job = await wave.transcribe.create({
+  source_type: "recording",
+  source_id: "rec_456",
+  language: "en",
+  speaker_diarization: true,
+});
+const result = await wave.transcribe.waitForReady(job.id);
+const text = await wave.transcribe.getText(result.id, { include_speakers: true });
+console.log(text);
+```
+
+## Product example — Editor
+
+```typescript
+import { Wave } from "@wave-av/sdk";
+
+const wave = new Wave({ apiKey: process.env.WAVE_API_KEY! });
+
+const project = await wave.editor.createProject({
+  name: "Highlight Reel",
+  width: 1920,
+  height: 1080,
+  frame_rate: 30,
+});
+const track = await wave.editor.addTrack(project.id, { name: "Main", type: "video" });
+await wave.editor.addElement(project.id, {
+  track_id: track.id,
+  type: "clip",
+  source_id: "clip_789",
+  start_time: 0,
+});
+const job = await wave.editor.render(project.id, { format: "mp4", quality: "high" });
+const rendered = await wave.editor.waitForRender(project.id, job.id);
+console.log(`Output: ${rendered.output_url}`);
+```
+
+## Configuration
+
+```typescript
+const wave = new Wave({
+  apiKey: "your-api-key", // Required
+  organizationId: "org_123", // Multi-tenant isolation
+  baseUrl: "https://api.wave.online", // Default
+  timeout: 30000, // Request timeout (ms)
+  maxRetries: 3, // Retry attempts
+  debug: false, // Debug logging
+});
+```
+
+## Individual API imports
+
+```typescript
+import { WaveClient, PipelineAPI, PrismAPI } from "@wave-av/sdk";
+
+const client = new WaveClient({ apiKey: "key" });
+const pipeline = new PipelineAPI(client);
+const prism = new PrismAPI(client);
+```
+
+## Error handling
+
+```typescript
+import { WaveError, RateLimitError } from "@wave-av/sdk";
+
+try {
+  await wave.pipeline.get("invalid-id");
+} catch (error) {
+  if (error instanceof RateLimitError) {
+    console.log(`Rate limited. Retry after ${error.retryAfter}ms`);
+  } else if (error instanceof WaveError) {
+    console.log(`${error.code}: ${error.message} (${error.statusCode})`);
+  }
+}
+```
+
+## Events
+
+```typescript
+wave.client.on("request.start", (url, method) => {
+  console.log(`${method} ${url}`);
+});
+
+wave.client.on("rate_limit.hit", (retryAfter) => {
+  console.log(`Rate limited. Waiting ${retryAfter}ms`);
+});
+```
+
+## Troubleshooting — Types not resolving from subpath imports
+
+Ensure your `tsconfig.json` uses `"moduleResolution": "node16"` or `"nodenext"`:
+
+## Troubleshooting — Types not resolving from subpath imports (fix)
+
+```json
+{
+  "compilerOptions": {
+    "module": "node16",
+    "moduleResolution": "node16"
+  }
+}
+```
+
+## Troubleshooting — Rate limit errors
+
+The SDK retries automatically with exponential backoff. To handle rate limits explicitly:
+
+## Troubleshooting — Rate limit errors (example)
+
+```typescript
+wave.client.on("rate_limit.hit", (retryAfter) => {
+  console.log(`Rate limited. Retry in ${retryAfter}ms`);
+});
+```
+
+## Troubleshooting — ESM vs CJS
+
+The SDK supports both ESM and CJS. If using CommonJS, ensure you're importing correctly:
+
+## Troubleshooting — ESM vs CJS (example)
+
+```javascript
+const { Wave } = require("@wave-av/sdk");
+```
+
+## Requirements
+
+- Node.js 18+ (`engines.node` is `&gt;=18.0.0`)
+- TypeScript 4.7+ for subpath type resolution (`moduleResolution: node16`); this package is built with TypeScript 5.9
+
+## Related packages
+
+| Package | Description |
+| --- | --- |
+| [@wave-av/adk](https://www.npmjs.com/package/@wave-av/adk) | Agent Developer Kit for building AI video agents |
+| [@wave-av/mcp-server](https://www.npmjs.com/package/@wave-av/mcp-server) | MCP server for Claude, Cursor, Windsurf |
+| [@wave-av/cli](https://www.npmjs.com/package/@wave-av/cli) | Command-line interface |
+| [@wave-av/create-app](https://www.npmjs.com/package/@wave-av/create-app) | Scaffold a new project |
+| [@wave-av/workflow-sdk](https://www.npmjs.com/package/@wave-av/workflow-sdk) | Workflow orchestration |
+| [OpenAPI spec](https://github.com/wave-av/api-spec) | Full API specification |
+
 ## Capabilities
 - **Pricing Pages** — create/list/read tier manifests (pricing.wave.online/<slug> hosted pages; scopes pricing:write/pricing:read)
 
