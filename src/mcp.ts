@@ -9,6 +9,8 @@
 
 import { RuntimeClient } from "./runtime";
 import { listProducts } from "./products";
+import { TranscriptAPI } from "./transcripts";
+import { WaveClient } from "./client";
 import { createInterface } from "node:readline";
 
 export interface McpToolDef {
@@ -42,7 +44,36 @@ export function waveMcpTools(): McpToolDef[] {
       description: "List every WAVE product surface (id, phase, surface URL) — the catalog that drives the product plane",
       inputSchema: { type: "object", properties: {} },
     },
+    {
+      name: "wave_transcripts_list",
+      description: "List the voice-agent transcript keys recorded for an org",
+      inputSchema: {
+        type: "object",
+        properties: { org: { type: "string", description: "The org id" } },
+        required: ["org"],
+      },
+    },
+    {
+      name: "wave_transcripts_get",
+      description: "Read one voice-agent session transcript (messages: system + alternating user/assistant)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          org: { type: "string", description: "The org id" },
+          room: { type: "string", description: "The room id" },
+          session: { type: "string", description: "The session id" },
+        },
+        required: ["org", "room", "session"],
+      },
+    },
   ];
+}
+
+/** Resolve a TranscriptAPI from WAVE_API_KEY (or the runtime token) + api.wave.online. Null when no key. */
+function transcriptApi(): TranscriptAPI | null {
+  const key = process.env.WAVE_API_KEY ?? process.env.WAVE_RUNTIME_TOKEN;
+  if (!key) return null;
+  return new TranscriptAPI(new WaveClient({ apiKey: key, baseUrl: process.env.WAVE_API_URL ?? "https://api.wave.online" }));
 }
 
 interface JsonRpcRequest {
@@ -101,6 +132,25 @@ export async function handleMcpMessage(client: RuntimeClient, message: unknown):
       if (name === "wave_products") {
         const rows = listProducts().map((p) => `${p.id}\t${p.phase}\t${p.surface}`);
         return result(req.id, { content: textContent(rows.join("\n")), isError: false });
+      }
+      if (name === "wave_transcripts_list" || name === "wave_transcripts_get") {
+        const api = transcriptApi();
+        if (!api) {
+          return result(req.id, { content: textContent("error: WAVE_API_KEY is required for transcript tools"), isError: true });
+        }
+        const targs = (req.params?.arguments ?? {}) as { org?: string; room?: string; session?: string };
+        if (name === "wave_transcripts_list") {
+          if (typeof targs.org !== "string" || !targs.org) {
+            return result(req.id, { content: textContent("error: org is required"), isError: true });
+          }
+          const res = await api.list(targs.org);
+          return result(req.id, { content: textContent(JSON.stringify(res, null, 2)), isError: false });
+        }
+        if (typeof targs.org !== "string" || !targs.org || typeof targs.room !== "string" || !targs.room || typeof targs.session !== "string" || !targs.session) {
+          return result(req.id, { content: textContent("error: org, room, session are required"), isError: true });
+        }
+        const res = await api.get(targs.org, targs.room, targs.session);
+        return result(req.id, { content: textContent(JSON.stringify(res, null, 2)), isError: false });
       }
       return result(req.id, { content: textContent(`error: unknown tool "${name}"`), isError: true });
     }
