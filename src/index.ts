@@ -463,7 +463,7 @@ import { RealtimeAPI } from "./realtime";
 import { TranscriptAPI } from "./transcripts";
 import { MailAPI } from "./mail";
 import { CommsAPI } from "./comms";
-import { WebhooksAPI, createWebhooksAPI } from "./webhooks";
+import { WebhooksAPI } from "./webhooks";
 import { MeterAPI } from "./meter";
 import { PricingAPI } from "./pricing";
 import { PerceptionAPI } from "./perception";
