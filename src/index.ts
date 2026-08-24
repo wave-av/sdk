@@ -463,7 +463,7 @@ import { RealtimeAPI } from "./realtime";
 import { TranscriptAPI } from "./transcripts";
 import { MailAPI } from "./mail";
 import { CommsAPI } from "./comms";
-import { WebhooksAPI } from "./webhooks";
+import { WebhooksAPI, createWebhooksAPI } from "./webhooks";
 import { MeterAPI } from "./meter";
 import { PricingAPI } from "./pricing";
 import { PerceptionAPI } from "./perception";
@@ -602,7 +602,13 @@ export class Wave {
     // Mail (E5)
     this.mail = new MailAPI(this.client);
     this.comms = new CommsAPI(this.client);
-    this.webhooks = new WebhooksAPI(this.client);
+    this.webhooks = new WebhooksAPI(
+        new WaveClient({
+          ...config,
+          apiKey: config.webhooksApiKey || config.apiKey,
+          baseUrl: config.webhooksBaseUrl || config.baseUrl,
+        }),
+      );
 
     // Meter (E5)
     this.meter = new MeterAPI(this.client);

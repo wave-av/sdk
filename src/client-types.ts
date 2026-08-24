@@ -7,6 +7,10 @@ export interface WaveClientConfig {
   organizationId?: string;
   /** Base URL for the API (default: https://api.wave.online) */
   baseUrl?: string;
+  /** Dedicated base URL for the mail-edge webhooks API. */
+  webhooksBaseUrl?: string;
+  /** API key for the webhooks API (defaults to apiKey). */
+  webhooksApiKey?: string;
   /** Request timeout in milliseconds (default: 30000) */
   timeout?: number;
   /** Maximum retry attempts for failed requests (default: 3) */
