@@ -221,7 +221,12 @@
       "import": "./dist/mail.mjs",
       "require": "./dist/mail.js"
     },
-    "./meter": {
+    "./comms": {
+        "types": "./dist/comms.d.ts",
+        "import": "./dist/comms.mjs",
+        "require": "./dist/comms.js"
+      },
+      "./meter": {
       "types": "./dist/meter.d.ts",
       "import": "./dist/meter.mjs",
       "require": "./dist/meter.js"
