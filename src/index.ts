@@ -341,6 +341,10 @@ export * from "./realtime-types";
 export { TranscriptAPI } from "./transcripts";
 export type { Transcript, TranscriptList, TranscriptMessage } from "./transcripts";
 
+// Comms API (E9.2 — tenant onboarding)
+export { CommsAPI, createCommsAPI } from "./comms";
+export type { CommsTenantRequest, CommsTenant } from "./comms";
+
 // Mail API (E5 — comms productization)
 export {
   MailAPI,
@@ -456,6 +460,7 @@ import { DrmAPI } from "./drm";
 import { RealtimeAPI } from "./realtime";
 import { TranscriptAPI } from "./transcripts";
 import { MailAPI } from "./mail";
+import { CommsAPI } from "./comms";
 import { MeterAPI } from "./meter";
 import { PricingAPI } from "./pricing";
 import { PerceptionAPI } from "./perception";
@@ -519,8 +524,11 @@ export class Wave {
   // Transcripts — the voice-agent transcript (list + read over the transcripts/* surface)
   public readonly transcripts: TranscriptAPI;
 
-  // Mail API (E5 — comms productization)
+// Mail API (E5 — comms productization)
   public readonly mail: MailAPI;
+
+  // Comms API (E9.2 — tenant onboarding)
+  public readonly comms: CommsAPI;
 
   // Meter API (E5 — comms productization, meter:read)
   public readonly meter: MeterAPI;
@@ -587,6 +595,7 @@ export class Wave {
 
     // Mail (E5)
     this.mail = new MailAPI(this.client);
+    this.comms = new CommsAPI(this.client);
 
     // Meter (E5)
     this.meter = new MeterAPI(this.client);
