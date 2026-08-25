@@ -345,7 +345,12 @@ export type { Transcript, TranscriptList, TranscriptMessage } from "./transcript
 export { CommsAPI, createCommsAPI } from "./comms";
 export { WebhooksAPI, createWebhooksAPI } from "./webhooks";
 export type { TenantWebhookRegisterRequest, TenantWebhookRegisterResult } from "./webhooks";
-export type { CommsTenantRequest, CommsTenant } from "./comms";
+export type {
+  CommsTenantRequest,
+  CommsTenant,
+  CommsTenantListResult,
+  CommsTenantListRow,
+} from "./comms";
 
 // Mail API (E5 — comms productization)
 export {
