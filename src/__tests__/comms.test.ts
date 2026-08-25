@@ -39,3 +39,17 @@ describe("CommsAPI", () => {
     await expect(api.createTenant({ client_id: "acme" })).rejects.toThrow("forbidden");
   });
 });
+
+describe("CommsAPI.listTenants (E9.4)", () => {
+  it("GETs /v1/comms/tenants and returns the org's rows", async () => {
+    const { client, post } = mockClient();
+    const get = vi.fn(async () => ({ org: "acme", tenants: [{ client_id: "acme", pod_id: "pod-1", key_id: "k1", created_at: "2026-08-24T00:00:00Z" }] }));
+    Object.assign(client, { get });
+    const api = new CommsAPI(client);
+    const r = await api.listTenants();
+    expect(get).toHaveBeenCalledWith("/v1/comms/tenants");
+    expect(r.tenants[0].pod_id).toBe("pod-1");
+    expect(JSON.stringify(r)).not.toContain("api_key");
+    expect(post).not.toHaveBeenCalled();
+  });
+});

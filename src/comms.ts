@@ -35,8 +35,28 @@ export class CommsAPI {
   async createTenant(request: CommsTenantRequest): Promise<CommsTenant> {
     return this.client.post<CommsTenant>(`${this.basePath}/tenants`, request);
   }
+
+  /**
+   * List the caller org's comms tenants (the registry read — E9.4). The API-key
+   * VALUE is never on the read surface (mint-once contract). Requires comms:read.
+   */
+  async listTenants(): Promise<CommsTenantListResult> {
+    return this.client.get<CommsTenantListResult>(`${this.basePath}/tenants`);
+  }
 }
 
 export function createCommsAPI(client: WaveClient): CommsAPI {
   return new CommsAPI(client);
+}
+
+export interface CommsTenantListRow {
+  client_id: string;
+  pod_id: string;
+  key_id: string;
+  created_at: string;
+}
+
+export interface CommsTenantListResult {
+  org: string;
+  tenants: CommsTenantListRow[];
 }
