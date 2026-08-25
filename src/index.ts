@@ -341,12 +341,6 @@ export * from "./realtime-types";
 export { TranscriptAPI } from "./transcripts";
 export type { Transcript, TranscriptList, TranscriptMessage } from "./transcripts";
 
-// Comms API (E9.2 — tenant onboarding)
-export { CommsAPI, createCommsAPI } from "./comms";
-export { WebhooksAPI, createWebhooksAPI } from "./webhooks";
-export type { TenantWebhookRegisterRequest, TenantWebhookRegisterResult } from "./webhooks";
-export type { CommsTenantRequest, CommsTenant } from "./comms";
-
 // Mail API (E5 — comms productization)
 export {
   MailAPI,
@@ -462,11 +456,10 @@ import { DrmAPI } from "./drm";
 import { RealtimeAPI } from "./realtime";
 import { TranscriptAPI } from "./transcripts";
 import { MailAPI } from "./mail";
-import { CommsAPI } from "./comms";
-import { WebhooksAPI } from "./webhooks";
 import { MeterAPI } from "./meter";
 import { PricingAPI } from "./pricing";
 import { PerceptionAPI } from "./perception";
+import { InferenceAPI } from "./inference";
 
 /**
  * Full WAVE SDK client with all APIs attached
@@ -527,14 +520,8 @@ export class Wave {
   // Transcripts — the voice-agent transcript (list + read over the transcripts/* surface)
   public readonly transcripts: TranscriptAPI;
 
-// Mail API (E5 — comms productization)
+  // Mail API (E5 — comms productization)
   public readonly mail: MailAPI;
-
-  // Comms API (E9.2 — tenant onboarding)
-  public readonly comms: CommsAPI;
-
-  // Webhooks API (E9.3 — tenant webhook registration)
-  public readonly webhooks: WebhooksAPI;
 
   // Meter API (E5 — comms productization, meter:read)
   public readonly meter: MeterAPI;
@@ -542,6 +529,9 @@ export class Wave {
 
   // Perception — agentic live-media subscribe() control plane (#85)
   public readonly perception: PerceptionAPI;
+
+  // Inference — the measured funnel (route/fallback/meter, inference.wave.online)
+  public readonly inference: InferenceAPI;
 
   constructor(config: WaveClientConfig) {
     this.client = new WaveClient(config);
@@ -601,8 +591,6 @@ export class Wave {
 
     // Mail (E5)
     this.mail = new MailAPI(this.client);
-    this.comms = new CommsAPI(this.client);
-    this.webhooks = new WebhooksAPI(this.client);
 
     // Meter (E5)
     this.meter = new MeterAPI(this.client);
@@ -610,6 +598,7 @@ export class Wave {
 
     // Perception (#85)
     this.perception = new PerceptionAPI(this.client);
+    this.inference = new InferenceAPI(this.client);
   }
 }
 
