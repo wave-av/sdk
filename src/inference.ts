@@ -57,7 +57,7 @@ export class InferenceAPI {
       const body = await res.text();
       throw new Error(`inference ${res.status}: ${body.slice(0, 300)}`);
     }
-    const d: any = await res.json();
+    const d = (await res.json()) as { model?: string; choices?: Array<{ message?: { content?: string } }>; usage?: { cost?: number | null; total_tokens?: number } };
     const u = d.usage ?? {};
     return {
       model: d.model ?? model,
@@ -70,19 +70,24 @@ export class InferenceAPI {
   /** Models admitted to the registry with their per-token pricing. */
   async models(): Promise<Array<{ id: string; rail: string; inputPerM: number | null; outputPerM: number | null }>> {
     const url = this.registryUrl();
-    const rows = await this.registryGet(`${url}/rest/v1/models?select=id,rail,cost_input_per_m,cost_output_per_m&limit=1000`);
-    return rows.map((m: any) => ({ id: m.id, rail: m.rail, inputPerM: m.cost_input_per_m, outputPerM: m.cost_output_per_m }));
+    const rows = await this.registryGet<Array<{ id: string; rail: string; cost_input_per_m: number | null; cost_output_per_m: number | null }>>(`${url}/rest/v1/models?select=id,rail,cost_input_per_m,cost_output_per_m&limit=1000`);
+    return rows.map((m) => ({ id: m.id, rail: m.rail, inputPerM: m.cost_input_per_m, outputPerM: m.cost_output_per_m }));
   }
 
   /** A model's measured profile: the transition signature + pricing + live usage. */
   async profile(modelId: string): Promise<ModelProfile> {
     const url = this.registryUrl();
-    const m = await this.registryGet(`${url}/rest/v1/models?select=*&id=eq.${encodeURIComponent(modelId)}`);
+    const m = await this.registryGet<Array<Record<string, unknown>>>(`${url}/rest/v1/models?select=*&id=eq.${encodeURIComponent(modelId)}`);
     if (!m.length) throw new Error(`model ${modelId}: NOT ADMITTED`);
-    const row = m[0];
-    const h = row.health ?? {};
-    const usage = await this.registryGet(`${url}/rest/v1/usage_logs?select=cost,latency_ms&model_id=eq.${encodeURIComponent(modelId)}&limit=1000`);
-    const lat = usage.map((x: any) => x.latency_ms).filter(Boolean) as number[];
+    const row = m[0] as {
+      id: string; rail: string; status: string;
+      health?: { floor?: number | null; ceiling?: number | null; discriminating?: number | null } | null;
+      cost_input_per_m: number | null; cost_output_per_m: number | null;
+      measured_at: string | null; tasks: string[] | null;
+    };
+    const h = (row.health ?? {}) as { floor?: number | null; ceiling?: number | null; discriminating?: number | null };
+    const usage = await this.registryGet<Array<{ cost: number | string | null; latency_ms: number | null }>>(`${url}/rest/v1/usage_logs?select=cost,latency_ms&model_id=eq.${encodeURIComponent(modelId)}&limit=1000`);
+    const lat = usage.map((x) => Number(x.latency_ms)).filter((n) => Number.isFinite(n) && n > 0);
     return {
       id: row.id,
       rail: row.rail,
@@ -91,7 +96,7 @@ export class InferenceAPI {
       pricing: { inputPerM: row.cost_input_per_m, outputPerM: row.cost_output_per_m },
       liveUsage: {
         calls: usage.length,
-        spentUsd: usage.reduce((a: number, x: any) => a + Number(x.cost || 0), 0),
+        spentUsd: usage.reduce((a, x) => a + Number(x.cost || 0), 0),
         avgLatencyMs: lat.length ? Math.round(lat.reduce((a, b) => a + b, 0) / lat.length) : null,
       },
     };
@@ -99,15 +104,16 @@ export class InferenceAPI {
 
   private funnelBase(): string {
     // the funnel front door (branded edge → LiteLLM); overridable for local dev
-    return (this.client as any)._config?.funnelUrl as string || "https://inference.wave.online";
+    return (this.client as unknown as { config?: { funnelUrl?: string } }).config?.funnelUrl
+      || "https://inference.wave.online";
   }
 
   private registryUrl(): string {
-    return (this.client as any)._config?.supabaseUrl as string || "";
+    return (this.client as unknown as { config?: { supabaseUrl?: string } }).config?.supabaseUrl || "";
   }
 
-  private async registryGet(path: string): Promise<any> {
-    const key = (this.client as any)._config?.supabaseKey as string || "";
+  private async registryGet<T = unknown>(path: string): Promise<T> {
+    const key = (this.client as unknown as { config?: { supabaseKey?: string } }).config?.supabaseKey || "";
     const res = await fetch(path, { headers: { apikey: key }, signal: AbortSignal.timeout(20_000) });
     if (!res.ok) throw new Error(`registry ${res.status}: ${(await res.text()).slice(0, 200)}`);
     return res.json();

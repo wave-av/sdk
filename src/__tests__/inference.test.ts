@@ -2,8 +2,9 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { InferenceAPI } from "../inference";
 
 /** A minimal WaveClient stand-in: InferenceAPI only touches getConnectionInfo(). */
-function fakeClient(apiKey = "sk-test") {
-  return { getConnectionInfo: () => ({ apiKey }) } as any;
+type FakeClient = { getConnectionInfo(): { apiKey: string } };
+function fakeClient(apiKey = "sk-test"): FakeClient {
+  return { getConnectionInfo: () => ({ apiKey }) };
 }
 
 const okCompletion = {
@@ -56,7 +57,7 @@ describe("InferenceAPI (the funnel rendering)", () => {
       { cost: 8.8e-6, latency_ms: 2000 },
       { cost: 1.2e-5, latency_ms: 3000 },
     ];
-    vi.stubGlobal("fetch", vi.fn(async (input: any) => {
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
       const path = String(input);
       if (path.includes("/rest/v1/models?")) return new Response(JSON.stringify([modelRow]), { status: 200 });
       if (path.includes("/rest/v1/usage_logs?")) return new Response(JSON.stringify(usageRows), { status: 200 });
