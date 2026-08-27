@@ -101,3 +101,15 @@ Every claim below is checked by `npm run verify` against the live repo or endpoi
 
 </div>
 
+
+## The `wave` CLI
+
+The SDK ships a CLI. Install globally and script WAVE from your terminal or agent:
+
+```bash
+npm install -g @wave-av/sdk@next
+wave --help
+```
+
+The CLI is a thin arg parser over the same `RuntimeClient` the SDK exports, so every
+command maps 1:1 to the API surface. Agents can call it without building integrations.
