@@ -317,5 +317,8 @@
     "typescript-eslint": "^8.60.1",
     "vitest": "^4.0.16",
     "zod": "4.4.3"
+  },
+  "bin": {
+    "wave": "./dist/cli.js"
   }
 }
