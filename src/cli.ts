@@ -84,3 +84,11 @@ export async function runWaveCli(argv: string[], opts: WaveCliOptions): Promise<
       return { code: 2, out: USAGE };
   }
 }
+
+// The bin entry point: run when invoked as an executable (npm bin / npx), not when imported.
+if (require.main === module) {
+  void runWaveCli(process.argv.slice(2), { baseUrl: "https://api.wave.online" }).then((r) => {
+    process.stdout.write(r.out ?? "");
+    process.exit(r.code ?? 0);
+  });
+}
