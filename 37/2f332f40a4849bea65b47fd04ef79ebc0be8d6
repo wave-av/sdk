@@ -1,0 +1,16 @@
+src/agent-auth.ts
+  h_af5ac1a9798224 5,13,16,26,34
+src/index.ts
+  h_af5ac1a9798224 338,344,357,375,387,517,520,523,526,530,533,589,605
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "372f332f40a4849bea65b47fd04ef79ebc0be8d6",
+  "prompts": {},
+  "humans": {
+    "h_af5ac1a9798224": {
+      "author": "Jake Fineman <jakefineman@gmail.com>"
+    }
+  }
+}
