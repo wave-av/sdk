@@ -602,6 +602,23 @@ export class Wave {
   }
 }
 
+// Agent Auth Ceremony (auth-md E8, RFC 8628 device authorization) — STANDALONE
+// functions (no apiKey: the ceremony exists because the caller has no credential yet).
+export {
+  startAgentCeremony,
+  pollAgentCeremony,
+  refreshAgentCeremony,
+  isCeremonyPending,
+  isCeremonyTerminal,
+} from "./agent-auth";
+export type {
+  DeviceGrant,
+  CeremonyTokens,
+  RefreshedTokens,
+  CeremonyPollError,
+  CeremonyOptions,
+} from "./agent-auth";
+
 /**
  * Create a full Wave SDK instance
  */
