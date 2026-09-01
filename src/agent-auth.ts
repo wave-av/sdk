@@ -2,7 +2,7 @@
  * WAVE SDK - Agent Auth Ceremony (RFC 8628 Device Authorization)
  *
  * The pre-credential bootstrap: an agent with NO API key earns a wallet-access
- * grant through a human approval. The flow: request a device code, a person
+ * grant through a person approval. The flow: request a device code, a person
  * approves at the verification URL (Google sign-in -> Approve), then poll for
  * tokens. Refresh rotates both tokens; a missing refresh_token on refresh means
  * the grant was revoked.
@@ -10,10 +10,10 @@
  * These functions are STANDALONE (no apiKey): the ceremony exists precisely
  * because the caller has no credential yet. The polling 400s
  * (authorization_pending / slow_down / expired_token / access_denied) pass
- * through verbatim — they are the protocol, not failures to hide.
+ * through verbatim; they are the protocol, not failures to hide.
  */
 
-/** POST /v1/agent/auth/device — the grant the ceremony starts with. */
+/** POST /v1/agent/auth/device: the grant the ceremony starts with. */
 export interface DeviceGrant {
   device_code: string;
   user_code: string;
@@ -23,7 +23,7 @@ export interface DeviceGrant {
   interval: number;
 }
 
-/** POST /v1/agent/auth/token (device grant) — the tokens an approval yields. */
+/** POST /v1/agent/auth/token (device grant): the tokens an approval yields. */
 export interface CeremonyTokens {
   access_token: string;
   token_type: string;
@@ -31,7 +31,7 @@ export interface CeremonyTokens {
   refresh_token: string;
 }
 
-/** POST /v1/agent/auth/token (refresh grant) — rotated tokens. */
+/** POST /v1/agent/auth/token (refresh grant): rotated tokens. */
 export interface RefreshedTokens {
   access_token: string;
   token_type: string;

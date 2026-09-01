@@ -335,13 +335,13 @@ export { NotificationsAPI, createNotificationsAPI } from "./notifications";
 // DRM API
 export { DrmAPI, createDrmAPI } from "./drm";
 
-// Realtime — the live control & event plane (WebSocket)
+// Realtime: the live control & event plane (WebSocket)
 export { RealtimeAPI, RealtimeChannel, createRealtimeAPI } from "./realtime";
 export * from "./realtime-types";
 export { TranscriptAPI } from "./transcripts";
 export type { Transcript, TranscriptList, TranscriptMessage } from "./transcripts";
 
-// Mail API (E5 — comms productization)
+// Mail API (E5: comms productization)
 export {
   MailAPI,
   createMailAPI,
@@ -354,7 +354,7 @@ export {
   type SendResult,
 } from "./mail";
 
-// Meter API (E5 — comms productization, meter:read)
+// Meter API (E5: comms productization, meter:read)
 export {
   MeterAPI,
   createMeterAPI,
@@ -372,7 +372,7 @@ export {
   type MeterRollupTotals,
 } from "./meter";
 
-// Pricing Pages API (pricing-pages E0/E1 — pricing:read / pricing:write)
+// Pricing Pages API (pricing-pages E0/E1: pricing:read / pricing:write)
 export {
   PricingAPI,
   createPricingAPI,
@@ -384,7 +384,7 @@ export {
   type ManifestRead,
 } from "./pricing";
 
-// Perception — agentic live-media subscribe() control plane (#85)
+// Perception: agentic live-media subscribe() control plane (#85)
 export {
   PerceptionAPI,
   createPerceptionAPI,
@@ -514,23 +514,23 @@ export class Wave {
   public readonly notifications: NotificationsAPI;
   public readonly drm: DrmAPI;
 
-  // Realtime — live control & event plane (WebSocket)
+  // Realtime: live control & event plane (WebSocket)
   public readonly realtime: RealtimeAPI;
 
-  // Transcripts — the voice-agent transcript (list + read over the transcripts/* surface)
+  // Transcripts: the voice-agent transcript (list + read over the transcripts/* surface)
   public readonly transcripts: TranscriptAPI;
 
-  // Mail API (E5 — comms productization)
+  // Mail API (E5: comms productization)
   public readonly mail: MailAPI;
 
-  // Meter API (E5 — comms productization, meter:read)
+  // Meter API (E5: comms productization, meter:read)
   public readonly meter: MeterAPI;
   public readonly pricing: PricingAPI;
 
-  // Perception — agentic live-media subscribe() control plane (#85)
+  // Perception: agentic live-media subscribe() control plane (#85)
   public readonly perception: PerceptionAPI;
 
-  // Inference — the measured funnel (route/fallback/meter, inference.wave.online)
+  // Inference: the measured funnel (route/fallback/meter, inference.wave.online)
   public readonly inference: InferenceAPI;
 
   constructor(config: WaveClientConfig) {
@@ -586,7 +586,7 @@ export class Wave {
     // Realtime
     this.realtime = new RealtimeAPI(this.client);
 
-    // Transcripts — the voice-agent transcript (list + read)
+    // Transcripts: the voice-agent transcript (list + read)
     this.transcripts = new TranscriptAPI(this.client);
 
     // Mail (E5)
@@ -602,7 +602,7 @@ export class Wave {
   }
 }
 
-// Agent Auth Ceremony (auth-md E8, RFC 8628 device authorization) — STANDALONE
+// Agent Auth Ceremony (auth-md E8, RFC 8628 device authorization): STANDALONE
 // functions (no apiKey: the ceremony exists because the caller has no credential yet).
 export {
   startAgentCeremony,
