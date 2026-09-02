@@ -251,7 +251,7 @@ export class WaveClient extends EventEmitter<WaveClientEvents> {
     path: string,
     options: RequestOptions = {}
   ): Promise<T> {
-    const { params, noRetry, timeout: requestTimeout, ...fetchOptions } = options;
+    const { params, noRetry, timeout: requestTimeout, responseType, ...fetchOptions } = options;
 
     // Build URL with query parameters
     let url = `${this.config.baseUrl}${path}`;
@@ -276,7 +276,8 @@ export class WaveClient extends EventEmitter<WaveClientEvents> {
         headers: this.buildHeaders(fetchOptions.headers),
       },
       noRetry ? 0 : this.config.maxRetries,
-      requestTimeout || this.config.timeout
+      requestTimeout || this.config.timeout,
+      responseType
     );
   }
 
@@ -287,7 +288,8 @@ export class WaveClient extends EventEmitter<WaveClientEvents> {
     url: string,
     options: RequestInit,
     maxRetries: number,
-    timeout: number
+    timeout: number,
+    responseType: 'json' | 'arraybuffer' = 'json'
   ): Promise<T> {
     const method = options.method || 'GET';
     let lastError: Error | null = null;
@@ -333,6 +335,11 @@ export class WaveClient extends EventEmitter<WaveClientEvents> {
         }
 
         this.emit('request.success', url, method, duration);
+
+        // Binary responses (e.g. audio bytes) are returned as-is.
+        if (responseType === 'arraybuffer') {
+          return (await response.arrayBuffer()) as T;
+        }
 
         // Parse response
         const contentType = response.headers.get('content-type');

@@ -38,8 +38,8 @@ const stream = await wave.pipeline.create({
 });
 await wave.pipeline.start(stream.id);
 
-// Text-to-speech
-const synthesis = await wave.voice.synthesize({
+// Text-to-speech (returns raw audio/mpeg bytes as an ArrayBuffer)
+const audio = await wave.voice.synthesize({
   text: "Hello from WAVE",
   voice_id: "voice_abc",
 });
