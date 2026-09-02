@@ -2,7 +2,7 @@
   "name": "sdk",
   "kind": "library",
   "domain": "sdk",
-  "purpose": "Official TypeScript SDK for the WAVE API — 42 API module subpaths covering streaming, production, device management, analytics, content, and monetization behind a single `Wave` client. Most modules are SDK-side TypeScript surface only; see capability statuses for what has a live fleet backend today.",
+  "purpose": "WAVE is media infrastructure for the agentic internet: one call shape moves live and on-demand media across every transport, and both kinds of user, people and agents, discover it, call it, and pay for it per call. This SDK is the TypeScript client for that call shape: API modules covering streaming, production, device management, analytics, content, and monetization behind a single `Wave` client. Most modules are SDK-side TypeScript surface only; see capability statuses for what has a live backend today.",
   "visibility": "public",
   "primaryLanguage": "TypeScript",
   "topics": ["sdk", "typescript", "streaming", "video", "audio", "production", "webrtc", "ndi", "srt", "clips", "voice", "transcription", "captions", "analytics"],
