@@ -77,8 +77,18 @@ verifier above count the artifact as covered and launder a gap into a pass.
 Backfill an existing release without cutting a version:
 
 ```bash
-gh workflow run sbom.yml --repo wave-av/sdk -f tag=sdk-v2.1.3
+gh workflow run sbom.yml --repo wave-av/sdk -f tag=v2.0.1
 ```
+
+Two facts about the trigger worth knowing, both measured rather than assumed:
+
+- **No workflow in this repo creates a GitHub Release.** `release.yml` publishes to npm off a
+  `sdk-v*` tag and stops; the Releases that exist were cut by hand. `release: published`
+  therefore fires only on a manual publish, which makes `workflow_dispatch` the load-bearing
+  path today — and means an SBOM cannot appear on a release nobody created.
+- **Both tag conventions are live.** `release.yml` triggers on `sdk-v*`, but every Release cut
+  so far is named `v*` (latest `v2.0.1`). The workflow accepts either and refuses anything
+  else before the value reaches `git` or `gh`.
 
 ## Tests
 

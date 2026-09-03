@@ -17,6 +17,13 @@
 # Runs on `release: published` (after release.yml has published to npm) and can be replayed
 # for any existing tag via workflow_dispatch — so historical releases can be backfilled
 # without cutting a new version.
+#
+# Note on the trigger: NO workflow in this repo creates a GitHub Release — release.yml
+# publishes to npm off a `sdk-v*` tag and stops there, and the Releases that exist were cut
+# by hand. So `release: published` fires only when someone publishes a Release in the UI or
+# via `gh release create`, and workflow_dispatch is the load-bearing path today. Both are
+# wired up so this workflow starts covering releases automatically the moment the repo
+# begins creating them.
 
 name: SBOM
 
@@ -57,12 +64,19 @@ jobs:
             echo "::error::no tag resolved from the event or the dispatch input"
             exit 1
           fi
-          # Tags in this repo are `sdk-v<semver>`. Anything else is refused rather than
-          # passed to a command, so a crafted ref name cannot become shell.
-          case "$TAG" in
-            sdk-v[0-9]*) ;;
-            *) echo "::error::refusing to run for unexpected tag '$TAG' (expected sdk-v<semver>)"; exit 1 ;;
-          esac
+          # This repo carries BOTH tag conventions: release.yml publishes on `sdk-v*`,
+          # while every GitHub Release cut so far is named `v*` (latest: v2.0.1). Accept
+          # either, and refuse anything else rather than pass it to a command — a crafted
+          # ref name must not be able to become shell.
+          #
+          # A full-anchored regex, not a `case` glob: `v[0-9]*` would happily accept
+          # `v1; rm -rf /` because the trailing `*` swallows the rest. Every use below
+          # quotes "$TAG", so that was defence-in-depth rather than a live hole — but a
+          # guard that does not actually hold is not a guard.
+          if [[ ! "$TAG" =~ ^(sdk-)?v[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::refusing to run for unexpected tag '$TAG' (expected v<semver> or sdk-v<semver>)"
+            exit 1
+          fi
           echo "resolved tag: $TAG"
 
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
