@@ -68,7 +68,11 @@ jobs:
         run: |
           set -e
           cd "$RUNNER_TEMP/smoke"
-          exports_field=$(node -e "console.log(require('@wave-av/sdk/package.json').exports['.'].require ? 'yes' : 'no')")
+          # Read package.json by filesystem path, not via require('@wave-av/sdk/package.json') --
+          # that bare-specifier subpath is not declared in the package's own "exports" map, so
+          # Node's ESM-aware CJS resolver refuses it (ERR_PACKAGE_PATH_NOT_EXPORTED) even under
+          # plain `require()`. A relative/absolute path bypasses "exports" resolution entirely.
+          exports_field=$(node -e "console.log(require('./node_modules/@wave-av/sdk/package.json').exports['.'].require ? 'yes' : 'no')")
           if [ "$exports_field" != "yes" ]; then
             echo "skipped: package does not claim a CJS require() entry point"
             exit 0
