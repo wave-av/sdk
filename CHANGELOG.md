@@ -83,9 +83,12 @@ Prereleased as `2.1.0-next.0` through `2.1.0-next.4` (2026-07-02, 2026-08-27) be
 
 - Relicensed under Apache-2.0 and added a NOTICE file reserving the WAVE marks (#18). No API or build changes.
 
-## [2.0.1] - [2.0.14]
+## [2.0.0] - [2.0.14]
 
-Published 2026-04-02 through 2026-04-03. No merged-PR history is available in this repository to anchor individual 2.0.x versions to specific changes; only the `v2.0.1` tag (2026-04-02) exists in git.
+Published 2026-04-01 through 2026-04-03 (registry `time` map: `2.0.0` at 2026-04-01T23:58:46Z,
+`2.0.1` through `2.0.14` following on 2026-04-02/03). No merged-PR history is available in this
+repository to anchor individual 2.0.x versions to specific changes. Only the `v2.0.1` git tag
+(2026-04-02) exists; `2.0.0` was published to npm with no corresponding git tag.
 
 [Unreleased]: https://github.com/wave-av/sdk/compare/sdk-v2.1.3...HEAD
 [2.1.3]: https://github.com/wave-av/sdk/compare/sdk-v2.1.2...sdk-v2.1.3
@@ -93,3 +96,4 @@ Published 2026-04-02 through 2026-04-03. No merged-PR history is available in th
 [2.1.1]: https://github.com/wave-av/sdk/compare/sdk-v2.1.0...sdk-v2.1.1
 [2.1.0]: https://github.com/wave-av/sdk/compare/v2.0.1...sdk-v2.1.0
 [2.0.1]: https://github.com/wave-av/sdk/releases/tag/v2.0.1
+[2.0.0]: https://www.npmjs.com/package/@wave-av/sdk/v/2.0.0
