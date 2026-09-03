@@ -1,11 +1,17 @@
-#!/usr/bin/env node
 /**
- * `wave` CLI — thin arg parsing + dispatch over RuntimeClient.
+ * `wave-sdk` CLI — thin arg parsing + dispatch over RuntimeClient.
  *
  * The human shell-control rung of the API-first ladder: the CLI does no HTTP of its own; it calls
  * the SDK's RuntimeClient, so the door's contract lives in one place. Subcommands mirror the SDK:
  * `models` (list), `complete <prompt>` (one-shot), `stream <prompt>` (SSE). Returns { code, out }
- * so the bin entry and tests both consume the same function.
+ * so the bin entry (src/bin.ts) and tests both consume the same function.
+ *
+ * This module is a pure library — no top-level side effects, no bin-entry guard. It is re-exported
+ * from `./index`, so tsup/esbuild's ESM code-splitting places it in a chunk shared by every entry
+ * that touches it (index.mjs, bin.mjs, ...). A CJS-only guard like `require.main === module` living
+ * here previously ended up executed at import time for *any* ESM consumer of `@wave-av/sdk` — see
+ * CHANGELOG for the incident. Keep the bin-only side effect confined to src/bin.ts, which is never
+ * imported by anything else and therefore never gets bundled into a shared chunk.
  */
 import { RuntimeClient } from "./runtime";
 import { listProducts, ProductClient } from "./products";
@@ -22,7 +28,7 @@ export interface WaveCliResult {
   out: string;
 }
 
-const USAGE = "usage: wave <models|complete|stream|products> [prompt] | wave product <id> <path>\n";
+const USAGE = "usage: wave-sdk <models|complete|stream|products> [prompt] | wave-sdk product <id> <path>\n";
 
 export async function runWaveCli(argv: string[], opts: WaveCliOptions): Promise<WaveCliResult> {
   const client = new RuntimeClient({ baseUrl: opts.baseUrl, token: opts.token });
@@ -59,7 +65,7 @@ export async function runWaveCli(argv: string[], opts: WaveCliOptions): Promise<
 
     case "product": {
       const [id, path] = rest;
-      if (!id || !path) return { code: 2, out: "usage: wave product <id> <path>\n" };
+      if (!id || !path) return { code: 2, out: "usage: wave-sdk product <id> <path>\n" };
       const pc = new ProductClient({ productId: id, token: opts.token });
       const res = await pc.call<unknown>(path, { method: "GET" });
       return { code: 0, out: JSON.stringify(res, null, 2) + "\n" };
@@ -67,7 +73,7 @@ export async function runWaveCli(argv: string[], opts: WaveCliOptions): Promise<
 
     case "transcripts": {
       const [sub, org, room, session] = rest;
-      if (!opts.token) return { code: 2, out: "wave transcripts: an API key is required\n" };
+      if (!opts.token) return { code: 2, out: "wave-sdk transcripts: an API key is required\n" };
       const api = new TranscriptAPI(new WaveClient({ apiKey: opts.token, baseUrl: opts.baseUrl }));
       if (sub === "list" && org) {
         const res = await api.list(org);
@@ -77,29 +83,10 @@ export async function runWaveCli(argv: string[], opts: WaveCliOptions): Promise<
         const res = await api.get(org, room, session);
         return { code: 0, out: JSON.stringify(res, null, 2) + "\n" };
       }
-      return { code: 2, out: "usage: wave transcripts <list <org> | get <org> <room> <session>>\n" };
+      return { code: 2, out: "usage: wave-sdk transcripts <list <org> | get <org> <room> <session>>\n" };
     }
 
     default:
       return { code: 2, out: USAGE };
   }
-}
-
-// The bin entry point: run when invoked as an executable (npm bin / npx), not when imported.
-//
-// `require`/`module` are CommonJS-only globals. This file is also built to ESM (tsup
-// --format cjs,esm) and re-exported from src/index.ts, so its compiled output is a shared
-// chunk that every ESM consumer of the package (including any downstream package such as a
-// CLI wrapper) statically imports. A bare `require.main === module` reference throws
-// `ReferenceError: module is not defined in ES module scope` at that chunk's top-level
-// evaluation in a true ESM context, crashing `import("@wave-av/sdk")` for every caller
-// regardless of whether they use the CLI at all. `typeof` never throws on an undeclared
-// identifier, so guard on `typeof` first: the ESM build short-circuits to `false` and the
-// block is skipped, while the CJS build (the SDK's actual `wave` bin, dist/cli.js) behaves
-// exactly as before.
-if (typeof require !== "undefined" && typeof module !== "undefined" && require.main === module) {
-  void runWaveCli(process.argv.slice(2), { baseUrl: "https://api.wave.online" }).then((r) => {
-    process.stdout.write(r.out ?? "");
-    process.exit(r.code ?? 0);
-  });
 }

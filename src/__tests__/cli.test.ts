@@ -5,26 +5,28 @@ import { describe, expect, it } from "vitest";
 
 import { runWaveCli } from "../cli";
 
-describe("wave CLI bin-entry guard is dual-format safe", () => {
-  // cli.ts is built to BOTH cjs and esm (tsup --format cjs,esm) and its compiled output is a
-  // shared chunk statically imported by every ESM consumer of the package (index.ts re-exports
-  // runWaveCli). A bare `require.main === module` at module top level throws
-  // `ReferenceError: module is not defined in ES module scope` the instant that chunk is
-  // evaluated under real ESM — crashing `import("@wave-av/sdk")` for every caller, not just CLI
-  // users. This shipped in 2.1.1/2.1.2 (fixed here) and only reproduces via a real script-file
-  // import, not `node -e`/`--input-type=module -e` (see .github/workflows/smoke-install.yml and
-  // release.yml's e2e-smoke, which is the real, load-bearing regression guard for this class of
-  // bug). This test is a fast, source-level tripwire: the bin-entry guard must never reference
-  // the bare `module` identifier without a preceding `typeof module !== "undefined"` check.
-  it("guards require.main === module behind typeof checks (never a bare `module` reference)", () => {
+describe("src/cli.ts stays a pure library module (no bin-entry side effects)", () => {
+  // cli.ts is re-exported from src/index.ts, so it is built to BOTH cjs and esm and its compiled
+  // output lands in a chunk shared by every ESM entry point (dist/index.mjs, dist/bin.mjs, ...).
+  // A top-level side effect here — historically `if (require.main === module) { ... }`, a
+  // CJS-only idiom that references the bare `module` identifier — throws
+  // `ReferenceError: module is not defined in ES module scope` the instant that shared chunk
+  // evaluates under real ESM, crashing `import("@wave-av/sdk")` for every caller, not just CLI
+  // users. This shipped in 2.1.1/2.1.2. Fix: the bin-only side effect lives in src/bin.ts, which
+  // nothing else imports and therefore can never be folded into a shared chunk. This is a fast,
+  // source-level tripwire for that invariant: cli.ts must never re-introduce a bin-entry guard.
+  // The real, load-bearing regression guards are src/__tests__/pack-esm-smoke.test.ts (packs +
+  // installs + imports for real) and .github/workflows/smoke-install.yml (same, in CI, on every
+  // PR/push) — a plain `node -e`/`--input-type=module -e` check does not reliably reproduce a
+  // module-top-level throw and must never be the only guard (see release.yml's e2e-smoke fix).
+  it("has no require.main / module top-level reference in executable code", () => {
     const cliSourcePath = fileURLToPath(new URL("../cli.ts", import.meta.url));
-    const source = readFileSync(cliSourcePath, "utf8");
-    const guardLine = source
+    const codeLines = readFileSync(cliSourcePath, "utf8")
       .split("\n")
-      .find((l) => l.trimStart().startsWith("if (") && l.includes("require.main === module"));
-    expect(guardLine).toBeDefined();
-    expect(guardLine).toContain('typeof module !== "undefined"');
-    expect(guardLine).toContain('typeof require !== "undefined"');
+      .filter((l) => !l.trimStart().startsWith("//") && !l.trimStart().startsWith("*"));
+    const code = codeLines.join("\n");
+    expect(code).not.toMatch(/require\.main/);
+    expect(code).not.toMatch(/^\s*if\s*\(.*\bmodule\b/m);
   });
 });
 
