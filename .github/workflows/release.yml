@@ -105,8 +105,24 @@ jobs:
           npm install --no-save "$TARBALL" >/dev/null 2>&1
           # CJS require
           node -e "const m=require('@wave-av/sdk'); if(!m||Object.keys(m).length===0){console.error('CJS import empty');process.exit(1);} console.log('CJS ok — exports:',Object.keys(m).length);"
-          # ESM import
-          node --input-type=module -e "import * as m from '@wave-av/sdk'; if(!m||Object.keys(m).length===0){console.error('ESM import empty');process.exit(1);} console.log('ESM ok — exports:',Object.keys(m).length);"
+          # ESM import — a real .mjs SCRIPT FILE, not `node -e`/`--input-type=module -e`. A
+          # `ReferenceError` thrown during an ES module's top-level evaluation does not reliably
+          # reject the `import()` promise (or propagate as a process exit) when the importing
+          # code itself was passed via `--eval`; the same error thrown from a real script file
+          # reliably rejects/exits. This gate exists specifically to catch a module-level throw
+          # in a shared ESM chunk (e.g. src/cli.ts's old `require.main === module` guard, fixed
+          # 2026-09 — that exact bug shipped in 2.1.1/2.1.2 because this check used `-e` and
+          # silently reported "ESM ok"). Do not revert this to an inline `-e` check.
+          cat > "$SMOKE/esm-import-check.mjs" <<'EOF'
+          process.on('unhandledRejection', (e) => { console.error('UNHANDLED', e); process.exitCode = 1; });
+          const m = await import('@wave-av/sdk');
+          if (!m || Object.keys(m).length === 0) {
+            console.error('ESM import empty');
+            process.exit(1);
+          }
+          console.log('ESM ok — exports:', Object.keys(m).length);
+          EOF
+          node "$SMOKE/esm-import-check.mjs"
           # subpath export (client) resolves
           node -e "const c=require('@wave-av/sdk/client'); if(!c||Object.keys(c).length===0){console.error('client subpath empty');process.exit(1);} console.log('client subpath ok');"
 
