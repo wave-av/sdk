@@ -1,0 +1,32 @@
+scripts/supply-chain/targets.json
+  s_418f585ff58cb5::t_c63f1ac8fc8f65 1-45
+scripts/supply-chain/verify-supply-chain.mjs
+  s_418f585ff58cb5::t_6c33995569baa5 1-321
+scripts/supply-chain/__tests__/verify-supply-chain.test.ts
+  s_418f585ff58cb5::t_b81a1c37231233 1-305
+scripts/supply-chain/__tests__/validate-sbom.test.ts
+  s_418f585ff58cb5::t_ae4613c304459d 1-73
+scripts/supply-chain/validate-sbom.mjs
+  s_418f585ff58cb5::t_82ccfc0bd234b7 1-92
+scripts/supply-chain/README.md
+  s_418f585ff58cb5::t_88aaae2fb25193 1-90
+.github/workflows/sbom.yml
+  s_418f585ff58cb5::t_024b5f694585ab 1-97,99-126
+  s_418f585ff58cb5::t_c77fa277fe1790 98
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "8e96b34714c6e9a0b95117a392dfd7c09a331256",
+  "prompts": {},
+  "sessions": {
+    "s_418f585ff58cb5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e5b410ce-aa9a-48d6-be5d-09400395b1b6",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Jake Fineman <jakefineman@gmail.com>"
+    }
+  }
+}
