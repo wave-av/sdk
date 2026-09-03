@@ -1,0 +1,45 @@
+{
+  "$comment": [
+    "SUPPLY-001 verification targets: every artifact WAVE publishes to a public registry.",
+    "`expect` encodes the state the GA gate requires, not the state observed today — the",
+    "verifier's job is to fail loudly while reality and expectation disagree.",
+    "`repo` is the GitHub repo whose Releases are checked for an SBOM asset."
+  ],
+  "targets": [
+    {
+      "id": "npm:@wave-av/sdk",
+      "registry": "npm",
+      "name": "@wave-av/sdk",
+      "repo": "wave-av/sdk",
+      "expect": { "provenance": true, "signatures": true, "sbom": true }
+    },
+    {
+      "id": "npm:@wave-av/cli",
+      "registry": "npm",
+      "name": "@wave-av/cli",
+      "repo": "wave-av/cli",
+      "expect": { "provenance": true, "signatures": true, "sbom": true }
+    },
+    {
+      "id": "npm:@wave-av/mcp-server",
+      "registry": "npm",
+      "name": "@wave-av/mcp-server",
+      "repo": "wave-av/mcp-server",
+      "expect": { "provenance": true, "signatures": true, "sbom": true }
+    },
+    {
+      "id": "npm:@wave-av/adk",
+      "registry": "npm",
+      "name": "@wave-av/adk",
+      "repo": "wave-av/adk",
+      "expect": { "provenance": true, "signatures": true, "sbom": true }
+    },
+    {
+      "id": "pypi:wave-sdk",
+      "registry": "pypi",
+      "name": "wave-sdk",
+      "repo": "wave-av/sdk-python",
+      "expect": { "provenance": true, "signatures": false, "sbom": true }
+    }
+  ]
+}
