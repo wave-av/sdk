@@ -1,0 +1,19 @@
+.github/workflows/smoke-install.yml
+  s_6ff1665cef97ee::t_0bb6444e5ca2a1 71-75
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "6ac6259f91aa4caa7c712419b96ba92e01e4c269",
+  "prompts": {},
+  "sessions": {
+    "s_6ff1665cef97ee": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-adee5b8f086fa6524",
+        "model": "unknown"
+      },
+      "human_author": "Jake Fineman <jakefineman@gmail.com>"
+    }
+  }
+}
