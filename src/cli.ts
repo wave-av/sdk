@@ -86,7 +86,18 @@ export async function runWaveCli(argv: string[], opts: WaveCliOptions): Promise<
 }
 
 // The bin entry point: run when invoked as an executable (npm bin / npx), not when imported.
-if (require.main === module) {
+//
+// `require`/`module` are CommonJS-only globals. This file is also built to ESM (tsup
+// --format cjs,esm) and re-exported from src/index.ts, so its compiled output is a shared
+// chunk that every ESM consumer of the package (including any downstream package such as a
+// CLI wrapper) statically imports. A bare `require.main === module` reference throws
+// `ReferenceError: module is not defined in ES module scope` at that chunk's top-level
+// evaluation in a true ESM context, crashing `import("@wave-av/sdk")` for every caller
+// regardless of whether they use the CLI at all. `typeof` never throws on an undeclared
+// identifier, so guard on `typeof` first: the ESM build short-circuits to `false` and the
+// block is skipped, while the CJS build (the SDK's actual `wave` bin, dist/cli.js) behaves
+// exactly as before.
+if (typeof require !== "undefined" && typeof module !== "undefined" && require.main === module) {
   void runWaveCli(process.argv.slice(2), { baseUrl: "https://api.wave.online" }).then((r) => {
     process.stdout.write(r.out ?? "");
     process.exit(r.code ?? 0);

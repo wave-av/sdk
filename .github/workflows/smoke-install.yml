@@ -1,0 +1,98 @@
+name: Fresh-install smoke
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: smoke-install-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [20, 22]
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install workspace deps
+        run: npm ci
+
+      - name: Build the package
+        run: npm run build
+
+      - name: Pack the tarball
+        id: pack
+        run: |
+          set -e
+          name=$(npm pack --silent)
+          echo "tarball=$PWD/$name" >> "$GITHUB_OUTPUT"
+
+      - name: Fresh install of the packed tarball
+        run: |
+          set -e
+          mkdir -p "$RUNNER_TEMP/smoke"
+          cd "$RUNNER_TEMP/smoke"
+          npm init -y >/dev/null
+          npm i "${{ steps.pack.outputs.tarball }}"
+
+      - name: ESM import check
+        run: |
+          set -e
+          cd "$RUNNER_TEMP/smoke"
+          cat > esm-check.mjs <<'EOF'
+          process.on('unhandledRejection', (e) => { console.error('UNHANDLED', e); process.exitCode = 1; });
+          const m = await import('@wave-av/sdk');
+          const count = Object.keys(m).length;
+          console.log('ESM import ok:', count, 'exports');
+          if (count < 1) {
+            console.error('FAIL: no exports from ESM import');
+            process.exit(1);
+          }
+          EOF
+          node esm-check.mjs
+
+      - name: CJS require check
+        run: |
+          set -e
+          cd "$RUNNER_TEMP/smoke"
+          exports_field=$(node -e "console.log(require('@wave-av/sdk/package.json').exports['.'].require ? 'yes' : 'no')")
+          if [ "$exports_field" != "yes" ]; then
+            echo "skipped: package does not claim a CJS require() entry point"
+            exit 0
+          fi
+          cat > cjs-check.cjs <<'EOF'
+          const m = require('@wave-av/sdk');
+          const count = Object.keys(m).length;
+          console.log('CJS require ok:', count, 'exports');
+          if (count < 1) {
+            console.error('FAIL: no exports from CJS require');
+            process.exit(1);
+          }
+          EOF
+          node cjs-check.cjs
+
+      - name: README quickstart against the live gateway
+        env:
+          WAVE_GATEWAY_API_KEY: ${{ secrets.WAVE_GATEWAY_API_KEY }}
+        run: |
+          set -e
+          if [ -z "$WAVE_GATEWAY_API_KEY" ]; then
+            echo "skipped: WAVE_GATEWAY_API_KEY absent (fork or unset)"
+            exit 0
+          fi
+          cp scripts/smoke-quickstart.mjs "$RUNNER_TEMP/smoke/smoke-quickstart.mjs"
+          cd "$RUNNER_TEMP/smoke"
+          node smoke-quickstart.mjs
