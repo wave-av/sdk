@@ -1,3 +1,4 @@
+import { stripTrailingSlashes } from './url-util';
 /**
  * WAVE SDK - Realtime API
  *
@@ -23,7 +24,7 @@ const DEFAULT_WS = 'wss://realtime.wave.online';
 
 /** Derive the https REST origin from the (ws) realtime base URL. */
 function httpOrigin(wsUrl: string): string {
-  return wsUrl.replace(/^ws/i, 'http').replace(/\/+$/, '');
+  return stripTrailingSlashes(wsUrl.replace(/^ws/i, 'http'));
 }
 
 /**
@@ -43,7 +44,7 @@ export class RealtimeChannel extends EventEmitter {
     private readonly opts: RealtimeConnectOptions = {},
   ) {
     super();
-    this.wsBase = (opts.url || DEFAULT_WS).replace(/\/+$/, '');
+    this.wsBase = stripTrailingSlashes(opts.url || DEFAULT_WS);
     this.httpBase = httpOrigin(this.wsBase);
     this.open();
   }
@@ -123,7 +124,7 @@ export class RealtimeAPI {
   constructor(client: WaveClient, opts: { url?: string } = {}) {
     const info = client.getConnectionInfo();
     this.apiKey = info.apiKey;
-    this.wsBase = (opts.url || DEFAULT_WS).replace(/\/+$/, '');
+    this.wsBase = stripTrailingSlashes(opts.url || DEFAULT_WS);
     this.httpBase = httpOrigin(this.wsBase);
   }
 

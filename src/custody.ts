@@ -1,3 +1,4 @@
+import { stripTrailingSlashes } from './url-util';
 /**
  * WAVE Custody client — the SDK rung for capability custody.
  *
@@ -47,7 +48,7 @@ export class CustodyClient {
   private readonly fetchImpl: typeof fetch;
 
   constructor(opts: CustodyClientOptions) {
-    this.baseUrl = opts.baseUrl.replace(/\/+$/, "");
+    this.baseUrl = stripTrailingSlashes(opts.baseUrl);
     this.token = opts.token;
     this.fetchImpl = opts.fetchImpl ?? fetch;
   }
