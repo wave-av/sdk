@@ -11,7 +11,11 @@ name: Release (public npm)
 # WILL still create the missing GitHub Release. Nothing reaches public npm or a
 # GitHub Release until every gate before it is green:
 #   0. resolve-ref   — resolve + strictly validate the tag (push ref or dispatch
-#                      input) BEFORE it reaches any git/npm/gh command as text.
+#                      input) BEFORE it reaches any git/npm/gh command as text:
+#                      format (sdk-v<semver>), existence (git rev-parse), and
+#                      trust (the tag's commit must be an ancestor of origin/main)
+#                      — every later job checks out that commit BY SHA, not by
+#                      the (mutable) tag name.
 #   1. secret-scan   — org-standard gitleaks (pinned + checksum-verified) over the
 #                      published tree + the WAVE content-policy trade-secret gate.
 #   2. verify        — asserts the tag's version matches package.json (fails loud
@@ -41,6 +45,11 @@ name: Release (public npm)
 # release-drift.yml fails loud if a release ever appears via any other path.
 
 on:
+  # A pushed tag's own commit IS the code this workflow builds/publishes — GitHub
+  # scopes that run's ambient Actions-cache to `refs/tags/<tag>`, an isolated scope
+  # with no relationship to `main`'s cache. CodeQL's actions/cache-poisoning query
+  # is silent here for exactly that reason (see resolve-ref below for the
+  # workflow_dispatch case, which does NOT get that isolation).
   push:
     tags: ['sdk-v*']
   workflow_dispatch:
@@ -62,7 +71,14 @@ jobs:
   # Gate 0 — resolve + strictly validate the tag before it reaches any command.
   # A dispatch input is attacker-influencable text; a full-anchored regex (not a
   # glob) refuses anything that isn't exactly `sdk-v<semver>` (mirrors the same
-  # guard in sbom.yml).
+  # guard in sbom.yml). Beyond format, this job also proves the tag's commit
+  # EXISTS and is an ANCESTOR of origin/main before any downstream job checks it
+  # out — closing CodeQL actions/cache-poisoning/poisonable-step alerts #9-15
+  # (a workflow_dispatch run's ambient Actions-cache scope is main's, so
+  # executing an unmerged/unreviewed tag's code there could poison main's
+  # cache). Outputs both `tag` (the name, for check-version.sh/gh release) and
+  # `sha` (the validated commit, used for every downstream checkout) — never
+  # interpolated into a shell body, only passed via env:/outputs.
   # ---------------------------------------------------------------------------
   resolve-ref:
     name: Resolve release tag
@@ -70,7 +86,19 @@ jobs:
     timeout-minutes: 5
     outputs:
       tag: ${{ steps.resolve.outputs.tag }}
+      sha: ${{ steps.resolve.outputs.sha }}
     steps:
+      # Full history + all tags — needed so `git rev-parse`/`git merge-base` below
+      # can see the tag and `origin/main`. No `ref:` override: this checks out
+      # whatever triggered the run (the pushed tag, or the branch a dispatch was
+      # run from) — never the untrusted dispatch input — and no step here executes
+      # anything from that tree (metadata reads only), so nothing below is a
+      # "poisonable step" itself.
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
       - name: Resolve and validate the tag to release
         id: resolve
         env:
@@ -79,12 +107,41 @@ jobs:
         run: |
           set -euo pipefail
           TAG="${DISPATCH_TAG:-$PUSH_TAG}"
+
+          # 1. Format — full-anchored regex, not a glob — refuses anything that
+          #    isn't exactly `sdk-v<semver>` (mirrors the same guard in sbom.yml).
           if [[ ! "$TAG" =~ ^sdk-v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]]; then
             echo "::error::refusing to process ref '$TAG' — expected sdk-v<semver>"
             exit 1
           fi
-          echo "resolved tag: $TAG"
+
+          # 2. Existence — the tag must resolve to a real commit object in THIS
+          #    repo, not just text that happens to look right.
+          if ! SHA="$(git rev-parse --verify --quiet "refs/tags/${TAG}^{commit}")"; then
+            echo "::error::tag '$TAG' does not exist in this repository (or does not point at a commit)"
+            exit 1
+          fi
+
+          # 3. Trust (closes CodeQL actions/cache-poisoning/poisonable-step alerts
+          #    #9-15 on this workflow) — a `workflow_dispatch` input is
+          #    attacker-influencable text, and a dispatch run's ambient
+          #    GITHUB_REF/Actions-cache scope is whatever branch it was dispatched
+          #    on (normally `main`), even though the CODE this workflow goes on to
+          #    execute (npm ci/build/lint/test, gitleaks, content-policy.sh) is the
+          #    resolved tag's tree. Format-validity alone does not prove that tree
+          #    was ever reviewed — a tag pushed off an arbitrary/unmerged branch
+          #    passes the regex above just as easily. Requiring the tag's commit to
+          #    be an ANCESTOR of origin/main means every later job only ever runs
+          #    code that was already merged (and reviewed) on the default branch —
+          #    never a bespoke, unmerged payload smuggled in via a crafted tag.
+          if ! git merge-base --is-ancestor "$SHA" origin/main; then
+            echo "::error::tag '$TAG' (commit $SHA) is not reachable from origin/main — refusing to build/publish/release an unmerged or unrecognized ref"
+            exit 1
+          fi
+
+          echo "resolved tag: $TAG -> $SHA (verified: sdk-v<semver> shape, exists, ancestor of origin/main)"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
 
   # ---------------------------------------------------------------------------
   # Gate 1 — secret scan (org standard: gitleaks + WAVE content-policy).
@@ -99,7 +156,7 @@ jobs:
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
-          ref: ${{ needs.resolve-ref.outputs.tag }}
+          ref: ${{ needs.resolve-ref.outputs.sha }}
           persist-credentials: false
 
       - name: Install gitleaks (pinned + checksum-verified)
@@ -138,7 +195,7 @@ jobs:
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
-          ref: ${{ needs.resolve-ref.outputs.tag }}
+          ref: ${{ needs.resolve-ref.outputs.sha }}
           persist-credentials: false
 
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
@@ -215,7 +272,7 @@ jobs:
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
-          ref: ${{ needs.resolve-ref.outputs.tag }}
+          ref: ${{ needs.resolve-ref.outputs.sha }}
           persist-credentials: false
 
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
@@ -296,7 +353,7 @@ jobs:
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
-          ref: ${{ needs.resolve-ref.outputs.tag }}
+          ref: ${{ needs.resolve-ref.outputs.sha }}
           persist-credentials: false
 
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
