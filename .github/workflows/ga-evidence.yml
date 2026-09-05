@@ -17,6 +17,10 @@ name: GA evidence (VER-001)
 # for the shipped ledger to drift — a GitHub release can be deleted, a dist-tag can be
 # retagged, a tarball can be re-published. Only a schedule catches that with no PR to
 # trigger it.
+#
+# PR CONTRACT: on `pull_request`, exit 1 (a live criterion failed) is a `::warning`, not a job
+# failure — that is a property of the live surface, not of the PR's diff. Exit 2 (the producer
+# could not run) always fails the job, and on schedule/workflow_dispatch/push exit 1 fails it too.
 
 on:
   pull_request:
@@ -84,18 +88,26 @@ jobs:
           retention-days: 90
 
       - name: Enforce
-        # A gate that cannot fail is not a gate. Exit 1 (a criterion failed or is unknown)
-        # and exit 2 (the producer could not run) both fail this job — neither is a pass.
-        # Reaching the canonical intake at
+        # A gate that cannot fail is not a gate. Exit 2 (the producer could not run) always
+        # fails this job. Exit 1 (a criterion failed or is unknown) fails it too, EXCEPT on
+        # `pull_request` — see the PR CONTRACT note in the header — where it logs a
+        # `::warning` and exits 0, because a live-surface result is not a property of this
+        # PR's diff. Reaching the canonical intake at
         # governance/ga-gate/evidence/incoming/wave-av__sdk.ga-evidence.json is a SEPARATE,
         # credential-gated cross-repo step (opening a PR against claude-workstation), not
         # part of this workflow; today the artifact uploaded above is how the evidence
         # leaves this repo.
         env:
           CODE: ${{ steps.evidence.outputs.exit_code }}
+          EVENT: ${{ github.event_name }}
         run: |
-          if [ "$CODE" != "0" ]; then
-            echo "::error title=ga-evidence::GA evidence producer reported a non-pass result (exit $CODE) — see the job summary"
-            exit 1
+          if [ "$CODE" = "0" ]; then
+            echo "GA evidence: all emitted criteria pass"
+            exit 0
           fi
-          echo "GA evidence: all emitted criteria pass"
+          if [ "$CODE" = "1" ] && [ "$EVENT" = "pull_request" ]; then
+            echo "::warning title=ga-evidence::sdk GA evidence producer reports a failing live criterion (exit 1); evidence is in the job summary and artifact; this does not fail the PR because the criterion is a property of the live surface, not of this change"
+            exit 0
+          fi
+          echo "::error title=ga-evidence::GA evidence producer reported a non-pass result (exit $CODE) — see the job summary"
+          exit 1
