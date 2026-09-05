@@ -23,3 +23,8 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run type-check
+      # CAP-001 — capabilities.json's exposes.sdk must match the real export surface
+      # (Wave's instantiated namespaces + the barrel's off-aggregate exports). Unit
+      # tests otherwise only run at release-tag time (release.yml); this specific
+      # drift gate runs on every PR so a manifest/code mismatch fails fast.
+      - run: npx vitest run src/__tests__/capabilities.test.ts
