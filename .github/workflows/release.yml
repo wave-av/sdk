@@ -96,7 +96,20 @@ jobs:
       - name: e2e-smoke — pack + install + import the published tarball
         run: |
           set -euo pipefail
-          TARBALL="$(npm pack --silent | tail -n1)"
+          # --json instead of --silent: some npm versions suppress the stdout
+          # filename under --silent, which would leave TARBALL empty and turn
+          # the install below into an install of the workspace DIRECTORY --
+          # green gate, real tarball never exercised. Parse the filename and
+          # prove the .tgz exists so any regression fails loudly instead.
+          TARBALL="$(npm pack --json | node -e "process.stdout.write(JSON.parse(require('fs').readFileSync(0,'utf8'))[0].filename)")"
+          case "$TARBALL" in
+            *.tgz) ;;
+            *) echo "::error::npm pack --json reported '$TARBALL', not a .tgz filename"; exit 1 ;;
+          esac
+          if [ ! -f "$TARBALL" ]; then
+            echo "::error::npm pack reported '$TARBALL' but no such file exists"
+            exit 1
+          fi
           TARBALL="$PWD/$TARBALL"
           echo "packed: $TARBALL"
           SMOKE="$(mktemp -d)"
@@ -159,10 +172,39 @@ jobs:
       - name: Upgrade npm to a trusted-publishing-capable CLI (>= 11.5.1)
         run: |
           set -euo pipefail
-          npm install -g npm@latest
+          npm install -g npm@11.19.0
           NPM_VER="$(npm --version)"
           echo "npm version: $NPM_VER"
-          node -e "const s='$NPM_VER'.split('.').map(Number);const min=[11,5,1];for(let i=0;i<3;i++){if(s[i]>min[i])process.exit(0);if(s[i]<min[i]){console.error('npm '+'$NPM_VER'+' < 11.5.1 — trusted publishing unavailable');process.exit(1);}}"
+          # The version is read from the environment, not spliced into the
+          # program text: it is the output of an external command, and a
+          # version that does not parse must fail CLOSED. The previous
+          # comparison relied on > and <, which are both false against NaN, so
+          # an unparseable string fell through the loop and exited 0 -- the
+          # gate reported the CLI as trusted-publishing-capable without ever
+          # having compared anything.
+          # shellcheck disable=SC2016  # single-quoted on purpose: the body is a
+          # JS program and ${...} inside it are template literals, not shell.
+          NPM_VER="$NPM_VER" node -e '
+            const raw = process.env.NPM_VER ?? "";
+            const min = [11, 5, 1];
+            const m = /^(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$/.exec(raw.trim());
+            if (!m) {
+              console.error(`::error::npm reported version ${JSON.stringify(raw)}, which is not a parseable x.y.z — refusing to assume it supports trusted publishing`);
+              process.exit(1);
+            }
+            const s = m.slice(1, 4).map(Number);
+            if (!s.every(Number.isSafeInteger)) {
+              console.error(`::error::npm version ${JSON.stringify(raw)} did not yield three integers`);
+              process.exit(1);
+            }
+            for (let i = 0; i < 3; i++) {
+              if (s[i] > min[i]) process.exit(0);
+              if (s[i] < min[i]) {
+                console.error(`::error::npm ${raw} < ${min.join(".")} — trusted publishing unavailable`);
+                process.exit(1);
+              }
+            }
+          '
 
       - run: npm ci
 
