@@ -401,6 +401,22 @@ export {
   type PerceptionSubscription,
 } from "./perception";
 
+// Sandbox: safe contained command execution (preview -> approve -> apply)
+export {
+  SandboxAPI,
+  createSandboxAPI,
+  type SandboxTier,
+  type SandboxContainment,
+  type SandboxFsDiffEntry,
+  type SandboxFileInput,
+  type SandboxReceipt,
+  type SandboxCommandRequest,
+  type SandboxPreviewResult,
+  type SandboxApplyRequest,
+  type SandboxApplyResult,
+  type SandboxReceiptResult,
+} from "./sandbox";
+
 // Telemetry (opt-in)
 export {
   withTelemetry,
@@ -459,6 +475,7 @@ import { MailAPI } from "./mail";
 import { MeterAPI } from "./meter";
 import { PricingAPI } from "./pricing";
 import { PerceptionAPI } from "./perception";
+import { SandboxAPI } from "./sandbox";
 import { InferenceAPI } from "./inference";
 
 /**
@@ -533,6 +550,9 @@ export class Wave {
   // Inference: the measured funnel (route/fallback/meter, inference.wave.online)
   public readonly inference: InferenceAPI;
 
+  // Sandbox: safe contained command execution (preview -> approve -> apply)
+  public readonly sandbox: SandboxAPI;
+
   constructor(config: WaveClientConfig) {
     this.client = new WaveClient(config);
 
@@ -599,6 +619,9 @@ export class Wave {
     // Perception (#85)
     this.perception = new PerceptionAPI(this.client);
     this.inference = new InferenceAPI(this.client);
+
+    // Sandbox
+    this.sandbox = new SandboxAPI(this.client);
   }
 }
 
