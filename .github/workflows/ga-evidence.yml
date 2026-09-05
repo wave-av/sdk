@@ -1,0 +1,101 @@
+name: GA evidence (VER-001)
+
+# Produces this repo's contribution to the WAVE GA readiness gate
+# (governance/plans/instinct-ga-validator/E1-HANDSHAKE.md, P2 row 3): a schema-shaped
+# ga-evidence.json for VER-001 ("version and release truth agree from source through
+# deployment"). See scripts/ga/ga-evidence.mjs for what is checked, what is deliberately
+# NOT emitted (CONTRACT-001 — no contract-hash pin exists in this repo today), and why.
+#
+# FAIL-LOUD, MIRRORING sdks' registry-cleanroom.yml: every trigger runs the real checks and
+# the job's own exit code is the true result. No `|| true`, no `continue-on-error`. On a
+# pull_request the HEAD version may legitimately be ahead of npm `latest` (an in-flight
+# release PR) — the producer reports that as `unknown` ("unreleased source"), never a
+# silent pass, and this workflow still goes red for it: an unverified criterion is not a
+# criterion the gate can rely on, the same rule the intake contract states for `unknown`.
+#
+# WHY DAILY AND NOT ONLY ON RELEASE: nothing about this repo's own commits has to change
+# for the shipped ledger to drift — a GitHub release can be deleted, a dist-tag can be
+# retagged, a tarball can be re-published. Only a schedule catches that with no PR to
+# trigger it.
+
+on:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    # 09:31 UTC daily.
+    - cron: "31 9 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ga-evidence:
+    name: GA evidence producer
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: "22"
+
+      - name: Run the GA evidence producer
+        id: evidence
+        env:
+          # Ambient CI token, used ONLY to raise the GitHub REST API's unauthenticated rate
+          # limit when checking for a release on the newest tag — never written to any file
+          # this workflow produces. The registry probes stay unauthenticated per the gate's
+          # own rule (public npm registry, no auth).
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -uo pipefail
+          set +e
+          node scripts/ga/ga-evidence.mjs 2>&1 | tee "$RUNNER_TEMP/ga-evidence.log"
+          code=${PIPESTATUS[0]}
+          set -e
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          {
+            echo "## GA evidence — VER-001"
+            echo
+            echo "Exit code \`$code\` (0 = pass, 1 = a criterion is fail or unknown, 2 = the producer could not run)."
+            echo
+            echo '```'
+            cat "$RUNNER_TEMP/ga-evidence.log"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+
+      - name: Upload GA evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ga-evidence-sdk
+          path: ga-out/
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Enforce
+        # A gate that cannot fail is not a gate. Exit 1 (a criterion failed or is unknown)
+        # and exit 2 (the producer could not run) both fail this job — neither is a pass.
+        # Reaching the canonical intake at
+        # governance/ga-gate/evidence/incoming/wave-av__sdk.ga-evidence.json is a SEPARATE,
+        # credential-gated cross-repo step (opening a PR against claude-workstation), not
+        # part of this workflow; today the artifact uploaded above is how the evidence
+        # leaves this repo.
+        env:
+          CODE: ${{ steps.evidence.outputs.exit_code }}
+        run: |
+          if [ "$CODE" != "0" ]; then
+            echo "::error title=ga-evidence::GA evidence producer reported a non-pass result (exit $CODE) — see the job summary"
+            exit 1
+          fi
+          echo "GA evidence: all emitted criteria pass"
