@@ -58,6 +58,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -uo pipefail
+          set +e
           node scripts/ga/ga-evidence.mjs 2>&1 | tee "$RUNNER_TEMP/ga-evidence.log"
           code=${PIPESTATUS[0]}
           set -e
