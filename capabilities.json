@@ -10,6 +10,209 @@
       "team": "sdk"
     }
   ],
+  "exposes": {
+    "sdk": {
+      "aggregateNamespaces": [
+        {
+          "name": "audience",
+          "className": "AudienceAPI"
+        },
+        {
+          "name": "captions",
+          "className": "CaptionsAPI"
+        },
+        {
+          "name": "chapters",
+          "className": "ChaptersAPI"
+        },
+        {
+          "name": "clips",
+          "className": "ClipsAPI"
+        },
+        {
+          "name": "collab",
+          "className": "CollabAPI"
+        },
+        {
+          "name": "connect",
+          "className": "ConnectAPI"
+        },
+        {
+          "name": "creator",
+          "className": "CreatorAPI"
+        },
+        {
+          "name": "desktop",
+          "className": "DesktopAPI"
+        },
+        {
+          "name": "distribution",
+          "className": "DistributionAPI"
+        },
+        {
+          "name": "drm",
+          "className": "DrmAPI"
+        },
+        {
+          "name": "edge",
+          "className": "EdgeAPI"
+        },
+        {
+          "name": "editor",
+          "className": "EditorAPI"
+        },
+        {
+          "name": "fleet",
+          "className": "FleetAPI"
+        },
+        {
+          "name": "ghost",
+          "className": "GhostAPI"
+        },
+        {
+          "name": "inference",
+          "className": "InferenceAPI"
+        },
+        {
+          "name": "mail",
+          "className": "MailAPI"
+        },
+        {
+          "name": "marketplace",
+          "className": "MarketplaceAPI"
+        },
+        {
+          "name": "mesh",
+          "className": "MeshAPI"
+        },
+        {
+          "name": "meter",
+          "className": "MeterAPI"
+        },
+        {
+          "name": "notifications",
+          "className": "NotificationsAPI"
+        },
+        {
+          "name": "perception",
+          "className": "PerceptionAPI"
+        },
+        {
+          "name": "phone",
+          "className": "PhoneAPI"
+        },
+        {
+          "name": "pipeline",
+          "className": "PipelineAPI"
+        },
+        {
+          "name": "podcast",
+          "className": "PodcastAPI"
+        },
+        {
+          "name": "pricing",
+          "className": "PricingAPI"
+        },
+        {
+          "name": "prism",
+          "className": "PrismAPI"
+        },
+        {
+          "name": "pulse",
+          "className": "PulseAPI"
+        },
+        {
+          "name": "qr",
+          "className": "QrAPI"
+        },
+        {
+          "name": "realtime",
+          "className": "RealtimeAPI"
+        },
+        {
+          "name": "scene",
+          "className": "SceneAPI"
+        },
+        {
+          "name": "search",
+          "className": "SearchAPI"
+        },
+        {
+          "name": "sentiment",
+          "className": "SentimentAPI"
+        },
+        {
+          "name": "signage",
+          "className": "SignageAPI"
+        },
+        {
+          "name": "slides",
+          "className": "SlidesAPI"
+        },
+        {
+          "name": "studio",
+          "className": "StudioAPI"
+        },
+        {
+          "name": "studioAI",
+          "className": "StudioAIAPI"
+        },
+        {
+          "name": "transcribe",
+          "className": "TranscribeAPI"
+        },
+        {
+          "name": "transcripts",
+          "className": "TranscriptAPI"
+        },
+        {
+          "name": "usb",
+          "className": "UsbAPI"
+        },
+        {
+          "name": "vault",
+          "className": "VaultAPI"
+        },
+        {
+          "name": "voice",
+          "className": "VoiceAPI"
+        },
+        {
+          "name": "zoom",
+          "className": "ZoomAPI"
+        }
+      ],
+      "offAggregateExports": [
+        "AutomationsClient",
+        "CATALOG",
+        "ComputerClient",
+        "CustodyClient",
+        "ProductClient",
+        "RateLimitError",
+        "RealtimeChannel",
+        "RuntimeClient",
+        "RuntimeError",
+        "WaveClient",
+        "WaveError",
+        "createClient",
+        "handleMcpMessage",
+        "initTelemetry",
+        "isCeremonyPending",
+        "isCeremonyTerminal",
+        "isTelemetryEnabled",
+        "listProducts",
+        "pollAgentCeremony",
+        "refreshAgentCeremony",
+        "resetTelemetry",
+        "resolveProduct",
+        "runWaveCli",
+        "startAgentCeremony",
+        "waveMcpTools",
+        "withTelemetry",
+        "withTelemetrySync"
+      ]
+    }
+  },
   "consumes": {
     "waveProducts": [
       {
