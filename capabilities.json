@@ -130,6 +130,10 @@
           "className": "RealtimeAPI"
         },
         {
+          "name": "sandbox",
+          "className": "SandboxAPI"
+        },
+        {
           "name": "scene",
           "className": "SceneAPI"
         },
