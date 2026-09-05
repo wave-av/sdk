@@ -1,3 +1,4 @@
+import { stripTrailingSlashes } from './url-util';
 /**
  * WAVE Runtime API client — the OpenAI-compatible runtime door.
  *
@@ -65,7 +66,7 @@ export class RuntimeClient {
   private readonly fetchImpl: typeof fetch;
 
   constructor(opts: RuntimeClientOptions) {
-    this.baseUrl = opts.baseUrl.replace(/\/+$/, "");
+    this.baseUrl = stripTrailingSlashes(opts.baseUrl);
     this.token = opts.token;
     this.fetchImpl = opts.fetchImpl ?? fetch;
   }
