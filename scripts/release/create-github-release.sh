@@ -13,7 +13,14 @@ set -euo pipefail
 
 TAG="${1:?usage: create-github-release.sh <sdk-vX.Y.Z tag>}"
 REPO="${GH_REPO:-wave-av/sdk}"
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+# Package root: defaults to this script's own repo (dirname-relative — correct
+# when the script runs from its normal in-tree location, e.g. local dev). CI
+# overrides this via $RELEASE_PKG_ROOT when the script has been checked out to
+# a SEPARATE path from the package code it packs — see release.yml's
+# ".release-tooling" checkout (backfilling a pre-#121 tag whose tree predates
+# this script: the tag's checkout has package.json/dist, this script is pinned
+# to the workflow's own ref instead).
+ROOT="${RELEASE_PKG_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 
 if [[ ! "$TAG" =~ ^sdk-v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]]; then
   echo "::error::refusing to create a release for tag '$TAG' — expected sdk-v<semver>" >&2

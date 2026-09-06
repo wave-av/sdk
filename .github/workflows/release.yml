@@ -198,13 +198,32 @@ jobs:
           ref: ${{ needs.resolve-ref.outputs.sha }}
           persist-credentials: false
 
+      # Release tooling (scripts/release/*) is pinned to the WORKFLOW's own ref
+      # (github.sha — the tag's own commit for a tag push, or the dispatch
+      # ref's head, i.e. main, for workflow_dispatch), NOT the tag checkout
+      # above. A backfill dispatch can target a `sdk-v*` tag that predates
+      # PR #121 (which added scripts/release/*.sh) — that tag's tree has no
+      # such directory, so the helper must come from here instead. The
+      # package CODE (package.json, src/, dist/) stays pinned to the tag sha
+      # via the checkout above; only the tooling moves. See check-version.sh's
+      # RELEASE_PKG_ROOT handling for why the env var below is required.
+      - name: Checkout release tooling (workflow ref — may postdate the tag)
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: ${{ github.sha }}
+          sparse-checkout: scripts/release
+          persist-credentials: false
+          path: .release-tooling
+
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: '22'
           package-manager-cache: false
 
       - name: Assert tag version matches package.json (VER-001 codification)
-        run: scripts/release/check-version.sh "${{ needs.resolve-ref.outputs.tag }}"
+        env:
+          RELEASE_PKG_ROOT: ${{ github.workspace }}
+        run: .release-tooling/scripts/release/check-version.sh "${{ needs.resolve-ref.outputs.tag }}"
 
       - run: npm ci
 
@@ -275,6 +294,17 @@ jobs:
           ref: ${{ needs.resolve-ref.outputs.sha }}
           persist-credentials: false
 
+      # Release tooling pinned to the workflow's own ref — see the identical
+      # step (and its comment) in the `verify` job above for the full
+      # rationale (backfilling a pre-#121 tag whose tree lacks scripts/release).
+      - name: Checkout release tooling (workflow ref — may postdate the tag)
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: ${{ github.sha }}
+          sparse-checkout: scripts/release
+          persist-credentials: false
+          path: .release-tooling
+
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: '22'
@@ -295,9 +325,11 @@ jobs:
 
       - name: Verify tag matches package.json version + choose dist-tag
         id: ver
+        env:
+          RELEASE_PKG_ROOT: ${{ github.workspace }}
         run: |
           set -euo pipefail
-          scripts/release/check-version.sh "${{ needs.resolve-ref.outputs.tag }}"
+          .release-tooling/scripts/release/check-version.sh "${{ needs.resolve-ref.outputs.tag }}"
           PKG_VERSION="$(node -p "require('./package.json').version")"
           case "$PKG_VERSION" in
             *-next.*) DIST_TAG=next ;;   # explicit prerelease channel
@@ -313,7 +345,7 @@ jobs:
         run: |
           set -euo pipefail
           set +e
-          scripts/release/npm-published.sh "${{ steps.ver.outputs.version }}"
+          .release-tooling/scripts/release/npm-published.sh "${{ steps.ver.outputs.version }}"
           RC=$?
           set -e
           case "$RC" in
@@ -356,6 +388,17 @@ jobs:
           ref: ${{ needs.resolve-ref.outputs.sha }}
           persist-credentials: false
 
+      # Release tooling pinned to the workflow's own ref — see the identical
+      # step (and its comment) in the `verify` job above for the full
+      # rationale (backfilling a pre-#121 tag whose tree lacks scripts/release).
+      - name: Checkout release tooling (workflow ref — may postdate the tag)
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: ${{ github.sha }}
+          sparse-checkout: scripts/release
+          persist-credentials: false
+          path: .release-tooling
+
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: '22'
@@ -368,4 +411,5 @@ jobs:
       - name: Create or update the GitHub Release (idempotent)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: scripts/release/create-github-release.sh "${{ needs.resolve-ref.outputs.tag }}"
+          RELEASE_PKG_ROOT: ${{ github.workspace }}
+        run: .release-tooling/scripts/release/create-github-release.sh "${{ needs.resolve-ref.outputs.tag }}"
