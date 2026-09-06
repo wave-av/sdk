@@ -1,13 +1,18 @@
+import { WaveClient } from './client.js';
+import { Timestamps, PaginationParams, PaginatedResponse } from './client-types.js';
+import 'eventemitter3';
+import './telemetry.js';
+
 /**
  * WAVE SDK - Pulse Analytics API
  *
  * Analytics, metrics, and business intelligence for streams and viewers.
  */
-import type { WaveClient, PaginationParams, PaginatedResponse, Timestamps } from "./client";
-export type TimeRange = "1h" | "6h" | "24h" | "7d" | "30d" | "90d" | "custom";
-export type Granularity = "minute" | "hour" | "day" | "week" | "month";
-export type MetricType = "viewers" | "streams" | "bandwidth" | "revenue" | "engagement" | "quality";
-export interface QueryParams {
+
+type TimeRange = "1h" | "6h" | "24h" | "7d" | "30d" | "90d" | "custom";
+type Granularity = "minute" | "hour" | "day" | "week" | "month";
+type MetricType = "viewers" | "streams" | "bandwidth" | "revenue" | "engagement" | "quality";
+interface QueryParams {
     time_range: TimeRange;
     start_date?: string;
     end_date?: string;
@@ -16,7 +21,7 @@ export interface QueryParams {
     group_by?: string;
     [key: string]: string | number | boolean | undefined;
 }
-export interface StreamAnalytics {
+interface StreamAnalytics {
     stream_id: string;
     title: string;
     total_viewers: number;
@@ -30,7 +35,7 @@ export interface StreamAnalytics {
     started_at: string;
     ended_at?: string;
 }
-export interface ViewerAnalytics {
+interface ViewerAnalytics {
     total_viewers: number;
     unique_viewers: number;
     peak_concurrent: number;
@@ -40,23 +45,23 @@ export interface ViewerAnalytics {
     devices: DeviceBreakdown[];
     protocols: ProtocolBreakdown[];
 }
-export interface GeoBreakdown {
+interface GeoBreakdown {
     country: string;
     region?: string;
     viewers: number;
     percentage: number;
 }
-export interface DeviceBreakdown {
+interface DeviceBreakdown {
     type: "desktop" | "mobile" | "tablet" | "tv" | "other";
     viewers: number;
     percentage: number;
 }
-export interface ProtocolBreakdown {
+interface ProtocolBreakdown {
     protocol: string;
     viewers: number;
     percentage: number;
 }
-export interface QualityMetrics {
+interface QualityMetrics {
     average_bitrate_kbps: number;
     buffering_ratio: number;
     startup_time_ms: number;
@@ -65,7 +70,7 @@ export interface QualityMetrics {
     error_rate: number;
     cdn_cache_hit_ratio: number;
 }
-export interface EngagementMetrics {
+interface EngagementMetrics {
     average_watch_time_seconds: number;
     chat_messages: number;
     reactions: number;
@@ -76,7 +81,7 @@ export interface EngagementMetrics {
         drop_rate: number;
     }[];
 }
-export interface RevenueMetrics {
+interface RevenueMetrics {
     total_revenue_cents: number;
     subscription_revenue_cents: number;
     tip_revenue_cents: number;
@@ -87,11 +92,11 @@ export interface RevenueMetrics {
     new_subscribers: number;
     cancelled_subscribers: number;
 }
-export interface TimeSeriesPoint {
+interface TimeSeriesPoint {
     timestamp: string;
     value: number;
 }
-export interface AnalyticsReport extends Timestamps {
+interface AnalyticsReport extends Timestamps {
     id: string;
     organization_id: string;
     name: string;
@@ -100,26 +105,26 @@ export interface AnalyticsReport extends Timestamps {
     time_range: TimeRange;
     download_url?: string;
 }
-export interface Dashboard extends Timestamps {
+interface Dashboard extends Timestamps {
     id: string;
     organization_id: string;
     name: string;
     widgets: DashboardWidget[];
     is_default: boolean;
 }
-export interface DashboardWidget {
+interface DashboardWidget {
     id: string;
     type: "chart" | "number" | "table" | "map";
     metric: MetricType;
     config: Record<string, unknown>;
 }
-export interface CreateReportRequest {
+interface CreateReportRequest {
     name: string;
     type: string;
     time_range: TimeRange;
     format?: "pdf" | "csv" | "json";
 }
-export interface CreateDashboardRequest {
+interface CreateDashboardRequest {
     name: string;
     widgets?: DashboardWidget[];
     is_default?: boolean;
@@ -134,7 +139,7 @@ export interface CreateDashboardRequest {
  * const timeseries = await wave.pulse.getTimeSeries('viewers', { time_range: '24h', granularity: 'hour' });
  * ```
  */
-export declare class PulseAPI {
+declare class PulseAPI {
     private readonly client;
     private readonly basePath;
     constructor(client: WaveClient);
@@ -153,4 +158,6 @@ export declare class PulseAPI {
     updateDashboard(dashboardId: string, updates: Partial<CreateDashboardRequest>): Promise<Dashboard>;
     removeDashboard(dashboardId: string): Promise<void>;
 }
-export declare function createPulseAPI(client: WaveClient): PulseAPI;
+declare function createPulseAPI(client: WaveClient): PulseAPI;
+
+export { type AnalyticsReport, type CreateDashboardRequest, type CreateReportRequest, type Dashboard, type DashboardWidget, type DeviceBreakdown, type EngagementMetrics, type GeoBreakdown, type Granularity, type MetricType, type ProtocolBreakdown, PulseAPI, type QualityMetrics, type QueryParams, type RevenueMetrics, type StreamAnalytics, type TimeRange, type TimeSeriesPoint, type ViewerAnalytics, createPulseAPI };

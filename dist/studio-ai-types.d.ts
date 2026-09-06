@@ -1,3 +1,6 @@
+import { Timestamps, Metadata, PaginationParams } from './client-types.js';
+import './telemetry.js';
+
 /**
  * WAVE SDK - Studio AI API
  *
@@ -6,23 +9,23 @@
  * NOTE: This is a client SDK. All authorization checks are performed server-side.
  * The API will return 403 Forbidden if the user lacks required permissions.
  */
-import type { PaginationParams, Timestamps, Metadata } from './client';
+
 /**
  * AI assistant mode
  */
-export type AssistantMode = 'auto_director' | 'graphics_operator' | 'audio_mixer' | 'replay_operator' | 'content_moderator' | 'engagement_manager';
+type AssistantMode = 'auto_director' | 'graphics_operator' | 'audio_mixer' | 'replay_operator' | 'content_moderator' | 'engagement_manager';
 /**
  * AI suggestion priority
  */
-export type SuggestionPriority = 'low' | 'medium' | 'high' | 'critical';
+type SuggestionPriority = 'low' | 'medium' | 'high' | 'critical';
 /**
  * AI suggestion status
  */
-export type SuggestionStatus = 'pending' | 'accepted' | 'rejected' | 'applied' | 'expired';
+type SuggestionStatus = 'pending' | 'accepted' | 'rejected' | 'applied' | 'expired';
 /**
  * AI assistant
  */
-export interface AIAssistant extends Timestamps {
+interface AIAssistant extends Timestamps {
     id: string;
     organization_id: string;
     stream_id: string;
@@ -35,7 +38,7 @@ export interface AIAssistant extends Timestamps {
 /**
  * Assistant configuration
  */
-export interface AssistantConfig {
+interface AssistantConfig {
     /** Automation level (0-100) */
     automation_level: number;
     /** Enable auto-apply for suggestions */
@@ -48,7 +51,7 @@ export interface AssistantConfig {
 /**
  * Assistant statistics
  */
-export interface AssistantStats {
+interface AssistantStats {
     suggestions_made: number;
     suggestions_accepted: number;
     suggestions_rejected: number;
@@ -59,7 +62,7 @@ export interface AssistantStats {
 /**
  * AI suggestion
  */
-export interface AISuggestion extends Timestamps {
+interface AISuggestion extends Timestamps {
     id: string;
     assistant_id: string;
     stream_id: string;
@@ -79,7 +82,7 @@ export interface AISuggestion extends Timestamps {
 /**
  * Suggestion action
  */
-export interface SuggestionAction {
+interface SuggestionAction {
     type: string;
     target?: string;
     params: Record<string, unknown>;
@@ -87,7 +90,7 @@ export interface SuggestionAction {
 /**
  * Auto-director scene recommendation
  */
-export interface SceneRecommendation {
+interface SceneRecommendation {
     scene_id: string;
     scene_name: string;
     confidence: number;
@@ -97,7 +100,7 @@ export interface SceneRecommendation {
 /**
  * Graphics suggestion
  */
-export interface GraphicsSuggestion {
+interface GraphicsSuggestion {
     graphic_type: 'lower_third' | 'full_screen' | 'overlay' | 'bug';
     template_id?: string;
     content: Record<string, string>;
@@ -110,7 +113,7 @@ export interface GraphicsSuggestion {
 /**
  * Audio mix suggestion
  */
-export interface AudioMixSuggestion {
+interface AudioMixSuggestion {
     source_id: string;
     source_name: string;
     action: 'raise' | 'lower' | 'mute' | 'unmute' | 'solo';
@@ -120,7 +123,7 @@ export interface AudioMixSuggestion {
 /**
  * Content moderation alert
  */
-export interface ModerationAlert {
+interface ModerationAlert {
     type: 'inappropriate_content' | 'copyright' | 'spam' | 'hate_speech' | 'violence';
     severity: 'low' | 'medium' | 'high' | 'critical';
     source: 'video' | 'audio' | 'chat';
@@ -131,7 +134,7 @@ export interface ModerationAlert {
 /**
  * Engagement insight
  */
-export interface EngagementInsight {
+interface EngagementInsight {
     type: 'peak_moment' | 'drop_off' | 'chat_spike' | 'reaction_surge';
     metric: string;
     value: number;
@@ -142,7 +145,7 @@ export interface EngagementInsight {
 /**
  * Start assistant request
  */
-export interface StartAssistantRequest {
+interface StartAssistantRequest {
     stream_id: string;
     mode: AssistantMode;
     config?: Partial<AssistantConfig>;
@@ -151,7 +154,7 @@ export interface StartAssistantRequest {
 /**
  * Update assistant request
  */
-export interface UpdateAssistantRequest {
+interface UpdateAssistantRequest {
     config?: Partial<AssistantConfig>;
     status?: 'active' | 'paused';
     metadata?: Metadata;
@@ -159,7 +162,7 @@ export interface UpdateAssistantRequest {
 /**
  * List suggestions params
  */
-export interface ListSuggestionsParams extends PaginationParams {
+interface ListSuggestionsParams extends PaginationParams {
     assistant_id?: string;
     stream_id?: string;
     mode?: AssistantMode;
@@ -167,32 +170,5 @@ export interface ListSuggestionsParams extends PaginationParams {
     priority?: SuggestionPriority;
     min_confidence?: number;
 }
-/**
- * Studio AI API client
- *
- * All operations require appropriate permissions. Authorization is enforced
- * server-side - the API returns 403 if the authenticated user lacks access.
- *
- * @example
- * ```typescript
- * import { WaveClient } from '@wave/sdk';
- * import { StudioAIAPI } from '@wave/sdk/studio-ai';
- *
- * const client = new WaveClient({ apiKey: 'your-api-key' });
- * const studioAI = new StudioAIAPI(client);
- *
- * // Start auto-director for a live stream
- * const assistant = await studioAI.startAssistant({
- *   stream_id: 'stream_123',
- *   mode: 'auto_director',
- *   config: {
- *     automation_level: 50,
- *     auto_apply: false,
- *     confidence_threshold: 0.8,
- *   },
- * });
- *
- * // Get scene recommendations
- * const scenes = await studioAI.getSceneRecommendations(assistant.id);
- * ```
- */
+
+export type { AIAssistant, AISuggestion, AssistantConfig, AssistantMode, AssistantStats, AudioMixSuggestion, EngagementInsight, GraphicsSuggestion, ListSuggestionsParams, ModerationAlert, SceneRecommendation, StartAssistantRequest, SuggestionAction, SuggestionPriority, SuggestionStatus, UpdateAssistantRequest };
