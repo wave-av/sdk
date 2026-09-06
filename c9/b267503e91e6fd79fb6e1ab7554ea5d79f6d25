@@ -1,0 +1,29 @@
+scripts/release/create-github-release.sh
+  s_efe86faf2558e9::t_7416ee42441319 16-23
+.github/workflows/release.yml
+  s_efe86faf2558e9::t_0916bf4bfa4fe3 391-401,414-415
+  s_efe86faf2558e9::t_4d7fb7142c7c0a 348
+  s_efe86faf2558e9::t_1ee464e978a9ab 201-217,224-226
+  s_efe86faf2558e9::t_b2cfbede4cebd9 297-307
+  s_efe86faf2558e9::t_7d1b21a75dec1d 328-329,332
+scripts/release/__tests__/check-version.test.ts
+  s_efe86faf2558e9::t_ff15ade4ef8fad 1-82
+scripts/release/check-version.sh
+  s_efe86faf2558e9::t_f9247c2e9963f2 15-22
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "c9b267503e91e6fd79fb6e1ab7554ea5d79f6d25",
+  "prompts": {},
+  "sessions": {
+    "s_efe86faf2558e9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f2b6e2e9-ab55-4d57-9d9f-d57a588ae688",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Jake Fineman <jakefineman@gmail.com>"
+    }
+  }
+}
