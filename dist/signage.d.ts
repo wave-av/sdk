@@ -1,11 +1,16 @@
+import { WaveClient } from './client.js';
+import { PaginationParams, PaginatedResponse, Timestamps } from './client-types.js';
+import 'eventemitter3';
+import './telemetry.js';
+
 /**
  * WAVE SDK - Signage API
  *
  * Digital signage display and playlist management.
  */
-import type { WaveClient, PaginationParams, PaginatedResponse, Timestamps } from "./client";
-export type DisplayStatus = "online" | "offline" | "playing" | "error";
-export interface Display extends Timestamps {
+
+type DisplayStatus = "online" | "offline" | "playing" | "error";
+interface Display extends Timestamps {
     id: string;
     organization_id: string;
     name: string;
@@ -18,7 +23,7 @@ export interface Display extends Timestamps {
     version?: string;
     last_seen_at?: string;
 }
-export interface Playlist extends Timestamps {
+interface Playlist extends Timestamps {
     id: string;
     organization_id: string;
     name: string;
@@ -26,7 +31,7 @@ export interface Playlist extends Timestamps {
     loop: boolean;
     duration_seconds: number;
 }
-export interface PlaylistItem {
+interface PlaylistItem {
     id: string;
     type: "image" | "video" | "stream" | "webpage" | "html";
     content_url: string;
@@ -34,7 +39,7 @@ export interface PlaylistItem {
     transition?: string;
     sort_order: number;
 }
-export interface ScheduleEntry {
+interface ScheduleEntry {
     id: string;
     playlist_id: string;
     display_ids: string[];
@@ -43,7 +48,7 @@ export interface ScheduleEntry {
     days_of_week: number[];
     recurring: boolean;
 }
-export interface DisplayConfig {
+interface DisplayConfig {
     brightness?: number;
     volume?: number;
     auto_sleep?: boolean;
@@ -51,7 +56,7 @@ export interface DisplayConfig {
     sleep_end?: string;
     rotation?: number;
 }
-export interface ListDisplaysParams extends PaginationParams {
+interface ListDisplaysParams extends PaginationParams {
     status?: DisplayStatus;
     location?: string;
 }
@@ -65,7 +70,7 @@ export interface ListDisplaysParams extends PaginationParams {
  * await wave.signage.assignPlaylist(display.id, playlist.id);
  * ```
  */
-export declare class SignageAPI {
+declare class SignageAPI {
     private readonly client;
     private readonly basePath;
     constructor(client: WaveClient);
@@ -98,4 +103,6 @@ export declare class SignageAPI {
     removeSchedule(scheduleId: string): Promise<void>;
     configureDisplay(displayId: string, config: DisplayConfig): Promise<DisplayConfig>;
 }
-export declare function createSignageAPI(client: WaveClient): SignageAPI;
+declare function createSignageAPI(client: WaveClient): SignageAPI;
+
+export { type Display, type DisplayConfig, type DisplayStatus, type ListDisplaysParams, type Playlist, type PlaylistItem, type ScheduleEntry, SignageAPI, createSignageAPI };

@@ -1,10 +1,15 @@
+import { WaveClient } from './client.js';
+import 'eventemitter3';
+import './telemetry.js';
+import './client-types.js';
+
 /**
  * WAVE SDK - Desktop API
  *
  * Desktop Node application management and device enumeration.
  */
-import type { WaveClient } from "./client";
-export interface DesktopNodeInfo {
+
+interface DesktopNodeInfo {
     id: string;
     name: string;
     version: string;
@@ -16,7 +21,7 @@ export interface DesktopNodeInfo {
     display_count: number;
     usb_devices: LocalUSBDevice[];
 }
-export interface LocalUSBDevice {
+interface LocalUSBDevice {
     id: string;
     name: string;
     type: "camera" | "microphone" | "capture_card" | "other";
@@ -24,7 +29,7 @@ export interface LocalUSBDevice {
     product_id: string;
     connected: boolean;
 }
-export interface NodePerformance {
+interface NodePerformance {
     cpu_usage: number;
     memory_usage: number;
     gpu_usage?: number;
@@ -35,15 +40,15 @@ export interface NodePerformance {
     uptime_seconds: number;
     temperature_celsius?: number;
 }
-export interface NodeLog {
+interface NodeLog {
     id: string;
     level: "debug" | "info" | "warn" | "error";
     message: string;
     source: string;
     timestamp: string;
 }
-export type UpdateChannel = "stable" | "beta" | "canary";
-export interface NodeConfig {
+type UpdateChannel = "stable" | "beta" | "canary";
+interface NodeConfig {
     auto_start: boolean;
     start_on_boot: boolean;
     update_channel: UpdateChannel;
@@ -61,7 +66,7 @@ export interface NodeConfig {
  * await wave.desktop.installUpdate(nodeId);
  * ```
  */
-export declare class DesktopAPI {
+declare class DesktopAPI {
     private readonly client;
     private readonly basePath;
     constructor(client: WaveClient);
@@ -92,4 +97,6 @@ export declare class DesktopAPI {
         status: string;
     }>;
 }
-export declare function createDesktopAPI(client: WaveClient): DesktopAPI;
+declare function createDesktopAPI(client: WaveClient): DesktopAPI;
+
+export { DesktopAPI, type DesktopNodeInfo, type LocalUSBDevice, type NodeConfig, type NodeLog, type NodePerformance, type UpdateChannel, createDesktopAPI };

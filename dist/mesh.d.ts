@@ -1,3 +1,8 @@
+import { WaveClient } from './client.js';
+import { PaginationParams, PaginatedResponse, Timestamps } from './client-types.js';
+import 'eventemitter3';
+import './telemetry.js';
+
 /**
  * WAVE SDK - Mesh API
  *
@@ -7,19 +12,19 @@
  * NOTE: This is a client SDK. All authorization checks are performed server-side.
  * The API will return 403 Forbidden if the user lacks required permissions.
  */
-import type { WaveClient, PaginationParams, PaginatedResponse, Timestamps } from "./client";
+
 /**
  * Region operational status
  */
-export type RegionStatus = "active" | "standby" | "draining" | "offline";
+type RegionStatus = "active" | "standby" | "draining" | "offline";
 /**
  * Failover strategy
  */
-export type FailoverStrategy = "automatic" | "manual" | "weighted";
+type FailoverStrategy = "automatic" | "manual" | "weighted";
 /**
  * Mesh region
  */
-export interface MeshRegion extends Timestamps {
+interface MeshRegion extends Timestamps {
     id: string;
     name: string;
     provider: "aws" | "gcp" | "cloudflare" | "custom";
@@ -34,7 +39,7 @@ export interface MeshRegion extends Timestamps {
 /**
  * Mesh peer connection between regions
  */
-export interface MeshPeer {
+interface MeshPeer {
     id: string;
     region_id: string;
     endpoint: string;
@@ -45,7 +50,7 @@ export interface MeshPeer {
 /**
  * Failover policy
  */
-export interface FailoverPolicy extends Timestamps {
+interface FailoverPolicy extends Timestamps {
     id: string;
     organization_id: string;
     name: string;
@@ -59,7 +64,7 @@ export interface FailoverPolicy extends Timestamps {
 /**
  * Failover event record
  */
-export interface FailoverEvent {
+interface FailoverEvent {
     id: string;
     policy_id: string;
     type: "failover" | "failback" | "manual_switch";
@@ -72,7 +77,7 @@ export interface FailoverEvent {
 /**
  * Replication status between two regions
  */
-export interface ReplicationStatus {
+interface ReplicationStatus {
     source_region: string;
     target_region: string;
     status: "synced" | "lagging" | "stale";
@@ -82,7 +87,7 @@ export interface ReplicationStatus {
 /**
  * Full mesh topology snapshot
  */
-export interface MeshTopology {
+interface MeshTopology {
     regions: MeshRegion[];
     peers: MeshPeer[];
     policies: FailoverPolicy[];
@@ -90,7 +95,7 @@ export interface MeshTopology {
 /**
  * Create a failover policy
  */
-export interface CreatePolicyRequest {
+interface CreatePolicyRequest {
     name: string;
     strategy: FailoverStrategy;
     primary_region: string;
@@ -102,7 +107,7 @@ export interface CreatePolicyRequest {
 /**
  * List regions filters
  */
-export interface ListRegionsParams extends PaginationParams {
+interface ListRegionsParams extends PaginationParams {
     status?: RegionStatus;
     provider?: "aws" | "gcp" | "cloudflare" | "custom";
 }
@@ -138,7 +143,7 @@ export interface ListRegionsParams extends PaginationParams {
  * await mesh.triggerFailover(policy.id, 'us-east-1');
  * ```
  */
-export declare class MeshAPI {
+declare class MeshAPI {
     private readonly client;
     private readonly basePath;
     constructor(client: WaveClient);
@@ -234,4 +239,6 @@ export declare class MeshAPI {
 /**
  * Create a Mesh API instance
  */
-export declare function createMeshAPI(client: WaveClient): MeshAPI;
+declare function createMeshAPI(client: WaveClient): MeshAPI;
+
+export { type CreatePolicyRequest, type FailoverEvent, type FailoverPolicy, type FailoverStrategy, type ListRegionsParams, MeshAPI, type MeshPeer, type MeshRegion, type MeshTopology, type RegionStatus, type ReplicationStatus, createMeshAPI };
