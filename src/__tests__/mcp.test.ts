@@ -18,7 +18,9 @@ describe("wave-runtime MCP", () => {
 
   it("exposes the wave_models + wave_complete tools", () => {
     const names = waveMcpTools().map((t) => t.name);
-    expect(names).toEqual(["wave_models", "wave_complete"]);
+    // the runtime MCP grew past its original 2 tools (catalog-driven renderings, c201645);
+    // assert the two originals are PRESENT rather than the exact set (additive surface).
+    expect(names).toEqual(expect.arrayContaining(["wave_models", "wave_complete"]));
   });
 
   it("responds to initialize with the server capabilities", async () => {
@@ -33,7 +35,8 @@ describe("wave-runtime MCP", () => {
 
   it("tools/list returns the tool defs", async () => {
     const r = await handleMcpMessage(client, { jsonrpc: "2.0", id: 2, method: "tools/list" });
-    expect((r?.result as { tools: unknown[] }).tools).toHaveLength(2);
+    const tools = (r?.result as { tools: unknown[] }).tools;
+    expect(tools.length).toBeGreaterThanOrEqual(2);
   });
 
   it("tools/call wave_complete returns the assistant text", async () => {

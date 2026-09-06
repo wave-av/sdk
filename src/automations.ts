@@ -1,3 +1,4 @@
+import { stripTrailingSlashes } from './url-util';
 /**
  * WAVE Automations client — the SDK rung for the event-trigger fabric.
  *
@@ -21,7 +22,7 @@ export class AutomationsClient {
   private readonly fetchImpl: typeof fetch;
 
   constructor(opts: AutomationsClientOptions) {
-    this.endpoint = opts.endpoint.replace(/\/+$/, "");
+    this.endpoint = stripTrailingSlashes(opts.endpoint);
     this.fetchImpl = opts.fetchImpl ?? fetch;
   }
 

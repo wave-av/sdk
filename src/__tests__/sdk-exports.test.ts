@@ -114,6 +114,9 @@ describe("@wave/sdk exports", () => {
 
     // Meter (E5)
     expect(wave.meter).toBeInstanceOf(SDK.MeterAPI);
+
+    // Sandbox
+    expect(wave.sandbox).toBeInstanceOf(SDK.SandboxAPI);
   });
 
   // =========================================================================
@@ -165,6 +168,8 @@ describe("@wave/sdk exports", () => {
     "MailAPI",
     // Meter (E5)
     "MeterAPI",
+    // Sandbox
+    "SandboxAPI",
   ];
 
   it.each(expectedAPIs)("exports %s class", (apiName) => {
@@ -211,6 +216,7 @@ describe("@wave/sdk exports", () => {
     "createPerceptionAPI",
     "createMailAPI",
     "createMeterAPI",
+    "createSandboxAPI",
   ];
 
   it.each(expectedFactories)("exports %s factory", (factoryName) => {
@@ -236,12 +242,12 @@ describe("@wave/sdk exports", () => {
   // Module count verification
   // =========================================================================
 
-  it("has exactly 36 API module classes (34 + 2 new E5)", () => {
-    expect(expectedAPIs.length).toBe(36);
+  it("has exactly 37 API module classes (34 + 2 new E5 + 1 sandbox)", () => {
+    expect(expectedAPIs.length).toBe(37);
   });
 
-  it("has exactly 36 factory functions", () => {
-    expect(expectedFactories.length).toBe(36);
+  it("has exactly 37 factory functions", () => {
+    expect(expectedFactories.length).toBe(37);
   });
 
   it("total named exports exceeds 80", () => {
