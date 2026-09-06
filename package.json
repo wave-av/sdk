@@ -1,6 +1,6 @@
 {
   "name": "@wave-av/sdk",
-  "version": "2.1.2",
+  "version": "2.1.3",
   "description": "Official WAVE SDK - 34 API modules covering streaming, production, device management, analytics, content, monetization, and more",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -319,6 +319,6 @@
     "zod": "4.4.3"
   },
   "bin": {
-    "wave": "./dist/cli.js"
+    "wave-sdk": "./dist/bin.js"
   }
 }
