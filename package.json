@@ -235,10 +235,16 @@
       "types": "./dist/pricing.d.ts",
       "import": "./dist/pricing.mjs",
       "require": "./dist/pricing.js"
+    },
+    "./compose": {
+      "types": "./dist/compose.d.ts",
+      "import": "./dist/compose.mjs",
+      "require": "./dist/compose.js"
     }
   },
   "files": [
     "dist",
+    "schema",
     "README.md",
     "CHANGELOG.md",
     "LICENSE"
@@ -250,6 +256,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "type-check": "tsc --noEmit -p tsconfig.json",
+    "schema:generate": "ts-json-schema-generator --path src/compose-types.ts --type ComposeProposal --tsconfig tsconfig.json --no-top-ref -o schema/compose.schema.json",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
@@ -311,7 +318,9 @@
   "devDependencies": {
     "@eslint/js": "^10.0.0",
     "@types/node": "^26.0.0",
+    "ajv": "^8.20.0",
     "eslint": "^10.4.1",
+    "ts-json-schema-generator": "^2.9.0",
     "tsup": "^8.0.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.60.1",
