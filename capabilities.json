@@ -62,6 +62,10 @@
           "className": "EditorAPI"
         },
         {
+          "name": "enhance",
+          "className": "EnhanceAPI"
+        },
+        {
           "name": "fleet",
           "className": "FleetAPI"
         },
