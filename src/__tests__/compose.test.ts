@@ -11,15 +11,14 @@
  * 4. `saveFlow()` throws `ConsoleAuthRequiredError` (never a silent no-op) when no console
  *    token is supplied, and the error carries the equivalent curl.
  *
- * The fixture response below is the `agentsPanel.example` object documented in the front-door
- * design pack (`designs/front-door/front-door.copy.json`, wave-pen branch
- * `design/print-register-2026-09-04`), which is itself sourced from the webinar fixture in the
- * gateway's `test/compose-fixtures.ts` (the `WEBINAR` intent and the `validReply()` why-lines).
- * Two fields the design pack's own `owed` list flags as not-yet-real placeholders
- * (`priceRows[0].quotedAt: null`, `engine.promptHash: null`) are replaced here with
- * representative non-null values, because the shipped engine contract types
- * (`QuotedPriceRow.quotedAt: number`, `ComposeEngineInfo.promptHash: string`) require them —
- * everything else is unchanged from the documented example.
+ * The fixture response below is a documented example response for `POST /v1/compose`, which is
+ * itself sourced from the webinar fixture in the gateway's `test/compose-fixtures.ts` at commit
+ * `882ae75` (the `WEBINAR` intent and the `validReply()` why-lines). Two fields the source
+ * documentation flags as not-yet-real placeholders (`priceRows[0].quotedAt: null`,
+ * `engine.promptHash: null`) are replaced here with representative non-null values, because the
+ * shipped engine contract types (`QuotedPriceRow.quotedAt: number`,
+ * `ComposeEngineInfo.promptHash: string`) require them. Everything else is unchanged from the
+ * documented example.
  */
 
 import { describe, it, expect, vi } from "vitest";
@@ -40,11 +39,11 @@ export const FIXTURE_PROPOSAL: ComposeProposal = {
   productIds: ["realtime", "transcribe", "captions"],
   tools: ["perception_subscribe", "wave_create_transcription", "wave_create_caption_job"],
   scopes: [
-    { scope: "realtime:read", mintable: true, source: "wave-gateway src/open-by-default.ts:101 (origin/main)" },
-    { scope: "transcribe:read", mintable: true, source: "wave-gateway src/open-by-default.ts:98 (origin/main)" },
-    { scope: "transcribe:write", mintable: true, source: "wave-gateway src/open-by-default.ts:98 (origin/main)" },
-    { scope: "captions:read", mintable: true, source: "wave-gateway src/open-by-default.ts:99 (origin/main)" },
-    { scope: "captions:write", mintable: true, source: "wave-gateway src/open-by-default.ts:99 (origin/main)" },
+    { scope: "realtime:read", mintable: true, source: "src/open-by-default.ts:101 (882ae75)" },
+    { scope: "transcribe:read", mintable: true, source: "src/open-by-default.ts:98 (882ae75)" },
+    { scope: "transcribe:write", mintable: true, source: "src/open-by-default.ts:98 (882ae75)" },
+    { scope: "captions:read", mintable: true, source: "src/open-by-default.ts:99 (882ae75)" },
+    { scope: "captions:write", mintable: true, source: "src/open-by-default.ts:99 (882ae75)" },
   ],
   priceRows: [
     // quotedAt: 1757100000 replaces the design pack's owed `null` (QuotedPriceRow.quotedAt: number).
