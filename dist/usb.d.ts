@@ -1,12 +1,17 @@
+import { WaveClient } from './client.js';
+import { PaginationParams, PaginatedResponse } from './client-types.js';
+import 'eventemitter3';
+import './telemetry.js';
+
 /**
  * WAVE SDK - USB API
  *
  * USB device relay, claiming, and capability management.
  */
-import type { WaveClient, PaginationParams, PaginatedResponse } from "./client";
-export type USBDeviceClass = "video" | "audio" | "hid" | "storage" | "composite";
-export type USBDeviceStatus = "connected" | "claimed" | "in_use" | "disconnected";
-export interface USBDevice {
+
+type USBDeviceClass = "video" | "audio" | "hid" | "storage" | "composite";
+type USBDeviceStatus = "connected" | "claimed" | "in_use" | "disconnected";
+interface USBDevice {
     id: string;
     node_id: string;
     name: string;
@@ -22,7 +27,7 @@ export interface USBDevice {
     connected_at: string;
     updated_at: string;
 }
-export interface USBDeviceCapabilities {
+interface USBDeviceCapabilities {
     video_formats?: string[];
     audio_formats?: string[];
     max_resolution?: string;
@@ -30,11 +35,11 @@ export interface USBDeviceCapabilities {
     supports_uvc: boolean;
     supports_uac: boolean;
 }
-export interface ClaimRequest {
+interface ClaimRequest {
     reason?: string;
     exclusive?: boolean;
 }
-export interface ListUSBDevicesParams extends PaginationParams {
+interface ListUSBDevicesParams extends PaginationParams {
     node_id?: string;
     device_class?: USBDeviceClass;
     status?: USBDeviceStatus;
@@ -49,7 +54,7 @@ export interface ListUSBDevicesParams extends PaginationParams {
  * const caps = await wave.usb.getCapabilities(deviceId);
  * ```
  */
-export declare class UsbAPI {
+declare class UsbAPI {
     private readonly client;
     private readonly basePath;
     constructor(client: WaveClient);
@@ -61,4 +66,6 @@ export declare class UsbAPI {
     listByNode(nodeId: string, params?: PaginationParams): Promise<PaginatedResponse<USBDevice>>;
     configure(deviceId: string, config: Record<string, unknown>): Promise<USBDevice>;
 }
-export declare function createUsbAPI(client: WaveClient): UsbAPI;
+declare function createUsbAPI(client: WaveClient): UsbAPI;
+
+export { type ClaimRequest, type ListUSBDevicesParams, type USBDevice, type USBDeviceCapabilities, type USBDeviceClass, type USBDeviceStatus, UsbAPI, createUsbAPI };
