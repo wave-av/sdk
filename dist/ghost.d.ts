@@ -1,3 +1,8 @@
+import { WaveClient } from './client.js';
+import { Timestamps, PaginationParams, PaginatedResponse } from './client-types.js';
+import 'eventemitter3';
+import './telemetry.js';
+
 /**
  * WAVE SDK - Autopilot API (formerly Ghost Producer)
  *
@@ -7,19 +12,19 @@
  * NOTE: This is a client SDK. All authorization checks are performed server-side.
  * The API will return 403 Forbidden if the user lacks required permissions.
  */
-import type { WaveClient, PaginationParams, PaginatedResponse, Timestamps } from "./client";
+
 /**
  * Directing autonomy level
  */
-export type DirectingMode = "autonomous" | "assisted" | "manual";
+type DirectingMode = "autonomous" | "assisted" | "manual";
 /**
  * Production directing style preset
  */
-export type DirectingStyle = "documentary" | "sports" | "talk_show" | "concert" | "conference" | "worship" | "custom";
+type DirectingStyle = "documentary" | "sports" | "talk_show" | "concert" | "conference" | "worship" | "custom";
 /**
  * Autopilot directing session
  */
-export interface GhostSession extends Timestamps {
+interface GhostSession extends Timestamps {
     id: string;
     production_id: string;
     mode: DirectingMode;
@@ -35,7 +40,7 @@ export interface GhostSession extends Timestamps {
 /**
  * Rule governing directing behavior
  */
-export interface DirectingRule {
+interface DirectingRule {
     type: "speaker_priority" | "shot_variety" | "no_repeat" | "minimum_duration" | "audio_follow" | "custom";
     params: Record<string, unknown>;
     enabled: boolean;
@@ -44,7 +49,7 @@ export interface DirectingRule {
 /**
  * Session directing statistics
  */
-export interface DirectingStats {
+interface DirectingStats {
     total_switches: number;
     auto_switches: number;
     manual_overrides: number;
@@ -55,11 +60,11 @@ export interface DirectingStats {
 /**
  * AI suggestion type
  */
-export type AISuggestionType = "switch_source" | "change_layout" | "show_graphic" | "adjust_audio" | "start_recording";
+type AISuggestionType = "switch_source" | "change_layout" | "show_graphic" | "adjust_audio" | "start_recording";
 /**
  * AI-generated production suggestion
  */
-export interface AISuggestion {
+interface AISuggestion {
     id: string;
     session_id: string;
     type: AISuggestionType;
@@ -72,7 +77,7 @@ export interface AISuggestion {
 /**
  * Manual shot override
  */
-export interface ShotOverride {
+interface ShotOverride {
     source_id: string;
     duration_ms: number;
     reason: string;
@@ -80,7 +85,7 @@ export interface ShotOverride {
 /**
  * Start an Autopilot session
  */
-export interface StartGhostRequest {
+interface StartGhostRequest {
     production_id: string;
     mode: DirectingMode;
     style: DirectingStyle;
@@ -91,7 +96,7 @@ export interface StartGhostRequest {
 /**
  * Update an Autopilot session
  */
-export interface UpdateGhostRequest {
+interface UpdateGhostRequest {
     mode?: DirectingMode;
     style?: DirectingStyle;
     confidence_threshold?: number;
@@ -136,7 +141,7 @@ export interface UpdateGhostRequest {
  * });
  * ```
  */
-export declare class GhostAPI {
+declare class GhostAPI {
     private readonly client;
     private readonly basePath;
     constructor(client: WaveClient);
@@ -210,4 +215,6 @@ export declare class GhostAPI {
 /**
  * Create an Autopilot API instance
  */
-export declare function createGhostAPI(client: WaveClient): GhostAPI;
+declare function createGhostAPI(client: WaveClient): GhostAPI;
+
+export { type AISuggestion, type AISuggestionType, type DirectingMode, type DirectingRule, type DirectingStats, type DirectingStyle, GhostAPI, type GhostSession, type ShotOverride, type StartGhostRequest, type UpdateGhostRequest, createGhostAPI };

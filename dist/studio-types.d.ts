@@ -1,3 +1,6 @@
+import { Metadata, Timestamps, PaginationParams } from './client-types.js';
+import './telemetry.js';
+
 /**
  * WAVE SDK - Studio API
  *
@@ -7,27 +10,27 @@
  * NOTE: This is a client SDK. All authorization checks are performed server-side.
  * The API will return 403 Forbidden if the user lacks required permissions.
  */
-import type { PaginationParams, Timestamps, Metadata } from "./client";
+
 /**
  * Production lifecycle status
  */
-export type ProductionStatus = "idle" | "rehearsal" | "live" | "ending" | "ended";
+type ProductionStatus = "idle" | "rehearsal" | "live" | "ending" | "ended";
 /**
  * Input source type for a production
  */
-export type SourceType = "camera" | "ndi" | "screen_share" | "rtmp_input" | "srt_input" | "media_file" | "browser" | "color_bars";
+type SourceType = "camera" | "ndi" | "screen_share" | "rtmp_input" | "srt_input" | "media_file" | "browser" | "color_bars";
 /**
  * Video transition type between sources or scenes
  */
-export type TransitionType = "cut" | "dissolve" | "wipe" | "fade" | "stinger";
+type TransitionType = "cut" | "dissolve" | "wipe" | "fade" | "stinger";
 /**
  * Scene layout preset
  */
-export type LayoutType = "fullscreen" | "split_2" | "split_3" | "split_4" | "pip" | "side_by_side" | "grid_2x2" | "grid_3x3" | "custom";
+type LayoutType = "fullscreen" | "split_2" | "split_3" | "split_4" | "pip" | "side_by_side" | "grid_2x2" | "grid_3x3" | "custom";
 /**
  * Transition configuration for scene or source changes
  */
-export interface TransitionConfig {
+interface TransitionConfig {
     /** Transition effect type */
     type: TransitionType;
     /** Duration in milliseconds */
@@ -38,7 +41,7 @@ export interface TransitionConfig {
 /**
  * Position and crop settings for a source within a scene
  */
-export interface SceneSource {
+interface SceneSource {
     /** Reference to the source */
     source_id: string;
     /** Position and dimensions within the scene canvas */
@@ -64,7 +67,7 @@ export interface SceneSource {
 /**
  * Production scene with layout and source arrangement
  */
-export interface Scene extends Timestamps {
+interface Scene extends Timestamps {
     id: string;
     production_id: string;
     name: string;
@@ -82,7 +85,7 @@ export interface Scene extends Timestamps {
 /**
  * Input source connected to a production
  */
-export interface Source extends Timestamps {
+interface Source extends Timestamps {
     id: string;
     production_id: string;
     name: string;
@@ -112,7 +115,7 @@ export interface Source extends Timestamps {
 /**
  * Live production session
  */
-export interface Production extends Timestamps {
+interface Production extends Timestamps {
     id: string;
     organization_id: string;
     title: string;
@@ -143,7 +146,7 @@ export interface Production extends Timestamps {
 /**
  * Graphic overlay element
  */
-export interface Graphic extends Timestamps {
+interface Graphic extends Timestamps {
     id: string;
     production_id: string;
     name: string;
@@ -166,7 +169,7 @@ export interface Graphic extends Timestamps {
 /**
  * Audio mix channel for a source
  */
-export interface AudioMixChannel {
+interface AudioMixChannel {
     /** Source this channel controls */
     source_id: string;
     /** Volume level (0-1) */
@@ -185,7 +188,7 @@ export interface AudioMixChannel {
 /**
  * Create production request
  */
-export interface CreateProductionRequest {
+interface CreateProductionRequest {
     title: string;
     description?: string;
     /** Enable recording when going live */
@@ -202,7 +205,7 @@ export interface CreateProductionRequest {
 /**
  * Update production request
  */
-export interface UpdateProductionRequest {
+interface UpdateProductionRequest {
     title?: string;
     description?: string;
     /** Enable or disable recording */
@@ -215,7 +218,7 @@ export interface UpdateProductionRequest {
 /**
  * List productions filters
  */
-export interface ListProductionsParams extends PaginationParams {
+interface ListProductionsParams extends PaginationParams {
     /** Filter by production status */
     status?: ProductionStatus;
     /** Filter productions created after this date (ISO 8601) */
@@ -227,41 +230,5 @@ export interface ListProductionsParams extends PaginationParams {
     /** Sort direction */
     order?: "asc" | "desc";
 }
-/**
- * Studio API client for multi-camera broadcast production
- *
- * All operations require appropriate permissions. Authorization is enforced
- * server-side - the API returns 403 if the authenticated user lacks access.
- *
- * @example
- * ```typescript
- * import { WaveClient } from '@wave/sdk';
- * import { StudioAPI } from '@wave/sdk/studio';
- *
- * const client = new WaveClient({ apiKey: 'your-api-key' });
- * const studio = new StudioAPI(client);
- *
- * // Create a production
- * const production = await studio.create({
- *   title: 'Live Show',
- *   recording_enabled: true,
- *   streaming_enabled: true,
- * });
- *
- * // Add a camera source
- * const camera = await studio.addSource(production.id, {
- *   name: 'Camera 1',
- *   type: 'camera',
- *   url: 'rtmp://ingest.wave.online/live/cam1',
- * });
- *
- * // Go live
- * await studio.start(production.id);
- *
- * // Switch program source with a dissolve
- * await studio.setProgram(production.id, camera.id, {
- *   type: 'dissolve',
- *   duration_ms: 500,
- * });
- * ```
- */
+
+export type { AudioMixChannel, CreateProductionRequest, Graphic, LayoutType, ListProductionsParams, Production, ProductionStatus, Scene, SceneSource, Source, SourceType, TransitionConfig, TransitionType, UpdateProductionRequest };
