@@ -1,3 +1,8 @@
+import { WaveClient } from './client.js';
+import 'eventemitter3';
+import './telemetry.js';
+import './client-types.js';
+
 /**
  * WAVE Replay Engine SDK
  *
@@ -5,22 +10,22 @@
  *
  * @packageDocumentation
  */
-import type { WaveClient } from './client';
-export interface ReplaySession {
+
+interface ReplaySession {
     readonly id: string;
     readonly switcherId: string | null;
     readonly status: 'recording' | 'reviewing' | 'exporting' | 'completed';
     readonly startedAt: string;
     readonly endedAt: string | null;
 }
-export interface PointOfInterest {
+interface PointOfInterest {
     readonly id: string;
     readonly sessionId: string;
     readonly timecode: string;
     readonly label: string | null;
     readonly createdAt: string;
 }
-export interface ReplayClip {
+interface ReplayClip {
     readonly id: string;
     readonly sessionId: string;
     readonly poiId: string;
@@ -28,7 +33,7 @@ export interface ReplayClip {
     readonly exportStatus: 'pending' | 'processing' | 'completed' | 'failed';
     readonly exportUrls: Record<string, string>;
 }
-export interface ExportClipOptions {
+interface ExportClipOptions {
     readonly poiId: string;
     readonly cameraId?: string;
     readonly speed?: number;
@@ -37,7 +42,7 @@ export interface ExportClipOptions {
     readonly platforms?: readonly ('tiktok' | 'youtube_shorts' | 'instagram_reels' | 'twitter')[];
     readonly addCaptions?: boolean;
 }
-export declare class ReplayAPI {
+declare class ReplayAPI {
     private readonly client;
     private readonly basePath;
     constructor(client: WaveClient);
@@ -49,4 +54,6 @@ export declare class ReplayAPI {
     getClip(sessionId: string, clipId: string): Promise<ReplayClip>;
     listClips(sessionId: string): Promise<ReplayClip[]>;
 }
-export declare function createReplayAPI(client: WaveClient): ReplayAPI;
+declare function createReplayAPI(client: WaveClient): ReplayAPI;
+
+export { type ExportClipOptions, type PointOfInterest, ReplayAPI, type ReplayClip, type ReplaySession, createReplayAPI };

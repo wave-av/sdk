@@ -1,12 +1,17 @@
+import { WaveClient } from './client.js';
+import { PaginationParams, PaginatedResponse, Timestamps, Metadata } from './client-types.js';
+import 'eventemitter3';
+import './telemetry.js';
+
 /**
  * WAVE SDK - Vault API
  *
  * Recording storage, VOD management, and archival policies.
  */
-import type { WaveClient, PaginationParams, PaginatedResponse, Timestamps, Metadata } from "./client";
-export type RecordingStatus = "recording" | "processing" | "ready" | "archived" | "failed";
-export type StorageTier = "hot" | "warm" | "cold" | "archive";
-export interface Recording extends Timestamps {
+
+type RecordingStatus = "recording" | "processing" | "ready" | "archived" | "failed";
+type StorageTier = "hot" | "warm" | "cold" | "archive";
+interface Recording extends Timestamps {
     id: string;
     organization_id: string;
     stream_id?: string;
@@ -25,7 +30,7 @@ export interface Recording extends Timestamps {
     metadata?: Metadata;
     expires_at?: string;
 }
-export interface StorageUsage {
+interface StorageUsage {
     organization_id: string;
     total_bytes: number;
     hot_bytes: number;
@@ -36,7 +41,7 @@ export interface StorageUsage {
     quota_bytes: number;
     usage_percent: number;
 }
-export interface ArchivePolicy extends Timestamps {
+interface ArchivePolicy extends Timestamps {
     id: string;
     name: string;
     tier_after_days: {
@@ -48,12 +53,12 @@ export interface ArchivePolicy extends Timestamps {
     applies_to: "all" | "tagged";
     tags?: string[];
 }
-export interface UploadSession {
+interface UploadSession {
     id: string;
     upload_url: string;
     expires_at: string;
 }
-export interface TranscodeJob extends Timestamps {
+interface TranscodeJob extends Timestamps {
     id: string;
     recording_id: string;
     status: "pending" | "processing" | "ready" | "failed";
@@ -61,7 +66,7 @@ export interface TranscodeJob extends Timestamps {
     output_url?: string;
     error?: string;
 }
-export interface ListRecordingsParams extends PaginationParams {
+interface ListRecordingsParams extends PaginationParams {
     status?: RecordingStatus;
     stream_id?: string;
     storage_tier?: StorageTier;
@@ -79,7 +84,7 @@ export interface ListRecordingsParams extends PaginationParams {
  * const url = await wave.vault.getDownloadUrl(recordingId);
  * ```
  */
-export declare class VaultAPI {
+declare class VaultAPI {
     private readonly client;
     private readonly basePath;
     constructor(client: WaveClient);
@@ -118,4 +123,6 @@ export declare class VaultAPI {
         expires_at: string;
     }>;
 }
-export declare function createVaultAPI(client: WaveClient): VaultAPI;
+declare function createVaultAPI(client: WaveClient): VaultAPI;
+
+export { type ArchivePolicy, type ListRecordingsParams, type Recording, type RecordingStatus, type StorageTier, type StorageUsage, type TranscodeJob, type UploadSession, VaultAPI, createVaultAPI };

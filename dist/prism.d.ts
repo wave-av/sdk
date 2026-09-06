@@ -1,15 +1,20 @@
+import { WaveClient } from './client.js';
+import { Timestamps, PaginationParams, PaginatedResponse } from './client-types.js';
+import 'eventemitter3';
+import './telemetry.js';
+
 /**
  * WAVE SDK - Prism API
  *
  * Virtual Device Bridge - present network AV sources (NDI, ONVIF, VISCA, Dante)
  * as standard USB UVC/UAC devices to conferencing apps.
  */
-import type { WaveClient, PaginationParams, PaginatedResponse, Timestamps } from "./client";
-export type VirtualDeviceType = "camera" | "microphone";
-export type DeviceStatus = "created" | "starting" | "running" | "stopping" | "stopped" | "error";
-export type SourceProtocol = "ndi" | "onvif" | "srt" | "rtmp" | "webrtc" | "dante" | "cloudflare" | "livekit";
-export type PTZProtocol = "ndi" | "onvif" | "visca" | "pelcod" | "cgi" | "livekit";
-export interface VirtualDevice extends Timestamps {
+
+type VirtualDeviceType = "camera" | "microphone";
+type DeviceStatus = "created" | "starting" | "running" | "stopping" | "stopped" | "error";
+type SourceProtocol = "ndi" | "onvif" | "srt" | "rtmp" | "webrtc" | "dante" | "cloudflare" | "livekit";
+type PTZProtocol = "ndi" | "onvif" | "visca" | "pelcod" | "cgi" | "livekit";
+interface VirtualDevice extends Timestamps {
     id: string;
     organization_id: string;
     name: string;
@@ -27,7 +32,7 @@ export interface VirtualDevice extends Timestamps {
     ptz_enabled: boolean;
     ptz_protocol?: PTZProtocol;
 }
-export interface PresetMapping extends Timestamps {
+interface PresetMapping extends Timestamps {
     id: string;
     device_id: string;
     slot_number: number;
@@ -36,7 +41,7 @@ export interface PresetMapping extends Timestamps {
     protocol: PTZProtocol;
     transition_speed: number;
 }
-export interface DeviceHealth {
+interface DeviceHealth {
     device_id: string;
     status: "healthy" | "degraded" | "critical" | "offline";
     latency_ms: number;
@@ -46,7 +51,7 @@ export interface DeviceHealth {
     source_connected: boolean;
     driver_connected: boolean;
 }
-export interface DiscoveredSource {
+interface DiscoveredSource {
     id: string;
     name: string;
     protocol: string;
@@ -55,7 +60,7 @@ export interface DiscoveredSource {
     capabilities: string[];
     discovered_at: string;
 }
-export interface CreateDeviceRequest {
+interface CreateDeviceRequest {
     name: string;
     type: VirtualDeviceType;
     source_protocol: SourceProtocol;
@@ -70,7 +75,7 @@ export interface CreateDeviceRequest {
     ptz_protocol?: PTZProtocol;
     metadata?: Record<string, unknown>;
 }
-export interface UpdateDeviceRequest {
+interface UpdateDeviceRequest {
     name?: string;
     source_endpoint?: string;
     resolution?: {
@@ -80,14 +85,14 @@ export interface UpdateDeviceRequest {
     frame_rate?: number;
     metadata?: Record<string, unknown>;
 }
-export interface SetPresetRequest {
+interface SetPresetRequest {
     slot_number: number;
     preset_name: string;
     preset_token: string;
     protocol: PTZProtocol;
     transition_speed?: number;
 }
-export interface ListDevicesParams extends PaginationParams {
+interface ListDevicesParams extends PaginationParams {
     type?: VirtualDeviceType;
     status?: DeviceStatus;
     node_id?: string;
@@ -107,7 +112,7 @@ export interface ListDevicesParams extends PaginationParams {
  * const sources = await wave.prism.discoverSources({ protocols: ['ndi', 'onvif'] });
  * ```
  */
-export declare class PrismAPI {
+declare class PrismAPI {
     private readonly client;
     private readonly basePath;
     constructor(client: WaveClient);
@@ -129,4 +134,6 @@ export declare class PrismAPI {
     removePreset(deviceId: string, slotNumber: number): Promise<void>;
     recallPreset(deviceId: string, slotNumber: number): Promise<void>;
 }
-export declare function createPrismAPI(client: WaveClient): PrismAPI;
+declare function createPrismAPI(client: WaveClient): PrismAPI;
+
+export { type CreateDeviceRequest, type DeviceHealth, type DeviceStatus, type DiscoveredSource, type ListDevicesParams, type PTZProtocol, type PresetMapping, PrismAPI, type SetPresetRequest, type SourceProtocol, type UpdateDeviceRequest, type VirtualDevice, type VirtualDeviceType, createPrismAPI };

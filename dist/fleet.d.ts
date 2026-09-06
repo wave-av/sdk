@@ -1,3 +1,8 @@
+import { WaveClient } from './client.js';
+import { PaginationParams, PaginatedResponse, Timestamps, Metadata } from './client-types.js';
+import 'eventemitter3';
+import './telemetry.js';
+
 /**
  * WAVE SDK - Fleet API
  *
@@ -7,19 +12,19 @@
  * NOTE: This is a client SDK. All authorization checks are performed server-side.
  * The API will return 403 Forbidden if the user lacks required permissions.
  */
-import type { WaveClient, PaginationParams, PaginatedResponse, Timestamps, Metadata } from "./client";
+
 /**
  * Node connection status
  */
-export type NodeStatus = "online" | "offline" | "maintenance" | "updating";
+type NodeStatus = "online" | "offline" | "maintenance" | "updating";
 /**
  * Node health state
  */
-export type NodeHealth = "healthy" | "degraded" | "critical";
+type NodeHealth = "healthy" | "degraded" | "critical";
 /**
  * Fleet node object
  */
-export interface FleetNode extends Timestamps {
+interface FleetNode extends Timestamps {
     id: string;
     organization_id: string;
     name: string;
@@ -40,7 +45,7 @@ export interface FleetNode extends Timestamps {
 /**
  * Device attached to a node
  */
-export interface NodeDevice {
+interface NodeDevice {
     id: string;
     node_id: string;
     name: string;
@@ -51,7 +56,7 @@ export interface NodeDevice {
 /**
  * Register a new node
  */
-export interface RegisterNodeRequest {
+interface RegisterNodeRequest {
     name: string;
     os: string;
     version: string;
@@ -61,7 +66,7 @@ export interface RegisterNodeRequest {
 /**
  * Update a node
  */
-export interface UpdateNodeRequest {
+interface UpdateNodeRequest {
     name?: string;
     tags?: string[];
     metadata?: Metadata;
@@ -69,7 +74,7 @@ export interface UpdateNodeRequest {
 /**
  * List nodes filters
  */
-export interface ListNodesParams extends PaginationParams {
+interface ListNodesParams extends PaginationParams {
     status?: NodeStatus;
     health?: NodeHealth;
     os?: string;
@@ -79,14 +84,14 @@ export interface ListNodesParams extends PaginationParams {
 /**
  * Command to send to a node
  */
-export interface NodeCommand {
+interface NodeCommand {
     type: "restart" | "update" | "shutdown" | "scan_devices" | "clear_cache";
     params?: Record<string, unknown>;
 }
 /**
  * Node resource metrics snapshot
  */
-export interface NodeMetrics {
+interface NodeMetrics {
     node_id: string;
     cpu_usage: number;
     memory_usage: number;
@@ -128,7 +133,7 @@ export interface NodeMetrics {
  * await fleet.sendCommand(node.id, { type: 'scan_devices' });
  * ```
  */
-export declare class FleetAPI {
+declare class FleetAPI {
     private readonly client;
     private readonly basePath;
     constructor(client: WaveClient);
@@ -204,4 +209,6 @@ export declare class FleetAPI {
 /**
  * Create a Fleet API instance
  */
-export declare function createFleetAPI(client: WaveClient): FleetAPI;
+declare function createFleetAPI(client: WaveClient): FleetAPI;
+
+export { FleetAPI, type FleetNode, type ListNodesParams, type NodeCommand, type NodeDevice, type NodeHealth, type NodeMetrics, type NodeStatus, type RegisterNodeRequest, type UpdateNodeRequest, createFleetAPI };
