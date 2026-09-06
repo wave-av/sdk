@@ -19,6 +19,10 @@ describe("@wave/sdk exports", () => {
     expect(SDK.WaveClient).toBeDefined();
     expect(typeof SDK.WaveClient).toBe("function");
   });
+  it("exports PricingAPI", () => {
+    expect(SDK.PricingAPI).toBeDefined();
+    expect(SDK.createPricingAPI).toBeDefined();
+  });
 
   it("exports createClient factory", () => {
     expect(SDK.createClient).toBeDefined();
@@ -56,7 +60,7 @@ describe("@wave/sdk exports", () => {
     expect(typeof SDK.createWave).toBe("function");
   });
 
-  it("Wave class instantiates with all 34 API modules", () => {
+  it("Wave class instantiates with all 36 API modules", () => {
     const wave = new SDK.Wave({ apiKey: "test-key" });
 
     // Existing P3 (12)
@@ -105,8 +109,17 @@ describe("@wave/sdk exports", () => {
     // Perception (#85)
     expect(wave.perception).toBeInstanceOf(SDK.PerceptionAPI);
 
-    // Enhance (wave-gateway#799)
+    // Enhance
     expect(wave.enhance).toBeInstanceOf(SDK.EnhanceAPI);
+
+    // Mail (E5)
+    expect(wave.mail).toBeInstanceOf(SDK.MailAPI);
+
+    // Meter (E5)
+    expect(wave.meter).toBeInstanceOf(SDK.MeterAPI);
+
+    // Sandbox
+    expect(wave.sandbox).toBeInstanceOf(SDK.SandboxAPI);
   });
 
   // =========================================================================
@@ -154,8 +167,14 @@ describe("@wave/sdk exports", () => {
     "UsbAPI",
     // Perception (#85)
     "PerceptionAPI",
-    // Enhance (wave-gateway#799)
+    // Enhance
     "EnhanceAPI",
+    // Mail (E5)
+    "MailAPI",
+    // Meter (E5)
+    "MeterAPI",
+    // Sandbox
+    "SandboxAPI",
   ];
 
   it.each(expectedAPIs)("exports %s class", (apiName) => {
@@ -201,6 +220,9 @@ describe("@wave/sdk exports", () => {
     "createUsbAPI",
     "createPerceptionAPI",
     "createEnhanceAPI",
+    "createMailAPI",
+    "createMeterAPI",
+    "createSandboxAPI",
   ];
 
   it.each(expectedFactories)("exports %s factory", (factoryName) => {
@@ -226,12 +248,12 @@ describe("@wave/sdk exports", () => {
   // Module count verification
   // =========================================================================
 
-  it("has exactly 36 API module classes (35 + Wave)", () => {
-    expect(expectedAPIs.length).toBe(35);
+  it("has exactly 38 API module classes (34 + 2 new E5 + 1 sandbox + 1 enhance)", () => {
+    expect(expectedAPIs.length).toBe(38);
   });
 
-  it("has exactly 35 factory functions", () => {
-    expect(expectedFactories.length).toBe(35);
+  it("has exactly 38 factory functions", () => {
+    expect(expectedFactories.length).toBe(38);
   });
 
   it("total named exports exceeds 80", () => {

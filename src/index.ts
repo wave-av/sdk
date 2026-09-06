@@ -302,6 +302,20 @@ export { QrAPI, createQrAPI } from "./qr";
 
 // Audience API (P3)
 export { AudienceAPI, createAudienceAPI } from "./audience";
+export { RuntimeClient, RuntimeError } from "./runtime";
+export { runWaveCli } from "./cli";
+export { ComputerClient } from "./computer";
+export type { Devbox, ComputerExecResult, ComputerClientOptions } from "./computer";
+export { CustodyClient } from "./custody";
+export type { CapabilityGrant, GrantStatus, ExerciseRequest, ExerciseReceipt, CustodyClientOptions } from "./custody";
+export { AutomationsClient } from "./automations";
+export type { AutomationDispatchResult, AutomationsClientOptions } from "./automations";
+export { ProductClient, CATALOG, listProducts, resolveProduct } from "./products";
+export type { Product, ProductPhase, ProductClientOptions } from "./products";
+export { handleMcpMessage, waveMcpTools } from "./mcp";
+export type { McpToolDef } from "./mcp";
+export type { WaveCliOptions, WaveCliResult } from "./cli";
+export type { ChatMessage, ToolSpec, CompletionRequest, CompletionResponse, RuntimeClientOptions } from "./runtime";
 
 // Creator API (P3)
 export { CreatorAPI, createCreatorAPI } from "./creator";
@@ -321,11 +335,13 @@ export { NotificationsAPI, createNotificationsAPI } from "./notifications";
 // DRM API
 export { DrmAPI, createDrmAPI } from "./drm";
 
-// Realtime — the live control & event plane (WebSocket)
+// Realtime: the live control & event plane (WebSocket)
 export { RealtimeAPI, RealtimeChannel, createRealtimeAPI } from "./realtime";
 export * from "./realtime-types";
+export { TranscriptAPI } from "./transcripts";
+export type { Transcript, TranscriptList, TranscriptMessage } from "./transcripts";
 
-// Enhance — AI video super-resolution (wave-gateway#799)
+// Enhance — AI video super-resolution
 export {
   EnhanceAPI,
   createEnhanceAPI,
@@ -335,7 +351,50 @@ export {
   type EnhanceResult,
 } from "./enhance";
 
-// Perception — agentic live-media subscribe() control plane (#85)
+// Mail API (E5: comms productization)
+export {
+  MailAPI,
+  createMailAPI,
+  type MailSendRequest,
+  type MailReplyBody,
+  type MailSearchResult,
+  type TranscriptEmailRequest,
+  type SmsRequest,
+  type SmsResult,
+  type SendResult,
+} from "./mail";
+
+// Meter API (E5: comms productization, meter:read)
+export {
+  MeterAPI,
+  createMeterAPI,
+  type LedgerParams,
+  type RollupParams,
+  type MeterLedger,
+  type MeterLedgerRow,
+  type MeterChannels,
+  type MeterMailChannel,
+  type MeterVoiceChannel,
+  type MeterSmsChannel,
+  type MeterRealtimeChannel,
+  type MeterStorageChannel,
+  type MeterRollup,
+  type MeterRollupTotals,
+} from "./meter";
+
+// Pricing Pages API (pricing-pages E0/E1: pricing:read / pricing:write)
+export {
+  PricingAPI,
+  createPricingAPI,
+  type PricingTier,
+  type PricingManifest,
+  type ManifestCreateResult,
+  type ManifestListEntry,
+  type ManifestList,
+  type ManifestRead,
+} from "./pricing";
+
+// Perception: agentic live-media subscribe() control plane (#85)
 export {
   PerceptionAPI,
   createPerceptionAPI,
@@ -351,6 +410,22 @@ export {
   type PerceptionOptions,
   type PerceptionSubscription,
 } from "./perception";
+
+// Sandbox: safe contained command execution (preview -> approve -> apply)
+export {
+  SandboxAPI,
+  createSandboxAPI,
+  type SandboxTier,
+  type SandboxContainment,
+  type SandboxFsDiffEntry,
+  type SandboxFileInput,
+  type SandboxReceipt,
+  type SandboxCommandRequest,
+  type SandboxPreviewResult,
+  type SandboxApplyRequest,
+  type SandboxApplyResult,
+  type SandboxReceiptResult,
+} from "./sandbox";
 
 // Telemetry (opt-in)
 export {
@@ -405,8 +480,14 @@ import { UsbAPI } from "./usb";
 import { NotificationsAPI } from "./notifications";
 import { DrmAPI } from "./drm";
 import { RealtimeAPI } from "./realtime";
+import { TranscriptAPI } from "./transcripts";
+import { MailAPI } from "./mail";
+import { MeterAPI } from "./meter";
+import { PricingAPI } from "./pricing";
 import { PerceptionAPI } from "./perception";
 import { EnhanceAPI } from "./enhance";
+import { SandboxAPI } from "./sandbox";
+import { InferenceAPI } from "./inference";
 
 /**
  * Full WAVE SDK client with all APIs attached
@@ -461,14 +542,30 @@ export class Wave {
   public readonly notifications: NotificationsAPI;
   public readonly drm: DrmAPI;
 
-  // Realtime — live control & event plane (WebSocket)
+  // Realtime: live control & event plane (WebSocket)
   public readonly realtime: RealtimeAPI;
 
-  // Perception — agentic live-media subscribe() control plane (#85)
+  // Transcripts: the voice-agent transcript (list + read over the transcripts/* surface)
+  public readonly transcripts: TranscriptAPI;
+
+  // Mail API (E5: comms productization)
+  public readonly mail: MailAPI;
+
+  // Meter API (E5: comms productization, meter:read)
+  public readonly meter: MeterAPI;
+  public readonly pricing: PricingAPI;
+
+  // Perception: agentic live-media subscribe() control plane (#85)
   public readonly perception: PerceptionAPI;
 
-  // Enhance — AI video super-resolution (wave-gateway#799)
+  // Enhance — AI video super-resolution
   public readonly enhance: EnhanceAPI;
+
+  // Inference: the measured funnel (route/fallback/meter, inference.wave.online)
+  public readonly inference: InferenceAPI;
+
+  // Sandbox: safe contained command execution (preview -> approve -> apply)
+  public readonly sandbox: SandboxAPI;
 
   constructor(config: WaveClientConfig) {
     this.client = new WaveClient(config);
@@ -523,13 +620,45 @@ export class Wave {
     // Realtime
     this.realtime = new RealtimeAPI(this.client);
 
+    // Transcripts: the voice-agent transcript (list + read)
+    this.transcripts = new TranscriptAPI(this.client);
+
+    // Mail (E5)
+    this.mail = new MailAPI(this.client);
+
+    // Meter (E5)
+    this.meter = new MeterAPI(this.client);
+    this.pricing = new PricingAPI(this.client);
+
     // Perception (#85)
     this.perception = new PerceptionAPI(this.client);
 
-    // Enhance (wave-gateway#799)
+    // Enhance
     this.enhance = new EnhanceAPI(this.client);
+
+    this.inference = new InferenceAPI(this.client);
+
+    // Sandbox
+    this.sandbox = new SandboxAPI(this.client);
   }
 }
+
+// Agent Auth Ceremony (auth-md E8, RFC 8628 device authorization): STANDALONE
+// functions (no apiKey: the ceremony exists because the caller has no credential yet).
+export {
+  startAgentCeremony,
+  pollAgentCeremony,
+  refreshAgentCeremony,
+  isCeremonyPending,
+  isCeremonyTerminal,
+} from "./agent-auth";
+export type {
+  DeviceGrant,
+  CeremonyTokens,
+  RefreshedTokens,
+  CeremonyPollError,
+  CeremonyOptions,
+} from "./agent-auth";
 
 /**
  * Create a full Wave SDK instance

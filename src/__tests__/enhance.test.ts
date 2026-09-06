@@ -1,5 +1,5 @@
 /**
- * EnhanceAPI Tests (wave-gateway#799) — AI video super-resolution SDK surface.
+ * EnhanceAPI Tests — AI video super-resolution SDK surface.
  *
  * POST /v1/enhance takes/returns raw video bytes (not JSON), so EnhanceAPI bypasses
  * WaveClient.post() and talks to fetch() directly (the same escape hatch RealtimeAPI uses) —

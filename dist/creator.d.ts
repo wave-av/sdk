@@ -1,10 +1,15 @@
+import { WaveClient } from './client.js';
+import { Timestamps, PaginationParams, PaginatedResponse } from './client-types.js';
+import 'eventemitter3';
+import './telemetry.js';
+
 /**
  * WAVE SDK - Creator API
  *
  * Creator monetization, subscriptions, tips, and payouts.
  */
-import type { WaveClient, PaginationParams, PaginatedResponse, Timestamps } from "./client";
-export interface CreatorProfile extends Timestamps {
+
+interface CreatorProfile extends Timestamps {
     id: string;
     user_id: string;
     organization_id: string;
@@ -18,7 +23,7 @@ export interface CreatorProfile extends Timestamps {
     verified: boolean;
     tier: "starter" | "pro" | "partner";
 }
-export interface Subscription {
+interface Subscription {
     id: string;
     creator_id: string;
     subscriber_id: string;
@@ -29,7 +34,7 @@ export interface Subscription {
     current_period_end: string;
     created_at: string;
 }
-export interface Tip {
+interface Tip {
     id: string;
     creator_id: string;
     tipper_id: string;
@@ -38,7 +43,7 @@ export interface Tip {
     stream_id?: string;
     created_at: string;
 }
-export interface Payout {
+interface Payout {
     id: string;
     creator_id: string;
     amount_cents: number;
@@ -47,7 +52,7 @@ export interface Payout {
     requested_at: string;
     completed_at?: string;
 }
-export interface RevenueReport {
+interface RevenueReport {
     creator_id: string;
     period: string;
     total_cents: number;
@@ -57,13 +62,13 @@ export interface RevenueReport {
     platform_fee_cents: number;
     net_cents: number;
 }
-export interface UpdateProfileRequest {
+interface UpdateProfileRequest {
     display_name?: string;
     bio?: string;
     avatar_url?: string;
     banner_url?: string;
 }
-export interface ListSubscriptionsParams extends PaginationParams {
+interface ListSubscriptionsParams extends PaginationParams {
     status?: string;
     tier?: string;
 }
@@ -77,7 +82,7 @@ export interface ListSubscriptionsParams extends PaginationParams {
  * await wave.creator.requestPayout(creatorId, { amount_cents: 10000, method: "stripe" });
  * ```
  */
-export declare class CreatorAPI {
+declare class CreatorAPI {
     private readonly client;
     private readonly basePath;
     constructor(client: WaveClient);
@@ -106,4 +111,6 @@ export declare class CreatorAPI {
         period?: string;
     }): Promise<Record<string, unknown>>;
 }
-export declare function createCreatorAPI(client: WaveClient): CreatorAPI;
+declare function createCreatorAPI(client: WaveClient): CreatorAPI;
+
+export { CreatorAPI, type CreatorProfile, type ListSubscriptionsParams, type Payout, type RevenueReport, type Subscription, type Tip, type UpdateProfileRequest, createCreatorAPI };
