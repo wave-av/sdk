@@ -1,3 +1,10 @@
+import { WaveClient } from './client.js';
+import { CreateRoomRequest, CollabRoom, UpdateRoomRequest, ListRoomsParams, Participant, ParticipantRole, ParticipantPermissions, InviteRequest, Comment, Annotation } from './collab-types.js';
+export { CursorPosition, PresenceStatus, Reaction, RoomSettings, RoomStatus, Selection } from './collab-types.js';
+import { PaginatedResponse, PaginationParams } from './client-types.js';
+import 'eventemitter3';
+import './telemetry.js';
+
 /**
  * WAVE SDK - Collab API
  *
@@ -6,10 +13,8 @@
  * NOTE: This is a client SDK. All authorization checks are performed server-side.
  * The API will return 403 Forbidden if the user lacks required permissions.
  */
-import type { WaveClient, PaginationParams, PaginatedResponse } from './client';
-export * from './collab-types';
-import type { Annotation, CollabRoom, Comment, CreateRoomRequest, InviteRequest, ListRoomsParams, Participant, ParticipantPermissions, ParticipantRole, UpdateRoomRequest } from './collab-types';
-export declare class CollabAPI {
+
+declare class CollabAPI {
     private readonly client;
     private readonly basePath;
     constructor(client: WaveClient);
@@ -223,4 +228,6 @@ export declare class CollabAPI {
 /**
  * Create a Collab API instance
  */
-export declare function createCollabAPI(client: WaveClient): CollabAPI;
+declare function createCollabAPI(client: WaveClient): CollabAPI;
+
+export { Annotation, CollabAPI, CollabRoom, Comment, CreateRoomRequest, InviteRequest, ListRoomsParams, Participant, ParticipantPermissions, ParticipantRole, UpdateRoomRequest, createCollabAPI };

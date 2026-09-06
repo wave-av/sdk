@@ -1,3 +1,6 @@
+import { Timestamps, Metadata } from './client-types.js';
+import './telemetry.js';
+
 /**
  * WAVE SDK - Search API
  *
@@ -6,23 +9,23 @@
  * NOTE: This is a client SDK. All authorization checks are performed server-side.
  * The API will return 403 Forbidden if the user lacks required permissions.
  */
-import type { Timestamps, Metadata } from './client';
+
 /**
  * Search result type
  */
-export type SearchResultType = 'video' | 'audio' | 'clip' | 'stream' | 'transcript' | 'chapter';
+type SearchResultType = 'video' | 'audio' | 'clip' | 'stream' | 'transcript' | 'chapter';
 /**
  * Search mode
  */
-export type SearchMode = 'text' | 'semantic' | 'visual' | 'audio' | 'multimodal';
+type SearchMode = 'text' | 'semantic' | 'visual' | 'audio' | 'multimodal';
 /**
  * Sort order
  */
-export type SearchSortOrder = 'relevance' | 'created_at' | 'duration' | 'views' | 'engagement';
+type SearchSortOrder = 'relevance' | 'created_at' | 'duration' | 'views' | 'engagement';
 /**
  * Search result
  */
-export interface SearchResult {
+interface SearchResult {
     id: string;
     type: SearchResultType;
     score: number;
@@ -39,7 +42,7 @@ export interface SearchResult {
 /**
  * Search highlight
  */
-export interface SearchHighlight {
+interface SearchHighlight {
     field: string;
     text: string;
     ranges: Array<{
@@ -50,7 +53,7 @@ export interface SearchHighlight {
 /**
  * Search facet
  */
-export interface SearchFacet {
+interface SearchFacet {
     field: string;
     values: Array<{
         value: string;
@@ -61,7 +64,7 @@ export interface SearchFacet {
 /**
  * Search suggestion
  */
-export interface SearchSuggestion {
+interface SearchSuggestion {
     text: string;
     type: 'query' | 'content' | 'filter';
     score: number;
@@ -69,7 +72,7 @@ export interface SearchSuggestion {
 /**
  * Search request
  */
-export interface SearchRequest {
+interface SearchRequest {
     /** Search query */
     query: string;
     /** Search mode */
@@ -93,7 +96,7 @@ export interface SearchRequest {
 /**
  * Search filters
  */
-export interface SearchFilters {
+interface SearchFilters {
     /** Filter by organization */
     organization_id?: string;
     /** Filter by creator */
@@ -118,7 +121,7 @@ export interface SearchFilters {
 /**
  * Search response
  */
-export interface SearchResponse {
+interface SearchResponse {
     results: SearchResult[];
     total: number;
     has_more: boolean;
@@ -131,7 +134,7 @@ export interface SearchResponse {
 /**
  * Visual search request
  */
-export interface VisualSearchRequest {
+interface VisualSearchRequest {
     /** Image URL to search with */
     image_url?: string;
     /** Base64 encoded image */
@@ -152,7 +155,7 @@ export interface VisualSearchRequest {
 /**
  * Audio search request
  */
-export interface AudioSearchRequest {
+interface AudioSearchRequest {
     /** Audio URL to search with */
     audio_url?: string;
     /** Search for similar audio */
@@ -171,7 +174,7 @@ export interface AudioSearchRequest {
 /**
  * Index status
  */
-export interface IndexStatus extends Timestamps {
+interface IndexStatus extends Timestamps {
     id: string;
     media_id: string;
     media_type: 'video' | 'audio' | 'clip' | 'stream';
@@ -180,31 +183,5 @@ export interface IndexStatus extends Timestamps {
     progress?: number;
     error?: string;
 }
-/**
- * Search API client
- *
- * All operations require appropriate permissions. Authorization is enforced
- * server-side - the API returns 403 if the authenticated user lacks access.
- *
- * @example
- * ```typescript
- * import { WaveClient } from '@wave/sdk';
- * import { SearchAPI } from '@wave/sdk/search';
- *
- * const client = new WaveClient({ apiKey: 'your-api-key' });
- * const search = new SearchAPI(client);
- *
- * // Text search
- * const results = await search.search({
- *   query: 'product demo',
- *   mode: 'semantic',
- *   types: ['video', 'clip'],
- * });
- *
- * // Visual search
- * const visualResults = await search.visualSearch({
- *   image_url: 'https://example.com/frame.jpg',
- *   scene_similarity: true,
- * });
- * ```
- */
+
+export type { AudioSearchRequest, IndexStatus, SearchFacet, SearchFilters, SearchHighlight, SearchMode, SearchRequest, SearchResponse, SearchResult, SearchResultType, SearchSortOrder, SearchSuggestion, VisualSearchRequest };

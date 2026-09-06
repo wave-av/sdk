@@ -1,3 +1,8 @@
+import { WaveClient } from './client.js';
+import { Metadata, Timestamps, PaginationParams, PaginatedResponse } from './client-types.js';
+import 'eventemitter3';
+import './telemetry.js';
+
 /**
  * WAVE SDK - Prompter API
  *
@@ -8,21 +13,21 @@
  * NOTE: This is a client SDK. All authorization checks are performed server-side.
  * The API will return 403 Forbidden if the user lacks required permissions.
  */
-import type { WaveClient, PaginationParams, PaginatedResponse, Timestamps, Metadata } from './client';
-export type PrompterState = 'idle' | 'countdown' | 'active' | 'paused' | 'complete';
-export type ScriptTone = 'casual' | 'professional' | 'educational' | 'motivational' | 'humorous';
-export type SupportedLanguage = 'en' | 'es' | 'fr' | 'de' | 'pt' | 'ja' | 'ko' | 'zh' | 'ar' | 'hi';
-export type BlockType = 'paragraph' | 'heading' | 'cue' | 'note' | 'divider';
-export interface ScriptBlock {
+
+type PrompterState = 'idle' | 'countdown' | 'active' | 'paused' | 'complete';
+type ScriptTone = 'casual' | 'professional' | 'educational' | 'motivational' | 'humorous';
+type SupportedLanguage = 'en' | 'es' | 'fr' | 'de' | 'pt' | 'ja' | 'ko' | 'zh' | 'ar' | 'hi';
+type BlockType = 'paragraph' | 'heading' | 'cue' | 'note' | 'divider';
+interface ScriptBlock {
     id: string;
     type: BlockType;
     content: string;
     metadata?: Metadata;
 }
-export interface ScriptContent {
+interface ScriptContent {
     blocks: ScriptBlock[];
 }
-export interface Script extends Timestamps {
+interface Script extends Timestamps {
     id: string;
     organization_id: string;
     user_id: string;
@@ -34,7 +39,7 @@ export interface Script extends Timestamps {
     tags: string[];
     metadata: Metadata;
 }
-export interface ScriptVersion {
+interface ScriptVersion {
     id: string;
     script_id: string;
     content: ScriptContent;
@@ -43,7 +48,7 @@ export interface ScriptVersion {
     diff_summary: string | null;
     created_at: string;
 }
-export interface DeliverySession extends Timestamps {
+interface DeliverySession extends Timestamps {
     id: string;
     script_id: string;
     stream_id: string | null;
@@ -54,7 +59,7 @@ export interface DeliverySession extends Timestamps {
     ended_at: string | null;
     metadata: Metadata;
 }
-export interface DeliveryAnalytics {
+interface DeliveryAnalytics {
     id: string;
     session_id: string;
     wpm_avg: number | null;
@@ -66,32 +71,32 @@ export interface DeliveryAnalytics {
     engagement_data: Metadata;
     created_at: string;
 }
-export interface WpmSegment {
+interface WpmSegment {
     paragraphIndex: number;
     wpm: number;
     startTime: number;
     endTime: number;
 }
-export interface FillerWordEntry {
+interface FillerWordEntry {
     word: string;
     timestamp: number;
     confidence: number;
 }
-export interface CreateScriptInput {
+interface CreateScriptInput {
     title: string;
     content: ScriptContent;
     language?: SupportedLanguage;
     tags?: string[];
     metadata?: Metadata;
 }
-export interface UpdateScriptInput {
+interface UpdateScriptInput {
     title?: string;
     content?: ScriptContent;
     language?: SupportedLanguage;
     tags?: string[];
     metadata?: Metadata;
 }
-export interface GenerateScriptInput {
+interface GenerateScriptInput {
     mode: 'topic' | 'outline' | 'improve';
     topic?: string;
     bullets?: string[];
@@ -100,12 +105,12 @@ export interface GenerateScriptInput {
     durationMinutes?: number;
     tone?: ScriptTone;
 }
-export interface StartSessionInput {
+interface StartSessionInput {
     scriptId: string;
     streamId?: string;
     countdownSeconds?: number;
 }
-export interface ListScriptsParams extends PaginationParams {
+interface ListScriptsParams extends PaginationParams {
     search?: string;
     tags?: string[];
     language?: SupportedLanguage;
@@ -146,7 +151,7 @@ export interface ListScriptsParams extends PaginationParams {
  * const analytics = await prompter.sessions.analytics(session.id);
  * ```
  */
-export declare function createPrompterApi(client: WaveClient): {
+declare function createPrompterApi(client: WaveClient): {
     scripts: {
         list(params?: ListScriptsParams): Promise<PaginatedResponse<Script>>;
         get(scriptId: string): Promise<Script>;
@@ -182,3 +187,5 @@ export declare function createPrompterApi(client: WaveClient): {
         summary(periodStart: string, periodEnd: string): Promise<Record<string, number>>;
     };
 };
+
+export { type BlockType, type CreateScriptInput, type DeliveryAnalytics, type DeliverySession, type FillerWordEntry, type GenerateScriptInput, type ListScriptsParams, type PrompterState, type Script, type ScriptBlock, type ScriptContent, type ScriptTone, type ScriptVersion, type StartSessionInput, type SupportedLanguage, type UpdateScriptInput, type WpmSegment, createPrompterApi };

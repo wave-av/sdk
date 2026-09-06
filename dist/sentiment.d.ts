@@ -1,3 +1,10 @@
+import { WaveClient } from './client.js';
+import { CreateAnalysisRequest, SentimentAnalysis, SentimentLabel, EmotionScore, BatchAnalysisRequest, ListAnalysesParams, SentimentSegment, SentimentSummary, SentimentTrend, KeyMoment, TopicSentiment, EmotionType } from './sentiment-types.js';
+export { AnalysisStatus, SourceType } from './sentiment-types.js';
+import { PaginatedResponse, PaginationParams } from './client-types.js';
+import 'eventemitter3';
+import './telemetry.js';
+
 /**
  * WAVE SDK - Sentiment API
  *
@@ -6,186 +13,53 @@
  * NOTE: This is a client SDK. All authorization checks are performed server-side.
  * The API will return 403 Forbidden if the user lacks required permissions.
  */
-import type { WaveClient, PaginationParams, PaginatedResponse, Timestamps, Metadata } from './client';
+
 /**
  * Analysis status
  */
-export type AnalysisStatus = 'pending' | 'processing' | 'ready' | 'failed';
 /**
  * Sentiment label
  */
-export type SentimentLabel = 'very_negative' | 'negative' | 'neutral' | 'positive' | 'very_positive';
 /**
  * Emotion type
  */
-export type EmotionType = 'joy' | 'sadness' | 'anger' | 'fear' | 'surprise' | 'disgust' | 'contempt' | 'neutral';
 /**
  * Analysis source type
  */
-export type SourceType = 'video' | 'audio' | 'text' | 'chat' | 'transcript';
 /**
  * Sentiment analysis job
  */
-export interface SentimentAnalysis extends Timestamps {
-    id: string;
-    organization_id: string;
-    source_type: SourceType;
-    source_id?: string;
-    source_url?: string;
-    status: AnalysisStatus;
-    overall_sentiment: SentimentLabel;
-    sentiment_score: number;
-    confidence: number;
-    dominant_emotions: EmotionType[];
-    duration?: number;
-    segment_count?: number;
-    error?: string;
-    metadata?: Metadata;
-}
 /**
  * Sentiment segment
  */
-export interface SentimentSegment {
-    id: string;
-    start_time: number;
-    end_time: number;
-    text?: string;
-    sentiment: SentimentLabel;
-    sentiment_score: number;
-    confidence: number;
-    emotions: EmotionScore[];
-    speaker_id?: number;
-}
 /**
  * Emotion score
  */
-export interface EmotionScore {
-    emotion: EmotionType;
-    score: number;
-    confidence: number;
-}
 /**
  * Sentiment trend point
  */
-export interface SentimentTrend {
-    timestamp: number;
-    sentiment_score: number;
-    dominant_emotion: EmotionType;
-    window_size: number;
-}
 /**
  * Sentiment summary
  */
-export interface SentimentSummary {
-    overall_sentiment: SentimentLabel;
-    sentiment_score: number;
-    sentiment_distribution: Record<SentimentLabel, number>;
-    emotion_distribution: Record<EmotionType, number>;
-    key_moments: KeyMoment[];
-    topics_sentiment: TopicSentiment[];
-}
 /**
  * Key emotional moment
  */
-export interface KeyMoment {
-    timestamp: number;
-    end_time?: number;
-    type: 'peak_positive' | 'peak_negative' | 'sentiment_shift' | 'high_emotion';
-    sentiment_score: number;
-    emotion: EmotionType;
-    description?: string;
-    text?: string;
-}
 /**
  * Topic sentiment
  */
-export interface TopicSentiment {
-    topic: string;
-    sentiment: SentimentLabel;
-    sentiment_score: number;
-    mention_count: number;
-    examples: string[];
-}
 /**
  * Create analysis request
  */
-export interface CreateAnalysisRequest {
-    source_type: SourceType;
-    source_id?: string;
-    source_url?: string;
-    text?: string;
-    /** Analysis options */
-    options?: {
-        /** Enable emotion detection */
-        emotions?: boolean;
-        /** Enable topic extraction */
-        topics?: boolean;
-        /** Enable key moment detection */
-        key_moments?: boolean;
-        /** Segment granularity in seconds */
-        segment_size?: number;
-        /** Language (auto-detect if not specified) */
-        language?: string;
-        /** Enable speaker-level analysis */
-        per_speaker?: boolean;
-    };
-    /** Webhook URL for completion */
-    webhook_url?: string;
-    metadata?: Metadata;
-}
 /**
  * Batch analysis request
  */
-export interface BatchAnalysisRequest {
-    items: Array<{
-        source_type: SourceType;
-        source_id?: string;
-        source_url?: string;
-        text?: string;
-    }>;
-    options?: CreateAnalysisRequest['options'];
-    webhook_url?: string;
-}
 /**
  * List analyses params
  */
-export interface ListAnalysesParams extends PaginationParams {
-    status?: AnalysisStatus;
-    source_type?: SourceType;
-    sentiment?: SentimentLabel;
-    created_after?: string;
-    created_before?: string;
-}
 /**
  * Sentiment API client
- *
- * All operations require appropriate permissions. Authorization is enforced
- * server-side - the API returns 403 if the authenticated user lacks access.
- *
- * @example
- * ```typescript
- * import { WaveClient } from '@wave/sdk';
- * import { SentimentAPI } from '@wave/sdk/sentiment';
- *
- * const client = new WaveClient({ apiKey: 'your-api-key' });
- * const sentiment = new SentimentAPI(client);
- *
- * // Analyze sentiment of a video
- * const analysis = await sentiment.analyze({
- *   source_type: 'video',
- *   source_id: 'video_123',
- *   options: {
- *     emotions: true,
- *     key_moments: true,
- *   },
- * });
- *
- * // Wait for results
- * const result = await sentiment.waitForReady(analysis.id);
- * console.log('Overall sentiment:', result.overall_sentiment);
- * ```
  */
-export declare class SentimentAPI {
+declare class SentimentAPI {
     private readonly client;
     private readonly basePath;
     constructor(client: WaveClient);
@@ -375,4 +249,6 @@ export declare class SentimentAPI {
 /**
  * Create a Sentiment API instance
  */
-export declare function createSentimentAPI(client: WaveClient): SentimentAPI;
+declare function createSentimentAPI(client: WaveClient): SentimentAPI;
+
+export { BatchAnalysisRequest, CreateAnalysisRequest, EmotionScore, EmotionType, KeyMoment, ListAnalysesParams, SentimentAPI, SentimentAnalysis, SentimentLabel, SentimentSegment, SentimentSummary, SentimentTrend, TopicSentiment, createSentimentAPI };
