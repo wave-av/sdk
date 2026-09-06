@@ -660,6 +660,35 @@ export type {
   CeremonyOptions,
 } from "./agent-auth";
 
+// Composer (PR4-SDK, "@wave-av/sdk/compose"): STANDALONE functions. `compose()` calls
+// POST /v1/compose (a plan, never an execution — `executes` is always `false`); `saveFlow()`
+// calls the console flows door. Also independently importable via the "./compose" subpath.
+export {
+  compose,
+  saveFlow,
+  ComposeError,
+  ConsoleAuthRequiredError,
+  COMPOSE_PROPOSAL_METER,
+  QUOTE_AT_CALL_TIME,
+  isQuotedPriceRow,
+} from "./compose";
+export type {
+  ComposeOptions,
+  SaveFlowOptions,
+  SaveFlowResult,
+  ComposeErrorBody,
+  ComposeRequest,
+  ComposeProposal,
+  ComposeStage,
+  ComposeScopeRow,
+  QuotedPriceRow,
+  UnquotedPriceRow,
+  ComposePriceRow,
+  ComposeCallShape,
+  ComposeEngineRoute,
+  ComposeEngineInfo,
+} from "./compose";
+
 /**
  * Create a full Wave SDK instance
  */

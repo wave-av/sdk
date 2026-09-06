@@ -32,6 +32,13 @@ All notable changes to this project are documented here. The format is based on
   now declined with a warning rather than silently running.
   (wave-av/wave-foundation-public#73)
 
+### Added
+
+- `@wave-av/sdk/compose`: `compose(intent, options)` calls `POST /v1/compose` (the WAVE Composer's proposal endpoint) and returns the typed `ComposeProposal`; `saveFlow(proposal, options)` posts a composed proposal to the console flows door with `createdBy.kind: "wave-composer"`. Both are STANDALONE functions (no `Wave` client instance required), matching the `agent-auth.ts` convention. `compose()` calls exactly one route, ever — the response's `executes` field is always `false`, never derived. `saveFlow()` requires a `consoleToken` (the console's `composer:write`-scoped machine-auth token has not shipped yet); without one it throws `ConsoleAuthRequiredError` carrying the exact `curl` a signed-in human can run, never a silent no-op.
+- `src/compose-types.ts`: the wire-contract types (`ComposeRequest`, `ComposeProposal`, `ComposeStage`, `ComposeScopeRow`, `ComposePriceRow`, `ComposeCallShape`, `ComposeEngineInfo`), copied verbatim from the gateway's `feat/compose-engine` branch (not hand-derived), plus `isQuotedPriceRow()`, a type-guard matching the same discriminator `wave-av/cli` PR #61 defines locally against the identical shape.
+- `schema/compose.schema.json`: a JSON Schema generated from `src/compose-types.ts` via the new `npm run schema:generate` script (`ts-json-schema-generator`), so the SDK's types cannot hand-drift from what it declares as the wire contract. The gateway itself does not publish a JSON Schema for this contract yet (its `feat/compose-engine` branch validates with TypeScript types only) — this schema should move to the gateway once it does, so every rendering (API, CLI, SDK, MCP) generates from one published source instead of three independently-generated copies.
+- New devDependencies: `ts-json-schema-generator` (schema generation), `ajv` (test-only, schema round-trip validation).
+
 ### Changed
 - **Breaking**: `CreateClipRequest.source` is now a recording-id string with top-level `in`/`out` time strings; the old discriminated `{ type: 'stream' | 'recording' | 'upload', id, start_time, end_time }` source object is gone, so clips can no longer be created from `stream`/`upload` sources (the live gateway rejects that shape). **Breaking**: `voice.synthesize()` now returns `Promise<ArrayBuffer>` (raw `audio/mpeg` bytes) instead of a JSON `SynthesisResult` job object.
 

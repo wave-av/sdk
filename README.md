@@ -38,6 +38,7 @@ const ledger = await wave.meter.ledger({ channel: "mail" });
 ```
 
 ## Capabilities
+- **Composer** — `import { compose, saveFlow } from "@wave-av/sdk/compose"`: `compose(intent, { budgetUsd?, flowId? })` calls `POST /v1/compose` on `api.wave.online` and returns a typed proposal (stages, scopes, price rows, call shape) — a plan the SDK never executes (`executes` is always `false`). `saveFlow(proposal, { consoleToken? })` posts to the console flows door; without a `consoleToken` it throws `ConsoleAuthRequiredError` carrying the exact `curl` a signed-in human can run instead, never a silent no-op (the console's machine-auth token has not shipped yet).
 - **Pricing Pages** — create/list/read tier manifests (pricing.wave.online/<slug> hosted pages; scopes pricing:write/pricing:read)
 
 | Capability | Status |
@@ -75,6 +76,7 @@ const ledger = await wave.meter.ledger({ channel: "mail" });
 | The npm package is published as @wave-av/sdk | grep `package.json` |
 | Current package.json version is 2.1.3 | grep `package.json` |
 | Each API module is independently importable via a package.json subpath export (e.g. @wave-av/sdk/pipeline) | grep `package.json` |
+| `compose()`/`saveFlow()` are independently importable via `@wave-av/sdk/compose`, and their types are generated from `src/compose-types.ts` (copied verbatim from the gateway's `POST /v1/compose` contract) into `schema/compose.schema.json` via `npm run schema:generate` | grep `package.json` exports, `schema/compose.schema.json` |
 | `wave.voice.synthesize()` implements text-to-speech; the SDK also declares `cloneVoice()` client methods that are not backed by a live voice product | grep the voice module source |
 | A single `Wave` client class composes every API module as a readonly property | grep the SDK entry point |
 | Takes zod `^3.22.0 \|\| ^4.4.3` and `@opentelemetry/api ^1.7.0` as peer dependencies | grep `package.json` |
