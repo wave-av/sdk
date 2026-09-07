@@ -317,7 +317,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.0",
-    "@types/node": "^26.0.0",
+    "@types/node": "^26.4.1",
     "ajv": "^8.20.0",
     "eslint": "^10.4.1",
     "ts-json-schema-generator": "^2.9.0",
