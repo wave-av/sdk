@@ -22,6 +22,7 @@ import type {
   EnhanceReceipt,
   EnhanceResult,
 } from './enhance-types';
+import { stripTrailingSlashes } from './url-util';
 
 export * from './enhance-types';
 
@@ -54,7 +55,7 @@ export class EnhanceAPI {
     const info = client.getConnectionInfo();
     this.apiKey = info.apiKey;
     this.organizationId = info.organizationId;
-    this.baseUrl = info.baseUrl.replace(/\/+$/, '');
+    this.baseUrl = stripTrailingSlashes(info.baseUrl);
   }
 
   /**
