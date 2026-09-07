@@ -62,6 +62,10 @@
           "className": "EditorAPI"
         },
         {
+          "name": "enhance",
+          "className": "EnhanceAPI"
+        },
+        {
           "name": "fleet",
           "className": "FleetAPI"
         },
@@ -189,20 +193,26 @@
       "offAggregateExports": [
         "AutomationsClient",
         "CATALOG",
+        "COMPOSE_PROPOSAL_METER",
+        "ComposeError",
         "ComputerClient",
+        "ConsoleAuthRequiredError",
         "CustodyClient",
         "ProductClient",
+        "QUOTE_AT_CALL_TIME",
         "RateLimitError",
         "RealtimeChannel",
         "RuntimeClient",
         "RuntimeError",
         "WaveClient",
         "WaveError",
+        "compose",
         "createClient",
         "handleMcpMessage",
         "initTelemetry",
         "isCeremonyPending",
         "isCeremonyTerminal",
+        "isQuotedPriceRow",
         "isTelemetryEnabled",
         "listProducts",
         "pollAgentCeremony",
@@ -210,6 +220,7 @@
         "resetTelemetry",
         "resolveProduct",
         "runWaveCli",
+        "saveFlow",
         "startAgentCeremony",
         "waveMcpTools",
         "withTelemetry",
