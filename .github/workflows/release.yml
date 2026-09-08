@@ -455,3 +455,23 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_PKG_ROOT: ${{ github.workspace }}
         run: .release-tooling/scripts/release/create-github-release.sh "${{ needs.resolve-ref.outputs.tag }}"
+
+  # ---------------------------------------------------------------------------
+  # Gate 5 — SUPPLY-001 (cw #4803). Attach a CycloneDX + SPDX SBOM to the Release
+  # this run just created. NOT wired via the `release: published` webhook: the
+  # Release above is created with the default GITHUB_TOKEN, and GitHub does not
+  # fire new workflow runs for events GITHUB_TOKEN itself produced (measured:
+  # sbom.yml's old webhook trigger sat at 0 runs through 14 release.yml runs).
+  # Calling sbom.yml as a reusable workflow FROM this run sidesteps that gap —
+  # see sbom.yml's header for the full root-cause writeup and why SBOM
+  # generation stays its own job (contents:write, never id-token:write).
+  # ---------------------------------------------------------------------------
+  sbom:
+    name: Generate SBOM and attach to the Release
+    needs: [resolve-ref, release]
+    if: needs.release.result == 'success'
+    permissions:
+      contents: write # upload the SBOM as a release asset — nothing else
+    uses: ./.github/workflows/sbom.yml
+    with:
+      tag: ${{ needs.resolve-ref.outputs.tag }}

@@ -1,40 +1,68 @@
-# sbom.yml — attach a CycloneDX + SPDX SBOM to every published GitHub Release.
+# sbom.yml — generate a CycloneDX + SPDX SBOM and attach it to a GitHub Release.
 #
-# SUPPLY-001. Measured 2026-09-03 against the live registries: @wave-av/sdk 2.1.3,
-# @wave-av/mcp-server 0.2.0 and @wave-av/adk 1.0.15 all carry a signed SLSA provenance
-# attestation (npm OIDC trusted publishing + `--provenance`, already in release.yml), but
-# NOT ONE release in any WAVE repo has ever carried an SBOM asset — while mcp-server's and
-# adk's PROVENANCE.md both declare `sbom: cyclonedx`. This workflow closes the half of
-# SUPPLY-001 that provenance does not cover: a machine-readable bill of materials for the
-# dependency tree an artifact was actually built from.
+# SUPPLY-001 (cw #4803). Measured 2026-09-03 against the live registries: @wave-av/sdk
+# 2.1.3, @wave-av/mcp-server 0.2.0 and @wave-av/adk 1.0.15 all carry a signed SLSA
+# provenance attestation (npm OIDC trusted publishing + `--provenance`, already in
+# release.yml), but NOT ONE release in any WAVE repo has ever carried an SBOM asset —
+# while mcp-server's and adk's PROVENANCE.md both declare `sbom: cyclonedx`. This
+# workflow closes the half of SUPPLY-001 that provenance does not cover: a
+# machine-readable bill of materials for the dependency tree an artifact was actually
+# built from.
 #
-# Deliberately a SEPARATE workflow rather than more steps in release.yml: release.yml is
-# the publish path holding `id-token: write`, and adding an SBOM upload there would widen
-# that job to `contents: write` alongside the OIDC publishing credential. Keeping SBOM
-# generation in its own workflow means the publish job never gains write access to the
-# repo, and this job never sees the publishing identity.
+# ROOT CAUSE this file never ran (measured 2026-09-08: actions/workflows/sbom.yml/runs
+# total_count = 0, even after 14 release.yml runs and a published sdk-v2.1.3): this
+# workflow's ONLY automatic trigger was `release: published`. release.yml's `release`
+# job (VER-001) is the sole place this repo creates a GitHub Release, and it does so via
+# `scripts/release/create-github-release.sh` calling `gh release create` /
+# `gh release upload` authenticated with `GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}` — the
+# default Actions token. GitHub Actions does not fire new workflow runs for events
+# produced by the default GITHUB_TOKEN (documented recursion guard), so `release:
+# published` never lands for a Release this repo's own automation creates. The comment
+# that used to sit here ("NO workflow in this repo creates a GitHub Release... the
+# Releases that exist were cut by hand") was accurate on 2026-09-03 when this file was
+# written, but went stale on 2026-09-05 when release.yml grew its `release` job — the
+# trigger was never revisited against that change, and the mismatch is why sbom.yml has
+# sat dormant through 14 real release runs including the sdk-v2.1.3 publish.
 #
-# Runs on `release: published` (after release.yml has published to npm) and can be replayed
-# for any existing tag via workflow_dispatch — so historical releases can be backfilled
-# without cutting a new version.
+# FIX (by design, not a trigger nudge): this workflow is now `workflow_call`-callable.
+# release.yml invokes it as a job (`uses: ./.github/workflows/sbom.yml`) immediately
+# after its own `release` job succeeds, in the SAME run that created the Release — no
+# event dispatch involved, so the GITHUB_TOKEN recursion guard is structurally
+# irrelevant. The `release: published` trigger is deliberately REMOVED (not just left
+# for defense-in-depth): it is dead code that would never fire for this repo's actual
+# release path and would misleadingly suggest a live automatic trigger that isn't one.
+# `workflow_dispatch` remains, now defaulting its `tag` input to `latest` — resolved via
+# `gh release view` — so an existing release (e.g. `sdk-v2.1.3`, published before this
+# fix) can be backfilled with zero arguments, without re-running release.yml's full
+# build/test/e2e/publish gate chain (only the SBOM step is missing on that release; the
+# artifact itself is already correct).
 #
-# Note on the trigger: NO workflow in this repo creates a GitHub Release — release.yml
-# publishes to npm off a `sdk-v*` tag and stops there, and the Releases that exist were cut
-# by hand. So `release: published` fires only when someone publishes a Release in the UI or
-# via `gh release create`, and workflow_dispatch is the load-bearing path today. Both are
-# wired up so this workflow starts covering releases automatically the moment the repo
-# begins creating them.
+# Deliberately still a SEPARATE workflow file rather than inlined steps, even though
+# release.yml now calls it directly: release.yml's `publish` job holds `id-token: write`
+# for OIDC trusted publishing, and this job needs `contents: write` to upload a release
+# asset. Keeping SBOM generation in its own workflow/job means the OIDC-publishing job
+# never gains write access to the repo, and this job never sees the publishing identity
+# — the two credentials stay in separate jobs no matter which workflow calls this one.
 
 name: SBOM
 
 on:
-  release:
-    types: [published]
+  workflow_call:
+    inputs:
+      tag:
+        description: 'Release tag to generate and attach an SBOM for (e.g. sdk-v2.1.3)'
+        required: true
+        type: string
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Existing release tag to generate and attach an SBOM for (e.g. sdk-v2.1.3)'
-        required: true
+        description: >-
+          Release tag to generate and attach an SBOM for (e.g. sdk-v2.1.3). Leave as
+          "latest" (or blank) to target this repo's current latest published release —
+          the backfill path for a release that predates this workflow's automatic call
+          from release.yml.
+        required: false
+        default: 'latest'
         type: string
 
 # Read-only by default; the one job that needs to write a release asset opts in below.
@@ -42,7 +70,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: sdk-sbom-${{ github.event.release.tag_name || inputs.tag }}
+  group: sdk-sbom-${{ inputs.tag }}
   cancel-in-progress: false
 
 jobs:
@@ -54,14 +82,29 @@ jobs:
     env:
       # Resolved once, here, so no `${{ }}` expression is ever interpolated into a shell
       # command below: a tag is attacker-influencable text and must reach bash only as an
-      # already-quoted environment variable.
-      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      # already-quoted environment variable. `inputs.tag` is populated for BOTH
+      # workflow_call and workflow_dispatch triggers.
+      TAG: ${{ inputs.tag }}
     steps:
+      - name: Resolve "latest" (or blank) to the repo's actual latest release tag
+        if: env.TAG == '' || env.TAG == 'latest'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          RESOLVED="$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq .tagName)"
+          if [ -z "$RESOLVED" ]; then
+            echo "::error::could not resolve the latest release tag for $GITHUB_REPOSITORY"
+            exit 1
+          fi
+          echo "resolved '${TAG:-<blank>}' -> $RESOLVED"
+          echo "TAG=$RESOLVED" >> "$GITHUB_ENV"
+
       - name: Validate the tag before it reaches git or gh
         run: |
           set -euo pipefail
           if [ -z "${TAG:-}" ]; then
-            echo "::error::no tag resolved from the event or the dispatch input"
+            echo "::error::no tag resolved from the workflow_call/workflow_dispatch input"
             exit 1
           fi
           # This repo carries BOTH tag conventions: release.yml publishes on `sdk-v*`,
