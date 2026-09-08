@@ -341,6 +341,16 @@ export * from "./realtime-types";
 export { TranscriptAPI } from "./transcripts";
 export type { Transcript, TranscriptList, TranscriptMessage } from "./transcripts";
 
+// Enhance — AI video super-resolution
+export {
+  EnhanceAPI,
+  createEnhanceAPI,
+  type EnhanceModel,
+  type EnhanceOptions,
+  type EnhanceReceipt,
+  type EnhanceResult,
+} from "./enhance";
+
 // Mail API (E5: comms productization)
 export {
   MailAPI,
@@ -475,6 +485,7 @@ import { MailAPI } from "./mail";
 import { MeterAPI } from "./meter";
 import { PricingAPI } from "./pricing";
 import { PerceptionAPI } from "./perception";
+import { EnhanceAPI } from "./enhance";
 import { SandboxAPI } from "./sandbox";
 import { InferenceAPI } from "./inference";
 
@@ -547,6 +558,9 @@ export class Wave {
   // Perception: agentic live-media subscribe() control plane (#85)
   public readonly perception: PerceptionAPI;
 
+  // Enhance — AI video super-resolution
+  public readonly enhance: EnhanceAPI;
+
   // Inference: the measured funnel (route/fallback/meter, inference.wave.online)
   public readonly inference: InferenceAPI;
 
@@ -618,6 +632,10 @@ export class Wave {
 
     // Perception (#85)
     this.perception = new PerceptionAPI(this.client);
+
+    // Enhance
+    this.enhance = new EnhanceAPI(this.client);
+
     this.inference = new InferenceAPI(this.client);
 
     // Sandbox
@@ -641,6 +659,35 @@ export type {
   CeremonyPollError,
   CeremonyOptions,
 } from "./agent-auth";
+
+// Composer (PR4-SDK, "@wave-av/sdk/compose"): STANDALONE functions. `compose()` calls
+// POST /v1/compose (a plan, never an execution — `executes` is always `false`); `saveFlow()`
+// calls the console flows door. Also independently importable via the "./compose" subpath.
+export {
+  compose,
+  saveFlow,
+  ComposeError,
+  ConsoleAuthRequiredError,
+  COMPOSE_PROPOSAL_METER,
+  QUOTE_AT_CALL_TIME,
+  isQuotedPriceRow,
+} from "./compose";
+export type {
+  ComposeOptions,
+  SaveFlowOptions,
+  SaveFlowResult,
+  ComposeErrorBody,
+  ComposeRequest,
+  ComposeProposal,
+  ComposeStage,
+  ComposeScopeRow,
+  QuotedPriceRow,
+  UnquotedPriceRow,
+  ComposePriceRow,
+  ComposeCallShape,
+  ComposeEngineRoute,
+  ComposeEngineInfo,
+} from "./compose";
 
 /**
  * Create a full Wave SDK instance
