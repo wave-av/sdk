@@ -28,14 +28,26 @@
 # release.yml invokes it as a job (`uses: ./.github/workflows/sbom.yml`) immediately
 # after its own `release` job succeeds, in the SAME run that created the Release — no
 # event dispatch involved, so the GITHUB_TOKEN recursion guard is structurally
-# irrelevant. The `release: published` trigger is deliberately REMOVED (not just left
-# for defense-in-depth): it is dead code that would never fire for this repo's actual
-# release path and would misleadingly suggest a live automatic trigger that isn't one.
+# irrelevant. This is now the GUARANTEED, primary path.
+#
+# `release: published` is kept alongside it (review feedback on this PR, cubic-dev-ai:
+# the recursion guard only suppresses events caused by THIS repo's own GITHUB_TOKEN — a
+# Release published by a human via the GitHub UI, or by any future automation using a
+# real user/App token, fires the event for real). `release-drift.yml` already treats any
+# Release not created by release.yml as policy drift to be caught — this trigger doesn't
+# bless that path, it just means SUPPLY-001 still gets covered on the rare release that
+# reaches drift status, instead of silently missing an SBOM until someone notices.
 # `workflow_dispatch` remains, now defaulting its `tag` input to `latest` — resolved via
 # `gh release view` — so an existing release (e.g. `sdk-v2.1.3`, published before this
 # fix) can be backfilled with zero arguments, without re-running release.yml's full
 # build/test/e2e/publish gate chain (only the SBOM step is missing on that release; the
 # artifact itself is already correct).
+#
+# On failure: this job runs strictly after release.yml's `release` job (or after an
+# already-published Release, for `release:`/dispatch), so a failure here never blocks or
+# unwinds an already-public npm package or an already-created Release — it only means the
+# SBOM asset is missing. The job's last step (`if: failure()`) prints the exact
+# `gh workflow run` command to backfill it, so a red X is a runbook, not a mystery.
 #
 # Deliberately still a SEPARATE workflow file rather than inlined steps, even though
 # release.yml now calls it directly: release.yml's `publish` job holds `id-token: write`
@@ -47,6 +59,8 @@
 name: SBOM
 
 on:
+  release:
+    types: [published]
   workflow_call:
     inputs:
       tag:
@@ -100,9 +114,10 @@ jobs:
     env:
       # Resolved once, here, so no `${{ }}` expression is ever interpolated into a shell
       # command below: a tag is attacker-influencable text and must reach bash only as an
-      # already-quoted environment variable. `inputs.tag` is populated for BOTH
-      # workflow_call and workflow_dispatch triggers.
-      TAG: ${{ inputs.tag }}
+      # already-quoted environment variable. `inputs.tag` is populated for workflow_call
+      # and workflow_dispatch; `github.event.release.tag_name` covers the `release:`
+      # trigger, which has no `inputs` context at all.
+      TAG: ${{ inputs.tag || github.event.release.tag_name }}
     steps:
       - name: Resolve "latest" (or blank) to the repo's actual latest release tag
         if: env.TAG == '' || env.TAG == 'latest'
@@ -226,3 +241,24 @@ jobs:
             *) echo "::error::sbom.spdx.json is not present on $TAG after upload"; exit 1 ;;
           esac
           echo "SUPPLY-001: $TAG carries a CycloneDX and an SPDX SBOM."
+
+      # Runs only when an earlier step in THIS job failed. By this point the Release
+      # (and, on the release.yml path, the npm publish) already succeeded — nothing here
+      # unwinds either — so the only actionable gap is "no SBOM yet." Print the exact
+      # backfill command rather than leaving the operator to reconstruct it from this
+      # file: a failed run should be a runbook, not a puzzle.
+      - name: On failure, print the exact backfill command
+        if: failure()
+        run: |
+          echo "::error::SBOM generation/upload failed for ${TAG:-<unresolved>} — the Release (and any npm publish) already succeeded and is NOT affected. Backfill with:"
+          echo "  gh workflow run sbom.yml --repo $GITHUB_REPOSITORY --ref main -f tag=${TAG:-<tag>}"
+          {
+            echo "### SBOM generation failed for \`${TAG:-<unresolved>}\`"
+            echo ""
+            echo "The Release (and any npm publish) already succeeded and is not affected."
+            echo "Backfill the SBOM with:"
+            echo ""
+            echo '```'
+            echo "gh workflow run sbom.yml --repo $GITHUB_REPOSITORY --ref main -f tag=${TAG:-<tag>}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
