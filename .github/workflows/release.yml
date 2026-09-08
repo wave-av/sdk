@@ -475,3 +475,4 @@ jobs:
     uses: ./.github/workflows/sbom.yml
     with:
       tag: ${{ needs.resolve-ref.outputs.tag }}
+      sha: ${{ needs.resolve-ref.outputs.sha }}

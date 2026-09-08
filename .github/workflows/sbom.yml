@@ -53,6 +53,16 @@ on:
         description: 'Release tag to generate and attach an SBOM for (e.g. sdk-v2.1.3)'
         required: true
         type: string
+      sha:
+        description: >-
+          Commit SHA the tag resolved to at the caller's own resolve-ref step (release.yml
+          already re-validates this is an ancestor of origin/main). When set, this is what
+          gets checked out — never the tag name — so a tag that moves between the caller's
+          resolution and this job's checkout cannot change what gets scanned. Optional: a
+          bare workflow_dispatch backfill has no separate resolve-ref step and resolves its
+          own SHA below instead.
+        required: false
+        type: string
   workflow_dispatch:
     inputs:
       tag:
@@ -69,8 +79,16 @@ on:
 permissions:
   contents: read
 
+# One global lock, not keyed by tag: a workflow_dispatch backfill defaults `tag` to the
+# literal string 'latest', which this job only resolves to an actual tag name (e.g.
+# sdk-v2.1.3) in a step below — the concurrency key is fixed at trigger time, before that
+# resolution runs, so a per-tag key here would let a 'latest' dispatch and a
+# release.yml-triggered call for that SAME actual tag race each other's `gh release
+# upload --clobber`. SBOM jobs are infrequent (once per release, or an on-demand
+# backfill) and fast, so serializing repo-wide costs nothing and removes the race
+# entirely rather than trying to keep two independently-computed keys in sync.
 concurrency:
-  group: sdk-sbom-${{ inputs.tag }}
+  group: sdk-sbom-${{ github.repository }}
   cancel-in-progress: false
 
 jobs:
@@ -122,9 +140,36 @@ jobs:
           fi
           echo "resolved tag: $TAG"
 
+      # Pin to a commit SHA before checkout, never the (mutable) tag name — mirrors
+      # release.yml's own resolve-ref job, which checks out every downstream job by SHA
+      # for exactly this reason. A `workflow_call` caller (release.yml) already resolved
+      # and trust-checked a SHA for this tag; use it directly. A bare workflow_dispatch
+      # backfill has no such caller-resolved SHA, so it resolves its own here, via the
+      # commits API — one atomic read, immediately before checkout, closing the window a
+      # ref-name checkout would otherwise leave open between "validate the tag" and
+      # "check it out" (in which the tag could be force-moved to point somewhere else).
+      - name: Resolve the tag to a commit SHA
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_SHA: ${{ inputs.sha }}
+        run: |
+          set -euo pipefail
+          if [ -n "${INPUT_SHA:-}" ]; then
+            SHA="$INPUT_SHA"
+            echo "using caller-resolved sha: $SHA"
+          else
+            SHA="$(gh api "repos/$GITHUB_REPOSITORY/commits/$TAG" --jq .sha)"
+            if [ -z "$SHA" ]; then
+              echo "::error::could not resolve tag '$TAG' to a commit sha"
+              exit 1
+            fi
+            echo "resolved tag '$TAG' -> $SHA"
+          fi
+          echo "SHA=$SHA" >> "$GITHUB_ENV"
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ env.TAG }}
+          ref: ${{ env.SHA }}
           persist-credentials: false
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
