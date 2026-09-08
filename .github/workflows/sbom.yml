@@ -187,6 +187,24 @@ jobs:
           ref: ${{ env.SHA }}
           persist-credentials: false
 
+      # This job's OWN tooling (validate-sbom.mjs) is pinned to the WORKFLOW's own ref
+      # (github.sha), NOT the tag checkout above — mirrors release.yml's identical
+      # ".release-tooling" pattern and for the identical reason: a backfill (`workflow_
+      # dispatch`/`release:`) can target a tag cut before `scripts/supply-chain/` existed
+      # in this repo's tree. Measured: `sdk-v2.1.3`'s tag tree has no `scripts/supply-
+      # chain/` directory at all (it predates that script), so a straight `node scripts/
+      # supply-chain/validate-sbom.mjs` against the tag checkout fails with `Cannot find
+      # module` the moment this workflow backfills that exact tag — the validator itself
+      # has no npm dependencies (stdlib-only), so it runs correctly against whichever
+      # tree's package.json/sbom.*.json it's pointed at via --dir.
+      - name: Checkout SBOM tooling (workflow ref — may postdate the tag)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          sparse-checkout: scripts/supply-chain
+          persist-credentials: false
+          path: .sbom-tooling
+
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: '24'
@@ -211,8 +229,11 @@ jobs:
 
       # Fail closed on an empty or malformed document: an unreadable SBOM attached to a
       # release is worse than none, because the verifier would count it as present.
+      # Script comes from .sbom-tooling (workflow ref, see checkout step above); --dir .
+      # points it at the sbom.*.json + package.json that were just generated in the tag
+      # checkout, which is the default cwd for every step in this job.
       - name: Verify the SBOMs are well-formed and describe this version
-        run: node scripts/supply-chain/validate-sbom.mjs
+        run: node .sbom-tooling/scripts/supply-chain/validate-sbom.mjs --tag "$TAG" --dir .
 
       # --clobber makes a re-run idempotent, so a dispatch replay repairs a bad upload
       # instead of failing on "asset already exists".
