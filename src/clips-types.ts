@@ -19,11 +19,21 @@ export type ClipQualityPreset =
   | 'high'
   | 'source'
   | 'custom';
+/**
+ * Clip source reference.
+ *
+ * Live contract (verified against api.wave.online): `source` is the recording
+ * id as a string, with `in`/`out` relative time strings (`"5s"`, `"2m"`).
+ * The older `{ type, id, start_time, end_time }` object shape is rejected by
+ * the gateway on create.
+ */
 export interface ClipSource {
-  type: 'stream' | 'recording' | 'upload';
+  /** Recording id the clip is cut from */
   id: string;
-  start_time: number;
-  end_time: number;
+  /** Start offset as a time string, e.g. `"5s"` or `"2m"` */
+  in: string;
+  /** End offset as a time string, e.g. `"10s"` or `"1m30s"` */
+  out: string;
 }
 export interface Clip extends Timestamps {
   id: string;

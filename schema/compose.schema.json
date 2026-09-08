@@ -1,0 +1,272 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "definitions": {
+    "ComposeCallShape": {
+      "additionalProperties": false,
+      "properties": {
+        "http": {
+          "type": "string"
+        },
+        "mcp": {
+          "anyOf": [
+            {
+              "additionalProperties": false,
+              "properties": {
+                "args": {
+                  "additionalProperties": {},
+                  "type": "object"
+                },
+                "tool": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "tool",
+                "args"
+              ],
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "http",
+        "mcp"
+      ],
+      "type": "object"
+    },
+    "ComposeEngineInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "model": {
+          "description": "null until a SOURCED model catalog exists (brief §9 item 17) — never a name the engine cannot cite.",
+          "type": "null"
+        },
+        "promptHash": {
+          "type": "string"
+        },
+        "route": {
+          "$ref": "#/definitions/ComposeEngineRoute"
+        }
+      },
+      "required": [
+        "route",
+        "promptHash",
+        "model"
+      ],
+      "type": "object"
+    },
+    "ComposeEngineRoute": {
+      "enum": [
+        "dispatch",
+        "deterministic-fallback"
+      ],
+      "type": "string"
+    },
+    "ComposePriceRow": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/QuotedPriceRow"
+        },
+        {
+          "$ref": "#/definitions/UnquotedPriceRow"
+        }
+      ]
+    },
+    "ComposeScopeRow": {
+      "additionalProperties": false,
+      "properties": {
+        "mintable": {
+          "type": "boolean"
+        },
+        "scope": {
+          "type": "string"
+        },
+        "source": {
+          "description": "Where the mintable fact was read: the open-by-default registry's file:line-ish anchor.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "scope",
+        "mintable",
+        "source"
+      ],
+      "type": "object"
+    },
+    "ComposeStage": {
+      "additionalProperties": false,
+      "properties": {
+        "product": {
+          "type": "string"
+        },
+        "why": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "product",
+        "why"
+      ],
+      "type": "object"
+    },
+    "QuotedPriceRow": {
+      "additionalProperties": false,
+      "description": "A quoted price row: a number ONLY when a live, decodable quote_token backed it.",
+      "properties": {
+        "meter": {
+          "type": "string"
+        },
+        "product": {
+          "type": "string"
+        },
+        "quotedAt": {
+          "type": "number"
+        },
+        "unit": {
+          "type": "string"
+        },
+        "usd": {
+          "type": "number"
+        },
+        "validForS": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "product",
+        "meter",
+        "usd",
+        "unit",
+        "quotedAt",
+        "validForS"
+      ],
+      "type": "object"
+    },
+    "UnquotedPriceRow": {
+      "additionalProperties": false,
+      "description": "An unquoted row: the literal \"quote at call time\" and the reason the number is absent.",
+      "properties": {
+        "meter": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "product": {
+          "type": "string"
+        },
+        "quote": {
+          "const": "quote at call time",
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "product",
+        "meter",
+        "quote",
+        "reason"
+      ],
+      "type": "object"
+    }
+  },
+  "description": "POST /v1/compose response and the stored proposal (§2c).",
+  "properties": {
+    "callShape": {
+      "$ref": "#/definitions/ComposeCallShape"
+    },
+    "engine": {
+      "$ref": "#/definitions/ComposeEngineInfo"
+    },
+    "executes": {
+      "const": false,
+      "type": "boolean"
+    },
+    "flowId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "groundedAt": {
+      "type": "string"
+    },
+    "grounding": {
+      "enum": [
+        "live",
+        "snapshot"
+      ],
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "intent": {
+      "type": "string"
+    },
+    "manifestHash": {
+      "type": "string"
+    },
+    "next": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "priceRows": {
+      "items": {
+        "$ref": "#/definitions/ComposePriceRow"
+      },
+      "type": "array"
+    },
+    "productIds": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "scopes": {
+      "items": {
+        "$ref": "#/definitions/ComposeScopeRow"
+      },
+      "type": "array"
+    },
+    "stages": {
+      "items": {
+        "$ref": "#/definitions/ComposeStage"
+      },
+      "type": "array"
+    },
+    "tools": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "id",
+    "intent",
+    "stages",
+    "productIds",
+    "tools",
+    "scopes",
+    "priceRows",
+    "callShape",
+    "next",
+    "executes",
+    "grounding",
+    "groundedAt",
+    "manifestHash",
+    "engine",
+    "flowId"
+  ],
+  "type": "object"
+}

@@ -1,7 +1,7 @@
 /**
  * SDK Export Verification Tests
  *
- * Validates that all 34 SDK modules export correctly, all API classes
+ * Validates that all 35 SDK modules export correctly, all API classes
  * accept WaveClient, and the Wave convenience class wires everything.
  */
 
@@ -109,6 +109,9 @@ describe("@wave/sdk exports", () => {
     // Perception (#85)
     expect(wave.perception).toBeInstanceOf(SDK.PerceptionAPI);
 
+    // Enhance
+    expect(wave.enhance).toBeInstanceOf(SDK.EnhanceAPI);
+
     // Mail (E5)
     expect(wave.mail).toBeInstanceOf(SDK.MailAPI);
 
@@ -164,6 +167,8 @@ describe("@wave/sdk exports", () => {
     "UsbAPI",
     // Perception (#85)
     "PerceptionAPI",
+    // Enhance
+    "EnhanceAPI",
     // Mail (E5)
     "MailAPI",
     // Meter (E5)
@@ -214,6 +219,7 @@ describe("@wave/sdk exports", () => {
     "createSlidesAPI",
     "createUsbAPI",
     "createPerceptionAPI",
+    "createEnhanceAPI",
     "createMailAPI",
     "createMeterAPI",
     "createSandboxAPI",
@@ -242,12 +248,12 @@ describe("@wave/sdk exports", () => {
   // Module count verification
   // =========================================================================
 
-  it("has exactly 37 API module classes (34 + 2 new E5 + 1 sandbox)", () => {
-    expect(expectedAPIs.length).toBe(37);
+  it("has exactly 38 API module classes (34 + 2 new E5 + 1 sandbox + 1 enhance)", () => {
+    expect(expectedAPIs.length).toBe(38);
   });
 
-  it("has exactly 37 factory functions", () => {
-    expect(expectedFactories.length).toBe(37);
+  it("has exactly 38 factory functions", () => {
+    expect(expectedFactories.length).toBe(38);
   });
 
   it("total named exports exceeds 80", () => {
