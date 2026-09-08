@@ -125,4 +125,23 @@ describe("EnhanceAPI", () => {
     const api = new EnhanceAPI(mockClient());
     await expect(api.enhance(new Uint8Array([1]))).rejects.toBeInstanceOf(WaveError);
   });
+
+  it("strips every trailing slash from a caller-configured baseUrl", async () => {
+    const slashyClient = {
+      getConnectionInfo: () => ({
+        apiKey: "wave_test_key",
+        baseUrl: "https://api.wave.online///",
+        organizationId: "org_123",
+      }),
+    } as unknown as WaveClient;
+    fetchMock.mockResolvedValue(
+      new Response(new Blob(["fake-video"]), { status: 200, headers: receiptHeaders() })
+    );
+
+    const api = new EnhanceAPI(slashyClient);
+    await api.enhance(new Uint8Array([1, 2, 3]), { contentType: "video/mp4" });
+
+    const [url] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("https://api.wave.online/v1/enhance?model=espcn");
+  });
 });
