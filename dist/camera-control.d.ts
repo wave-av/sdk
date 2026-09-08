@@ -1,3 +1,8 @@
+import { WaveClient } from './client.js';
+import 'eventemitter3';
+import './telemetry.js';
+import './client-types.js';
+
 /**
  * WAVE Camera Control SDK
  *
@@ -5,8 +10,8 @@
  *
  * @packageDocumentation
  */
-import type { WaveClient } from './client';
-export interface ManagedCamera {
+
+interface ManagedCamera {
     readonly id: string;
     readonly name: string;
     readonly manufacturer: 'blackmagic' | 'sony' | 'canon' | 'ptzoptics' | 'other';
@@ -15,12 +20,12 @@ export interface ManagedCamera {
     readonly status: 'online' | 'offline' | 'error';
     readonly controlProtocol: string;
 }
-export interface CameraPreset {
+interface CameraPreset {
     readonly id: string;
     readonly name: string;
     readonly slot: number;
 }
-export interface CameraControlParams {
+interface CameraControlParams {
     readonly iris?: number;
     readonly focus?: number;
     readonly zoom?: number;
@@ -36,7 +41,7 @@ export interface CameraControlParams {
         speed: number;
     };
 }
-export declare class CameraControlAPI {
+declare class CameraControlAPI {
     private readonly client;
     private readonly basePath;
     constructor(client: WaveClient);
@@ -51,4 +56,6 @@ export declare class CameraControlAPI {
     startRecording(cameraId: string): Promise<void>;
     stopRecording(cameraId: string): Promise<void>;
 }
-export declare function createCameraControlAPI(client: WaveClient): CameraControlAPI;
+declare function createCameraControlAPI(client: WaveClient): CameraControlAPI;
+
+export { CameraControlAPI, type CameraControlParams, type CameraPreset, type ManagedCamera, createCameraControlAPI };

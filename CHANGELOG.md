@@ -5,3 +5,136 @@ All notable changes to this project are documented here. The format is based on
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+### Fixed
+
+- `pr-agent` lane: fork-triggered `/` commands are now refused, and the AI
+  call's budget fits inside its step. Three defects, one of them only visible
+  once the first was fixed.
+
+  The job-level `if:` refused forks on the `pull_request` arm and could not on
+  `issue_comment` — fork status is absent from that payload, so there was never
+  an expression to write. A `fork gate` step now asks the pulls endpoint and
+  fails closed: only a literal `false` proceeds, so a 404, a rate limit or a
+  deleted fork all skip. The lane runs no `actions/checkout`, so fork code was
+  never executed and no exfiltration path existed; what this closes is the
+  comment claiming forks were already skipped, which was true of one arm only.
+
+  `CONFIG__AI_TIMEOUT` was 600s inside a 360s step, so the runner killed the
+  step before pr-agent could reach its own timeout or fall back to a secondary
+  model. Now 300s.
+
+  Fixing the first exposed a third: `stamp attempt 2 end` runs under
+  `if: always()`, so when attempt 2 never ran the verdict subtracted from zero
+  and reported a 1787580408-second attempt as a confident TIMED OUT.
+
+  Contributors on forks are affected: a maintainer's `/review` on a fork PR is
+  now declined with a warning rather than silently running.
+  (wave-av/wave-foundation-public#73)
+
+### Added
+
+- `@wave-av/sdk/compose`: `compose(intent, options)` calls `POST /v1/compose` (the WAVE Composer's proposal endpoint) and returns the typed `ComposeProposal`; `saveFlow(proposal, options)` posts a composed proposal to the console flows door with `createdBy.kind: "wave-composer"`. Both are STANDALONE functions (no `Wave` client instance required), matching the `agent-auth.ts` convention. `compose()` calls exactly one route, ever — the response's `executes` field is always `false`, never derived. `saveFlow()` requires a `consoleToken` (the console's `composer:write`-scoped machine-auth token has not shipped yet); without one it throws `ConsoleAuthRequiredError` carrying the exact `curl` a signed-in human can run, never a silent no-op.
+- `src/compose-types.ts`: the wire-contract types (`ComposeRequest`, `ComposeProposal`, `ComposeStage`, `ComposeScopeRow`, `ComposePriceRow`, `ComposeCallShape`, `ComposeEngineInfo`), copied verbatim from the gateway's `feat/compose-engine` branch (not hand-derived), plus `isQuotedPriceRow()`, a type-guard matching the same discriminator `wave-av/cli` PR #61 defines locally against the identical shape.
+- `schema/compose.schema.json`: a JSON Schema generated from `src/compose-types.ts` via the new `npm run schema:generate` script (`ts-json-schema-generator`), so the SDK's types cannot hand-drift from what it declares as the wire contract. The gateway itself does not publish a JSON Schema for this contract yet (its `feat/compose-engine` branch validates with TypeScript types only) — this schema should move to the gateway once it does, so every rendering (API, CLI, SDK, MCP) generates from one published source instead of three independently-generated copies.
+- New devDependencies: `ts-json-schema-generator` (schema generation), `ajv` (test-only, schema round-trip validation).
+
+### Changed
+- **Breaking**: `CreateClipRequest.source` is now a recording-id string with top-level `in`/`out` time strings; the old discriminated `{ type: 'stream' | 'recording' | 'upload', id, start_time, end_time }` source object is gone, so clips can no longer be created from `stream`/`upload` sources (the live gateway rejects that shape). **Breaking**: `voice.synthesize()` now returns `Promise<ArrayBuffer>` (raw `audio/mpeg` bytes) instead of a JSON `SynthesisResult` job object.
+
+### Fixed
+- **SDK contract aligned to the LIVE gateway** (verified against `api.wave.online`): `clips.create()` now sends the gateway-accepted shape `{ source: "<recording-id>", in: "5s", out: "10s", title? }` (previously sent a rejected `{ source: { type, id, start_time, end_time } }` object). `voice.synthesize()` now POSTs `/v1/voice` and returns the raw `audio/mpeg` bytes (previously POSTed `/v1/voice/synthesize` and expected a JSON job object). `ClipSource` and `SynthesizeRequest` types updated to match the verified live contract.
+- `voice.synthesize()` goes through the standard client request path: the full `SynthesizeRequest` (including audio options) is forwarded, and retries, rate-limit handling, timeouts, custom headers, and `WaveError`-typed failures now apply (previously a bare `fetch` that sent only `text`/`voice_id` and threw generic `Error`s).
+
+
+## [2.1.3] - 2026-09-01
+
+### Added
+
+- Standalone functions for the agent-auth device authorization ceremony: `startAgentCeremony`, `pollAgentCeremony`, `refreshAgentCeremony`, plus the `isCeremonyPending` and `isCeremonyTerminal` classifiers (#110). These take no client and no API key, so an SDK consumer can run the full bootstrap and hand a human an approval URL before any credential exists.
+
+### Fixed
+
+- **P0: fresh installs of `@wave-av/sdk@2.1.x` crashed every ESM consumer at import time.**
+  `src/cli.ts` carried a top-level bin-entry guard, `if (require.main === module) { ... }`,
+  a CJS-only idiom. Because `src/cli.ts` is also re-exported from `src/index.ts` (for
+  `runWaveCli`), tsup/esbuild's ESM code-splitting placed it in a chunk shared by every ESM
+  entry point (`dist/index.mjs`, `dist/cli.mjs`, ...). `module` has no meaning in ES module
+  scope, so evaluating that shared chunk threw
+  `ReferenceError: module is not defined in ES module scope` for *any* ESM import of the
+  package — not just when the `wave` bin was executed. This broke `@wave-av/cli@1.0.8`
+  (which resolves `@wave-av/sdk` via `^2.0.11` → 2.1.2, and is itself an ESM package, so it
+  always takes the `"import"` condition) on every fresh install.
+  Reproduced with: `node --input-type=module -e "import('@wave-av/sdk')"` (throws on 2.1.0
+  through 2.1.2; works from 2.0.14 backward because the guard was added by the CLI-bin work
+  landing in 2.1.0).
+- The bin-entry side effect now lives in `src/bin.ts`, a file with no exports consumed
+  elsewhere in the package. It is never re-exported, so tsup/esbuild never folds it into a
+  shared chunk, and because it only ever runs as the process entry point it needs no
+  entry-point guard at all (ESM-safe or otherwise) — it just runs.
+- `src/cli.ts` is now a pure library module: `runWaveCli` with zero top-level side effects.
+
+### Changed
+
+- **BREAKING (bin rename):** the package's `bin` field changed from `"wave": "./dist/cli.js"`
+  to `"wave-sdk": "./dist/bin.js"`. `@wave-av/sdk` and `@wave-av/cli` both declared a bin
+  named `wave`, so which package's `wave` binary actually landed in `node_modules/.bin` was
+  install-order luck — and the SDK's version was a 4-verb stub (`wave <models|complete|
+  stream|products>`), not the full 34-command-group CLI that `@wave-av/cli` ships. If you
+  depended on the SDK's own `wave` bin directly (not via `@wave-av/cli`), invoke it as
+  `wave-sdk` after upgrading, or run it via `npx @wave-av/sdk` command name `wave-sdk`.
+
+### Release note
+
+Publishing `@wave-av/sdk@2.1.3` to npm is a separate, manual operator step. This change does
+not run `npm publish`.
+
+## [2.1.2] - 2026-08-28
+
+### Fixed
+
+- The published `wave` CLI binary was a silent no-op: the entry point exported `runWaveCli` but never invoked it (#105).
+
+## [2.1.1] - 2026-08-28
+
+### Fixed
+
+- Republished the identical 2.1.0 tree under a new version number after the `sdk-v2.1.0` tag was cut from a stale pre-merge commit (#103, #104).
+
+## [2.1.0] - 2026-08-27
+
+Prereleased as `2.1.0-next.0` through `2.1.0-next.4` (2026-07-02, 2026-08-27) before this stable tag.
+
+### Added
+
+- `wave` CLI, published as a package bin (#99).
+- `RuntimeClient`, a typed client for the OpenAI-compatible runtime endpoint (#76).
+- Mail and meter client modules (#78).
+- `ProductClient`, a catalog-driven client covering all product surfaces (#82).
+- `PricingAPI` for creating, listing, and reading pricing tier manifests (#85).
+- `TranscriptAPI` for listing and reading voice-agent transcripts (#87).
+- `CommsAPI.createTenant` for tenant onboarding (#91).
+- `WebhooksAPI.registerTenantWebhook` (#93).
+- `CommsAPI.listTenants` (#95).
+- An inference client module (#97).
+- A typed WAVE Realtime client, `wave.realtime` (#15).
+- A live-media perception `subscribe()` client (#42).
+
+### Changed
+
+- Relicensed under Apache-2.0 and added a NOTICE file reserving the WAVE marks (#18). No API or build changes.
+
+## [2.0.0] - [2.0.14]
+
+Published 2026-04-01 through 2026-04-03 (registry `time` map: `2.0.0` at 2026-04-01T23:58:46Z,
+`2.0.1` through `2.0.14` following on 2026-04-02/03). No merged-PR history is available in this
+repository to anchor individual 2.0.x versions to specific changes. Only the `v2.0.1` git tag
+(2026-04-02) exists; `2.0.0` was published to npm with no corresponding git tag.
+
+[Unreleased]: https://github.com/wave-av/sdk/compare/sdk-v2.1.3...HEAD
+[2.1.3]: https://github.com/wave-av/sdk/compare/sdk-v2.1.2...sdk-v2.1.3
+[2.1.2]: https://github.com/wave-av/sdk/compare/sdk-v2.1.1...sdk-v2.1.2
+[2.1.1]: https://github.com/wave-av/sdk/compare/sdk-v2.1.0...sdk-v2.1.1
+[2.1.0]: https://github.com/wave-av/sdk/compare/v2.0.1...sdk-v2.1.0
+[2.0.1]: https://github.com/wave-av/sdk/releases/tag/v2.0.1
+[2.0.0]: https://www.npmjs.com/package/@wave-av/sdk/v/2.0.0

@@ -1,12 +1,17 @@
+import { WaveClient } from './client.js';
+import { Timestamps, PaginationParams, PaginatedResponse } from './client-types.js';
+import 'eventemitter3';
+import './telemetry.js';
+
 /**
  * WAVE SDK - DRM API
  *
  * Digital Rights Management: content protection with Widevine, FairPlay, and PlayReady.
  */
-import type { WaveClient, PaginationParams, PaginatedResponse, Timestamps } from "./client";
-export type DRMProvider = "widevine" | "fairplay" | "playready";
-export type LicenseStatus = "active" | "expired" | "revoked";
-export interface DRMPolicy extends Timestamps {
+
+type DRMProvider = "widevine" | "fairplay" | "playready";
+type LicenseStatus = "active" | "expired" | "revoked";
+interface DRMPolicy extends Timestamps {
     id: string;
     organization_id: string;
     name: string;
@@ -18,7 +23,7 @@ export interface DRMPolicy extends Timestamps {
     security_level: "sw" | "hw";
     persistent_license: boolean;
 }
-export interface DRMLicense extends Timestamps {
+interface DRMLicense extends Timestamps {
     id: string;
     policy_id: string;
     asset_id: string;
@@ -29,12 +34,12 @@ export interface DRMLicense extends Timestamps {
     expires_at?: string;
     playback_count: number;
 }
-export interface DRMCertificate {
+interface DRMCertificate {
     provider: DRMProvider;
     certificate: string;
     expires_at: string;
 }
-export interface CreatePolicyRequest {
+interface CreatePolicyRequest {
     name: string;
     providers: DRMProvider[];
     allow_offline?: boolean;
@@ -44,7 +49,7 @@ export interface CreatePolicyRequest {
     security_level?: "sw" | "hw";
     persistent_license?: boolean;
 }
-export interface ListPoliciesParams extends PaginationParams {
+interface ListPoliciesParams extends PaginationParams {
     provider?: DRMProvider;
 }
 /**
@@ -57,7 +62,7 @@ export interface ListPoliciesParams extends PaginationParams {
  * const license = await wave.drm.issueLicense(assetId, policyId);
  * ```
  */
-export declare class DrmAPI {
+declare class DrmAPI {
     private readonly client;
     private readonly basePath;
     constructor(client: WaveClient);
@@ -84,4 +89,6 @@ export declare class DrmAPI {
         status?: LicenseStatus;
     } & PaginationParams): Promise<PaginatedResponse<DRMLicense>>;
 }
-export declare function createDrmAPI(client: WaveClient): DrmAPI;
+declare function createDrmAPI(client: WaveClient): DrmAPI;
+
+export { type CreatePolicyRequest, type DRMCertificate, type DRMLicense, type DRMPolicy, type DRMProvider, DrmAPI, type LicenseStatus, type ListPoliciesParams, createDrmAPI };

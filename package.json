@@ -1,7 +1,7 @@
 {
   "name": "@wave-av/sdk",
-  "version": "2.1.0-next.0",
-  "description": "Official WAVE SDK - 34 API modules covering streaming, production, device management, analytics, content, monetization, and more",
+  "version": "2.1.3",
+  "description": "Official WAVE SDK - 35 API modules covering streaming, production, device management, analytics, content, monetization, and more",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -216,14 +216,35 @@
       "import": "./dist/telemetry.mjs",
       "require": "./dist/telemetry.js"
     },
+    "./mail": {
+      "types": "./dist/mail.d.ts",
+      "import": "./dist/mail.mjs",
+      "require": "./dist/mail.js"
+    },
+    "./meter": {
+      "types": "./dist/meter.d.ts",
+      "import": "./dist/meter.mjs",
+      "require": "./dist/meter.js"
+    },
     "./realtime": {
       "types": "./dist/realtime.d.ts",
       "import": "./dist/realtime.mjs",
       "require": "./dist/realtime.js"
+    },
+    "./pricing": {
+      "types": "./dist/pricing.d.ts",
+      "import": "./dist/pricing.mjs",
+      "require": "./dist/pricing.js"
+    },
+    "./compose": {
+      "types": "./dist/compose.d.ts",
+      "import": "./dist/compose.mjs",
+      "require": "./dist/compose.js"
     }
   },
   "files": [
     "dist",
+    "schema",
     "README.md",
     "CHANGELOG.md",
     "LICENSE"
@@ -235,6 +256,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "type-check": "tsc --noEmit -p tsconfig.json",
+    "schema:generate": "ts-json-schema-generator --path src/compose-types.ts --type ComposeProposal --tsconfig tsconfig.json --no-top-ref -o schema/compose.schema.json",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
@@ -283,7 +305,7 @@
   },
   "peerDependencies": {
     "@opentelemetry/api": "^1.7.0",
-    "zod": "^3.22.0"
+    "zod": "^3.22.0 || ^4.4.3"
   },
   "peerDependenciesMeta": {
     "@opentelemetry/api": {
@@ -294,13 +316,18 @@
     "eventemitter3": "^5.0.1"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.4",
-    "@types/node": "^25.0.3",
-    "eslint": "^10.4.1",
+    "@eslint/js": "^10.0.0",
+    "@types/node": "^26.0.0",
+    "ajv": "^8.20.0",
+    "eslint": "^10.9.1",
+    "ts-json-schema-generator": "^2.9.0",
     "tsup": "^8.0.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.60.1",
     "vitest": "^4.0.16",
     "zod": "4.4.3"
+  },
+  "bin": {
+    "wave-sdk": "./dist/bin.js"
   }
 }
