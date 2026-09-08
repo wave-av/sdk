@@ -325,7 +325,7 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.60.1",
     "vitest": "^4.0.16",
-    "zod": "4.4.3"
+    "zod": "4.5.4"
   },
   "bin": {
     "wave-sdk": "./dist/bin.js"
