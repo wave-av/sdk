@@ -217,7 +217,7 @@ jobs:
 
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
-          node-version: '22'
+          node-version: '24'
           package-manager-cache: false
 
       - name: Assert tag version matches package.json (VER-001 codification)
@@ -320,7 +320,7 @@ jobs:
 
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
-          node-version: '22'
+          node-version: '24'
           package-manager-cache: false
           registry-url: 'https://registry.npmjs.org'
 
@@ -443,7 +443,7 @@ jobs:
 
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
-          node-version: '22'
+          node-version: '24'
           package-manager-cache: false
 
       - run: npm ci
