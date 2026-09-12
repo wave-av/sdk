@@ -1,0 +1,16 @@
+package.json
+  h_af5ac1a9798224 320-322
+src/cli.ts
+  h_af5ac1a9798224 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "0d78b56b384dba98b2016cf58ac84acf1d91fcdc",
+  "prompts": {},
+  "humans": {
+    "h_af5ac1a9798224": {
+      "author": "Jake Fineman <jakefineman@gmail.com>"
+    }
+  }
+}

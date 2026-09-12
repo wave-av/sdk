@@ -1,0 +1,29 @@
+.wave/repo.json
+  s_4657dee555390b::t_fce3df2bf9d1c5 5
+README.md
+  s_49793c5a9de056::t_2664092605198e 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "1afdf309cd68f348a96569b0547aeb82e59ad334",
+  "prompts": {},
+  "sessions": {
+    "s_4657dee555390b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c714314b-1edf-4e54-a112-2a97f2377df1",
+        "model": "unknown"
+      },
+      "human_author": "Jake Fineman <jakefineman@gmail.com>"
+    },
+    "s_49793c5a9de056": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d315ea56-91aa-4d81-9939-eac4eba83179",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": null
+    }
+  }
+}

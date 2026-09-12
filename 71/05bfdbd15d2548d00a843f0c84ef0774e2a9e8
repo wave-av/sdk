@@ -1,0 +1,40 @@
+src/meter-types.ts
+  s_b64386f84090ec::t_200bba3a7f0b91 1-92
+src/index.ts
+  s_b64386f84090ec::t_f4fe249bd4779f 429-430
+  s_b64386f84090ec::t_25d6a8f95c0cbf 489-494
+  s_b64386f84090ec::t_4910ac853283eb 551-556
+src/__tests__/sdk-exports.test.ts
+  s_b64386f84090ec::t_a7c59d75ad7042 59
+src/mail-types.ts
+  s_b64386f84090ec::t_dcf444ca951e4c 1-71
+src/mail.ts
+  s_b64386f84090ec::t_539eae879f31cf 1-98
+src/__tests__/mail.test.ts
+  s_b64386f84090ec::t_aedb3bd3c8f23c 1-118
+README.md
+  s_b64386f84090ec::t_8911a918da1c04 67-68
+package.json
+  s_b64386f84090ec::t_6e2863c229f458 219-228
+src/__tests__/meter.test.ts
+  s_b64386f84090ec::t_ea1094498fd884 1-112
+src/meter.ts
+  s_b64386f84090ec::t_acbb1d96509c29 1-75,77-82,84-90
+  s_b64386f84090ec::t_8b5a43e0b8de9a 76,83
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "7105bfdbd15d2548d00a843f0c84ef0774e2a9e8",
+  "prompts": {},
+  "sessions": {
+    "s_b64386f84090ec": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_fe47e53e8ffeH63Q2hIEtgxpEz",
+        "model": "mimo-v2.5"
+      },
+      "human_author": "Jake Fineman <jakefineman@gmail.com>"
+    }
+  }
+}

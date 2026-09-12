@@ -1,0 +1,35 @@
+CHANGELOG.md
+  s_4657dee555390b::t_f15bda0e3894e3 8-45
+src/bin.ts
+  s_4657dee555390b::t_f4c4f876a8c208 1-21
+package.json
+  s_4657dee555390b::t_bf383dd6d3c31e 3
+  s_4657dee555390b::t_93310b7171831e 322
+src/__tests__/pack-esm-smoke.test.ts
+  s_4657dee555390b::t_08d786e230bd43 22
+  s_4657dee555390b::t_7bcb1a4b22a4f1 1-21,23-77,79-80,89-96
+  s_4657dee555390b::t_c9397b795492dc 78,81-88
+src/cli.ts
+  s_4657dee555390b::t_ece53aa47145de 31
+  s_4657dee555390b::t_869297e18fa3c8 68
+  s_4657dee555390b::t_995e0640857c17 2,7-14
+  s_4657dee555390b::t_8d0fc7ab4af84f 76,86
+package-lock.json
+  s_4657dee555390b::t_22597f0128ec52 3,9,14-16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "5fd2a7949f6ecf8736fabd989ad27806c9db522c",
+  "prompts": {},
+  "sessions": {
+    "s_4657dee555390b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c714314b-1edf-4e54-a112-2a97f2377df1",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Jake Fineman <jakefineman@gmail.com>"
+    }
+  }
+}

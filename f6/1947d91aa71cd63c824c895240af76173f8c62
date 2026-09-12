@@ -1,0 +1,31 @@
+src/__tests__/cli.test.ts
+  s_4657dee555390b::t_907cd3f6c330c0 1-3,23,30-31
+  s_4657dee555390b::t_ada185143d873e 32
+  s_4657dee555390b::t_a3d934345cfb06 8-21
+  s_4657dee555390b::t_e4bc05e8bed1c6 22,24-29
+scripts/smoke-quickstart.mjs
+  s_4657dee555390b::t_3b8961b9ca9283 1-8,17-69,71-72,76-78,83-84,91-93
+  s_4657dee555390b::t_89fa6b95a82fb4 70,73-75,79-82,85-90,94-95
+  s_4657dee555390b::t_c1535ab3530aa6 9-16
+.github/workflows/smoke-install.yml
+  s_4657dee555390b::t_dafd0ddd19992f 96
+  s_4657dee555390b::t_2e9b0738a1e2bf 1-95,97-98
+.github/workflows/release.yml
+  s_4657dee555390b::t_24f7bd1b8ee4f8 108-125
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "f61947d91aa71cd63c824c895240af76173f8c62",
+  "prompts": {},
+  "sessions": {
+    "s_4657dee555390b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c714314b-1edf-4e54-a112-2a97f2377df1",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": null
+    }
+  }
+}

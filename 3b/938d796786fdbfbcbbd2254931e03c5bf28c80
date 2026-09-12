@@ -1,0 +1,38 @@
+.github/workflows/foundation-gate.yml
+  h_af5ac1a9798224 25-28
+.github/workflows/pr-agent.yml
+  h_af5ac1a9798224 1-3,5-8,11-12,15-17,19-23
+.github/workflows/release.yml
+  h_af5ac1a9798224 1-178
+.wave/repo.json
+  h_af5ac1a9798224 1-54
+AGENTS.md
+  h_af5ac1a9798224 19-26
+CONTRIBUTING.md
+  h_af5ac1a9798224 45-63
+README.md
+  h_af5ac1a9798224 14-15,73
+package-lock.json
+  h_af5ac1a9798224 3,9
+package.json
+  h_af5ac1a9798224 3,232
+src/__tests__/perception.test.ts
+  h_af5ac1a9798224 2-6,9-12,14-19,21-39,41-46,48-51,53-59,61-66,69-74,76-77,80-85
+src/__tests__/sdk-exports.test.ts
+  h_af5ac1a9798224 104-106,152-153,197,223-224,227-228,231,235
+src/index.ts
+  h_af5ac1a9798224 328-344,398,456-458,511-513
+src/perception.ts
+  h_af5ac1a9798224 2-15,18-147
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "3b938d796786fdbfbcbbd2254931e03c5bf28c80",
+  "prompts": {},
+  "humans": {
+    "h_af5ac1a9798224": {
+      "author": "Jake Fineman <jakefineman@gmail.com>"
+    }
+  }
+}

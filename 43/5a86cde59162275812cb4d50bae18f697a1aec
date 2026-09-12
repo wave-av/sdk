@@ -1,0 +1,20 @@
+src/cli.ts
+  h_af5ac1a9798224 11-12,67-81
+src/index.ts
+  h_af5ac1a9798224 341-342,457,519-521,585-587
+src/mcp.ts
+  h_af5ac1a9798224 12-13,47-68,72-78,136-154
+src/transcripts.ts
+  h_af5ac1a9798224 1-50
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "435a86cde59162275812cb4d50bae18f697a1aec",
+  "prompts": {},
+  "humans": {
+    "h_af5ac1a9798224": {
+      "author": "Jake Fineman <jakefineman@gmail.com>"
+    }
+  }
+}

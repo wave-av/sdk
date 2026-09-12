@@ -1,0 +1,25 @@
+src/__tests__/inference.test.ts
+  s_9e49fb2dab61f0::t_85d977702da1aa 1-77
+src/__tests__/mcp.test.ts
+  s_9e49fb2dab61f0::t_2b34811e3767e8 21-23,38-39
+src/index.ts
+  s_9e49fb2dab61f0::t_974fe87450a4ea 462,523,533-535,601
+src/inference.ts
+  s_9e49fb2dab61f0::t_fc08d922fef306 1-115
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "da06ba8ee9e45a28462289147e2f4e87e33452e2",
+  "prompts": {},
+  "sessions": {
+    "s_9e49fb2dab61f0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "981b7f1a-f483-49cf-a573-1264b8ca9553",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Jake Fineman <jakefineman@gmail.com>"
+    }
+  }
+}
