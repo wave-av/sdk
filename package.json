@@ -317,15 +317,15 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.0",
-    "@types/node": "^26.0.0",
+    "@types/node": "^26.5.1",
     "ajv": "^8.20.0",
-    "eslint": "^10.9.1",
+    "eslint": "^10.10.0",
     "ts-json-schema-generator": "^2.9.0",
     "tsup": "^8.0.0",
-    "typescript": "^5.9.3",
+    "typescript": "^7.0.2",
     "typescript-eslint": "^8.60.1",
-    "vitest": "^4.0.16",
-    "zod": "4.5.4"
+    "vitest": "^5.0.0",
+    "zod": "4.6.5"
   },
   "bin": {
     "wave-sdk": "./dist/bin.js"
