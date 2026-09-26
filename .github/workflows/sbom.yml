@@ -30,7 +30,7 @@
 # event dispatch involved, so the GITHUB_TOKEN recursion guard is structurally
 # irrelevant. This is now the GUARANTEED, primary path.
 #
-# `release: published` is kept alongside it (review feedback on this PR, cubic-dev-ai:
+# `release: published` is kept alongside it (review feedback on this PR:
 # the recursion guard only suppresses events caused by THIS repo's own GITHUB_TOKEN — a
 # Release published by a human via the GitHub UI, or by any future automation using a
 # real user/App token, fires the event for real). `release-drift.yml` already treats any
