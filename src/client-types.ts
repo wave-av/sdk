@@ -31,6 +31,11 @@ export interface RequestOptions extends RequestInit {
    */
   responseType?: 'json' | 'arraybuffer';
 }
+/**
+ * The nested gateway error envelope. The gateway also emits a flat envelope
+ * (`{ error: string, code, message }`) and an x402 challenge
+ * (`{ x402Version, error, accepts }`); `parseErrorBody` in './errors' reads all three.
+ */
 export interface WaveAPIErrorResponse {
   error: {
     code: string;

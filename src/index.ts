@@ -13,6 +13,8 @@ export {
   createClient,
   WaveError,
   RateLimitError,
+  PaymentRequiredError,
+  RouteNotServedError,
   type WaveClientConfig,
   type RequestOptions,
   type WaveAPIErrorResponse,
@@ -23,6 +25,7 @@ export {
   type Timestamps,
   type Metadata,
 } from "./client";
+export { SDK_VERSION } from "./version";
 
 // Clips API
 export {
@@ -30,6 +33,14 @@ export {
   createClipsAPI,
   type Clip,
   type ClipStatus,
+  type ClipQuality,
+  type ClipOutputFormat,
+  type ClipAsset,
+  type ClipCreateResult,
+  type ClipList,
+  type ClipDetectRequest,
+  type ClipDetectionJob,
+  type ClipCandidate,
   type ClipExportFormat,
   type ClipQualityPreset,
   type ClipSource,
@@ -126,6 +137,12 @@ export {
 export {
   CaptionsAPI,
   createCaptionsAPI,
+  type CaptionJob,
+  type CaptionJobStatus,
+  type CaptionJobList,
+  type CaptionDownloadFormat,
+  type CreateCaptionJobRequest,
+  type ListCaptionJobsParams,
   type CaptionTrack,
   type CaptionStatus,
   type CaptionFormat,
@@ -185,12 +202,14 @@ export {
   type Transcription,
   type TranscriptionStatus,
   type TranscriptionModel,
+  type TranscriptionEngine,
   type TranscriptionSegment,
   type TranscriptionWord,
   type Speaker,
   type CreateTranscriptionRequest,
   type UpdateTranscriptionRequest,
   type ListTranscriptionsParams,
+  type TranscriptionList,
   type TranscriptExportFormat,
 } from "./transcribe";
 
@@ -340,6 +359,8 @@ export { RealtimeAPI, RealtimeChannel, createRealtimeAPI } from "./realtime";
 export * from "./realtime-types";
 export { TranscriptAPI } from "./transcripts";
 export type { Transcript, TranscriptList, TranscriptMessage } from "./transcripts";
+export { InferenceAPI } from "./inference";
+export type { InferenceMessage, InferenceResult, InferenceModel, ModelProfile } from "./inference";
 
 // Enhance — AI video super-resolution
 export {
@@ -378,6 +399,7 @@ export {
   type MeterSmsChannel,
   type MeterRealtimeChannel,
   type MeterStorageChannel,
+  type MeterTier,
   type MeterRollup,
   type MeterRollupTotals,
 } from "./meter";
@@ -561,7 +583,7 @@ export class Wave {
   // Enhance — AI video super-resolution
   public readonly enhance: EnhanceAPI;
 
-  // Inference: the measured funnel (route/fallback/meter, inference.wave.online)
+  // Inference: OpenAI-compatible completions + model list via the gateway (/v1/inference/*)
   public readonly inference: InferenceAPI;
 
   // Sandbox: safe contained command execution (preview -> approve -> apply)

@@ -1,8 +1,8 @@
 /**
  * WAVE SDK - Meter API
  *
- * Read-only metering surface: the ledger (per-window rows) and rollup (aggregated
- * totals) for the comms productization planes.
+ * Read-only metering surface: the ledger (one window, per-channel usage) and rollup
+ * (aggregated totals over a period) for the comms productization planes.
  *
  * Requires scope `meter:read`. Auth, scope, and entitlement are enforced
  * server-side; the SDK only forwards your API key.
@@ -23,6 +23,7 @@ export type {
   MeterSmsChannel,
   MeterRealtimeChannel,
   MeterStorageChannel,
+  MeterTier,
   MeterRollup,
   MeterRollupTotals,
 } from "./meter-types";
@@ -55,12 +56,10 @@ export interface RollupParams {
  * @example
  * ```typescript
  * const ledger = await wave.meter.ledger({ channel: "mail" });
- * for (const row of ledger.rows) {
- *   console.log(`${row.from} → ${row.to}: ${row.channels.mail.ops} ops`);
- * }
+ * console.log(`${ledger.from} → ${ledger.to}: ${ledger.channels.mail?.ops ?? 0} mail ops`);
  *
  * const rollup = await wave.meter.rollup({ period: "month" });
- * console.log(`Total USDC: ${rollup.totals.mail.usdc}`);
+ * console.log(`Mail USDC this month: ${rollup.totals.mail.usdc}`);
  * ```
  */
 export class MeterAPI {
@@ -70,7 +69,7 @@ export class MeterAPI {
     this.client = client;
   }
 
-  /** Fetch ledger rows for the given time window and optional channel filter. */
+  /** Fetch the ledger for one window (default: today, UTC), optionally narrowed to one channel. */
   async ledger(params?: LedgerParams): Promise<MeterLedger> {
     return this.client.get<MeterLedger>(`${this.basePath}/ledger`, {
       params: params as Record<string, string | number | boolean | undefined>,

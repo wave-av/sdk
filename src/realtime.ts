@@ -2,30 +2,90 @@ import { stripTrailingSlashes } from './url-util';
 /**
  * WAVE SDK - Realtime API
  *
- * The WAVE Realtime control & event plane (realtime.wave.online): presence, pub/sub broadcast, and the
- * streaming-event bus the WAVE AI products push into. Subscribe once to a channel and receive live
- * transcription / captions / sentiment / clip / stream events with no polling.
+ * The WAVE Realtime control & event plane: presence, pub/sub broadcast, and the streaming-event bus
+ * the WAVE AI products push into. Subscribe once to a channel and receive live transcription /
+ * captions / sentiment / clip / stream events with no polling.
  *
- * NOTE: This is a client SDK. Auth, scope, entitlement, and metering are enforced server-side (the
- * gateway, via realtime's /v1/verify federation) — the SDK only forwards your API key.
+ * The gateway serves it under the API base URL: `GET /v1/realtime/connect` (WebSocket upgrade) and
+ * `/v1/realtime/channels/{channel}/{publish,presence,history}`. The SDK derives both from the
+ * client's `baseUrl`, so `new Wave({ baseUrl })` moves realtime with every other module.
+ *
+ * NOTE: This is a client SDK. Auth, scope (realtime:read / realtime:write), entitlement, and
+ * metering are enforced server-side by the gateway. The API key travels only in the
+ * `Authorization` header, on the REST calls and on the WebSocket handshake, never in a URL.
  */
 
 import { EventEmitter } from 'eventemitter3';
 import type { WaveClient } from './client';
+import { WaveError } from './errors';
 
 export * from './realtime-types';
 import type {
   PresenceMember,
   RealtimeConnectOptions,
   RealtimeFrame,
+  RealtimeSocketFactory,
 } from './realtime-types';
 
-const DEFAULT_WS = 'wss://realtime.wave.online';
+/** Where the realtime plane lives under the API base URL. */
+export const REALTIME_PATH = '/v1/realtime';
 
-/** Derive the https REST origin from the (ws) realtime base URL. */
-function httpOrigin(wsUrl: string): string {
-  return stripTrailingSlashes(wsUrl.replace(/^ws/i, 'http'));
+/**
+ * The channel names the gateway routes: lowercase, starting with a letter or digit, then letters,
+ * digits, `:`, `_` or `-`, at most 128 characters. `:` namespaces a channel (`stream:abc`).
+ */
+export const REALTIME_CHANNEL_PATTERN = /^[a-z0-9][a-z0-9:_-]{0,127}$/;
+
+/**
+ * Reject a channel name the gateway would not route, before any network call. A name that passes
+ * contains no character that needs escaping, so it goes into the path verbatim: percent-encoding
+ * `:` as `%3A` makes the gateway answer 404 ROUTE_NOT_FOUND.
+ */
+export function assertRealtimeChannel(channel: string): string {
+  if (typeof channel !== 'string' || !REALTIME_CHANNEL_PATTERN.test(channel)) {
+    throw new WaveError(
+      `invalid realtime channel ${JSON.stringify(channel)}: use 1-128 characters of a-z, 0-9, ':', '_' ` +
+        `or '-', starting with a letter or digit (e.g. "stream:abc")`,
+      'INVALID_CHANNEL',
+      400,
+    );
+  }
+  return channel;
 }
+
+/** Map an http(s) origin to ws(s); ws(s) URLs pass through unchanged. */
+function toWebSocketUrl(url: string): string {
+  return stripTrailingSlashes(url.replace(/^http(s?):/i, 'ws$1:'));
+}
+
+function isBrowser(): boolean {
+  const g = globalThis as { window?: { document?: unknown } };
+  return typeof g.window !== 'undefined' && typeof g.window.document !== 'undefined';
+}
+
+/**
+ * Default socket factory. Server runtimes whose global WebSocket accepts an init dict with
+ * `headers` (Node >= 22 via undici, Bun) send the Authorization header on the handshake. Browsers
+ * cannot set WebSocket headers at all, and the gateway does not accept a key in the URL, so a
+ * browser needs a server-side relay or a custom factory.
+ */
+const defaultSocketFactory: RealtimeSocketFactory = (url, headers) => {
+  if (isBrowser()) {
+    throw new Error(
+      'wave.realtime.connect: browsers cannot send the Authorization header on a WebSocket, and the ' +
+        'gateway does not accept an API key in the URL. Open the socket from your server, or pass ' +
+        'webSocketFactory.',
+    );
+  }
+  const WS = (globalThis as { WebSocket?: new (url: string, init?: unknown) => WebSocket }).WebSocket;
+  if (!WS) {
+    throw new Error(
+      'wave.realtime.connect: this runtime has no global WebSocket (Node < 22). Pass webSocketFactory, ' +
+        'e.g. with the ws package: (url, headers) => new WS(url, { headers }).',
+    );
+  }
+  return new WS(url, { headers });
+};
 
 /**
  * One subscribed channel = one WebSocket. Emits lifecycle events ('open'|'close'|'error'|'message'|
@@ -36,30 +96,34 @@ export class RealtimeChannel extends EventEmitter {
   private closedByUser = false;
   private attempt = 0;
   private readonly wsBase: string;
-  private readonly httpBase: string;
+  private readonly socketFactory: RealtimeSocketFactory;
 
   constructor(
     public readonly channel: string,
     private readonly apiKey: string,
     private readonly opts: RealtimeConnectOptions = {},
+    private readonly extraHeaders: Record<string, string> = {},
   ) {
     super();
-    this.wsBase = stripTrailingSlashes(opts.url || DEFAULT_WS);
-    this.httpBase = httpOrigin(this.wsBase);
+    assertRealtimeChannel(channel);
+    this.wsBase = toWebSocketUrl(opts.url || `wss://api.wave.online${REALTIME_PATH}`);
+    this.socketFactory = opts.webSocketFactory || defaultSocketFactory;
     this.open();
   }
 
-  private url(): string {
-    const u = new URL(`${this.wsBase}/v1/connect`);
+  /** The handshake URL. Carries the channel and member id only; the key goes in a header. */
+  url(): string {
+    const u = new URL(`${this.wsBase}/connect`);
     u.searchParams.set('channel', this.channel);
     if (this.opts.as) u.searchParams.set('as', this.opts.as);
-    // Browser WebSocket cannot set Authorization headers → token travels as a query param (over wss).
-    u.searchParams.set('access_token', this.apiKey);
     return u.toString();
   }
 
   private open(): void {
-    const ws = new WebSocket(this.url());
+    const ws = this.socketFactory(this.url(), {
+      ...this.extraHeaders,
+      Authorization: `Bearer ${this.apiKey}`,
+    });
     this.ws = ws;
     ws.addEventListener('open', () => {
       this.attempt = 0;
@@ -90,7 +154,15 @@ export class RealtimeChannel extends EventEmitter {
     const max = this.opts.maxBackoffMs ?? 15000;
     const delay = Math.min(max, 500 * 2 ** this.attempt++);
     setTimeout(() => {
-      if (!this.closedByUser) this.open();
+      if (this.closedByUser) return;
+      try {
+        this.open();
+      } catch (err) {
+        this.emit('error', err instanceof Error ? err : new Error(String(err)));
+        // No socket was created, so no 'close' event will re-arm reconnection: schedule the next
+        // attempt here, with the backoff still growing, until close() is called.
+        if (!this.closedByUser) this.scheduleReconnect();
+      }
     }, delay);
   }
 
@@ -114,52 +186,73 @@ export class RealtimeChannel extends EventEmitter {
 
 /**
  * Realtime entry point. `wave.realtime.connect('stream:abc').on('transcription.partial', …)`.
- * Presence/history/publish are also available as one-shot REST calls (no socket needed) for producers.
+ * Presence/history/publish are also available as one-shot REST calls (no socket needed) for
+ * producers. The REST calls go through WaveClient, so a non-2xx answer throws a typed WaveError.
  */
 export class RealtimeAPI {
   private readonly apiKey: string;
   private readonly wsBase: string;
-  private readonly httpBase: string;
+  private readonly extraHeaders: Record<string, string>;
+  private readonly webSocketFactory?: RealtimeSocketFactory;
 
-  constructor(client: WaveClient, opts: { url?: string } = {}) {
+  constructor(
+    private readonly client: WaveClient,
+    opts: { url?: string; webSocketFactory?: RealtimeSocketFactory } = {},
+  ) {
     const info = client.getConnectionInfo();
     this.apiKey = info.apiKey;
-    this.wsBase = stripTrailingSlashes(opts.url || DEFAULT_WS);
-    this.httpBase = httpOrigin(this.wsBase);
+    this.extraHeaders = info.organizationId ? { 'X-Organization-Id': info.organizationId } : {};
+    this.wsBase = toWebSocketUrl(opts.url || `${stripTrailingSlashes(info.baseUrl)}${REALTIME_PATH}`);
+    this.webSocketFactory = opts.webSocketFactory;
   }
 
-  /** Subscribe to a channel; returns a RealtimeChannel (EventEmitter). */
+  /** The WebSocket base this instance connects to (e.g. `wss://api.wave.online/v1/realtime`). */
+  get socketBaseUrl(): string {
+    return this.wsBase;
+  }
+
+  /** Subscribe to a channel; returns a RealtimeChannel (EventEmitter). Requires realtime:read. */
   connect(channel: string, opts: RealtimeConnectOptions = {}): RealtimeChannel {
-    return new RealtimeChannel(channel, this.apiKey, { url: this.wsBase, ...opts });
+    return new RealtimeChannel(
+      channel,
+      this.apiKey,
+      { url: this.wsBase, webSocketFactory: this.webSocketFactory, ...opts },
+      this.extraHeaders,
+    );
   }
 
-  /** Publish one event to a channel via REST (for producers that don't hold a socket). */
+  /** Throws WaveError INVALID_CHANNEL (rejecting the calling method) for a name the gateway would not route. */
+  private channelPath(channel: string, action: 'publish' | 'presence' | 'history'): string {
+    return `${REALTIME_PATH}/channels/${assertRealtimeChannel(channel)}/${action}`;
+  }
+
+  /** Publish one event to a channel via REST (for producers that don't hold a socket). Requires realtime:write. */
   async publish(channel: string, event: string, data?: unknown): Promise<{ ok: boolean; delivered: number }> {
-    const r = await fetch(`${this.httpBase}/v1/channels/${encodeURIComponent(channel)}/publish`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${this.apiKey}`, 'content-type': 'application/json' },
-      body: JSON.stringify({ event, data }),
-    });
-    return (await r.json()) as { ok: boolean; delivered: number };
+    // Not retried: publishing is not idempotent, so a lost response or 5xx after delivery must not
+    // deliver (and meter) the event twice. The caller decides whether to retry.
+    return this.client.post<{ ok: boolean; delivered: number }>(
+      this.channelPath(channel, 'publish'),
+      { event, data },
+      { noRetry: true },
+    );
   }
 
-  /** Current presence for a channel (REST). */
+  /** Current presence for a channel (REST). Requires realtime:read. */
   async presence(channel: string): Promise<{ channel: string; members: PresenceMember[] }> {
-    const r = await fetch(`${this.httpBase}/v1/channels/${encodeURIComponent(channel)}/presence`, {
-      headers: { Authorization: `Bearer ${this.apiKey}` },
-    });
-    return (await r.json()) as { channel: string; members: PresenceMember[] };
+    return this.client.get<{ channel: string; members: PresenceMember[] }>(this.channelPath(channel, 'presence'));
   }
 
-  /** Recent event history for a channel (REST, last-N ≤ 50). */
+  /** Recent event history for a channel (REST, last-N ≤ 50). Requires realtime:read. */
   async history(channel: string, limit = 50): Promise<{ channel: string; events: RealtimeFrame[] }> {
-    const r = await fetch(`${this.httpBase}/v1/channels/${encodeURIComponent(channel)}/history?limit=${limit}`, {
-      headers: { Authorization: `Bearer ${this.apiKey}` },
+    return this.client.get<{ channel: string; events: RealtimeFrame[] }>(this.channelPath(channel, 'history'), {
+      params: { limit },
     });
-    return (await r.json()) as { channel: string; events: RealtimeFrame[] };
   }
 }
 
-export function createRealtimeAPI(client: WaveClient, opts?: { url?: string }): RealtimeAPI {
+export function createRealtimeAPI(
+  client: WaveClient,
+  opts?: { url?: string; webSocketFactory?: RealtimeSocketFactory },
+): RealtimeAPI {
   return new RealtimeAPI(client, opts);
 }

@@ -1,63 +1,35 @@
 /**
  * WAVE SDK - Voice API
  *
- * Text-to-speech and voice cloning capabilities.
+ * Text-to-speech, the voice catalog, and instant voice cloning.
+ *
+ * The gateway forwards `/v1/voice` to the WAVE voice edge. The routes this module calls and the
+ * edge serves:
+ *
+ *   POST /v1/voice           synthesize()   the audio bytes (audio/mpeg)
+ *   GET  /v1/voice/voices    listVoices()   { voices }
+ *   POST /v1/voice/clone     cloneVoice()   the new Voice, 201
+ *
+ * The synthesis-job, voice-settings, clone-job, estimate and language methods of earlier releases
+ * have no backend; they now throw RouteNotServedError before any network call, and are marked
+ * deprecated.
  *
  * NOTE: This is a client SDK. All authorization checks are performed server-side.
  * The API will return 403 Forbidden if the user lacks required permissions.
  */
 
+import type { WaveClient, PaginationParams, PaginatedResponse } from './client';
+import { routeNotServed } from './errors';
 import type {
-  WaveClient,
-  PaginationParams,
-  PaginatedResponse,
-} from './client';
-import type { Voice, SynthesizeRequest, SynthesisResult, CloneVoiceRequest, VoiceCloneJob, ListVoicesParams, VoiceSettings } from './voice-types';
+  Voice,
+  SynthesizeRequest,
+  SynthesisResult,
+  CloneVoiceRequest,
+  VoiceCloneJob,
+  ListVoicesParams,
+  VoiceSettings,
+} from './voice-types';
 export type * from './voice-types';
-
-// ============================================================================
-// Types
-// ============================================================================
-
-/**
- * Voice model type
- */
-
-/**
- * Voice gender
- */
-
-/**
- * Audio format
- */
-
-/**
- * Voice definition
- */
-
-/**
- * Speech synthesis request
- */
-
-/**
- * Speech synthesis result
- */
-
-/**
- * Voice cloning request
- */
-
-/**
- * Voice clone job
- */
-
-/**
- * List voices params
- */
-
-/**
- * Voice settings
- */
 
 // ============================================================================
 // Voice API
@@ -75,313 +47,164 @@ export class VoiceAPI {
   }
 
   // ==========================================================================
-  // Voices
-  // ==========================================================================
-
-  /**
-   * List available voices
-   *
-   * Requires: voice:read permission
-   */
-  async listVoices(params?: ListVoicesParams): Promise<PaginatedResponse<Voice>> {
-    const queryParams: Record<string, string | number | boolean | undefined> = {
-      ...params,
-      tags: params?.tags?.join(','),
-    };
-
-    return this.client.get<PaginatedResponse<Voice>>(`${this.basePath}/voices`, {
-      params: queryParams,
-    });
-  }
-
-  /**
-   * Get a voice by ID
-   *
-   * Requires: voice:read permission
-   */
-  async getVoice(voiceId: string): Promise<Voice> {
-    return this.client.get<Voice>(`${this.basePath}/voices/${voiceId}`);
-  }
-
-  /**
-   * Get default voice settings for a voice
-   *
-   * Requires: voice:read permission
-   */
-  async getVoiceSettings(voiceId: string): Promise<VoiceSettings> {
-    return this.client.get<VoiceSettings>(
-      `${this.basePath}/voices/${voiceId}/settings`
-    );
-  }
-
-  /**
-   * Update voice settings for a cloned voice
-   *
-   * Requires: voice:update permission
-   */
-  async updateVoiceSettings(
-    voiceId: string,
-    settings: Partial<VoiceSettings>
-  ): Promise<VoiceSettings> {
-    return this.client.patch<VoiceSettings>(
-      `${this.basePath}/voices/${voiceId}/settings`,
-      settings
-    );
-  }
-
-  /**
-   * Remove a cloned voice
-   *
-   * Requires: voice:remove permission (server-side RBAC enforced)
-   */
-  async removeVoice(voiceId: string): Promise<void> {
-    await this.client.delete(
-      `${this.basePath}/voices/${voiceId}`,
-      { method: 'DELETE' }
-    );
-  }
-
-  // ==========================================================================
-  // Speech Synthesis
+  // Served
   // ==========================================================================
 
   /**
    * Synthesize text to speech.
    *
-   * Live contract (verified against api.wave.online): POST `/v1/voice` with a
-   * JSON body (`{ text, voice_id?, ...options }`) returns the audio bytes
-   * directly (`audio/mpeg`), not a JSON job object. The returned bytes are
-   * the synthesized speech.
+   * Contract: POST `/v1/voice` with a JSON body returns the audio bytes directly
+   * (`audio/mpeg`), not a JSON job object. The gateway forwards `/v1/voice` to the
+   * wave-voice edge, whose speak handler reads the voice as `voiceId`; the SDK keeps
+   * its snake_case `voice_id` option and renames it on the wire, so a chosen voice is
+   * not silently replaced by the default one. Omit `voice_id` for the default voice.
    *
-   * Goes through the standard client request path, so retries, rate-limit
-   * handling, timeouts, custom headers, and `WaveError`-typed failures apply.
+   * Billed per call, so it is sent once and never retried: a timeout after the edge synthesized
+   * the audio must not synthesize (and bill) it again. Timeouts, custom headers and
+   * `WaveError`-typed failures still apply.
    *
-   * Requires: voice:synthesize permission
+   * Requires: voice:write permission
    */
   async synthesize(request: SynthesizeRequest): Promise<ArrayBuffer> {
-    return this.client.post<ArrayBuffer>(this.basePath, request, {
+    const { voice_id, ...rest } = request;
+    const body = voice_id ? { ...rest, voiceId: voice_id } : rest;
+    return this.client.post<ArrayBuffer>(this.basePath, body, {
       headers: { Accept: 'audio/mpeg' },
       responseType: 'arraybuffer',
+      noRetry: true,
     });
   }
 
   /**
-   * Get synthesis job status
+   * List the voices `synthesize()` can use. `GET /v1/voice/voices`, filtered by the edge.
    *
    * Requires: voice:read permission
    */
-  async getSynthesis(synthesisId: string): Promise<SynthesisResult> {
-    return this.client.get<SynthesisResult>(
-      `${this.basePath}/synthesize/${synthesisId}`
-    );
+  async listVoices(params?: ListVoicesParams): Promise<Voice[]> {
+    const body = await this.client.get<{ voices?: Voice[] }>(`${this.basePath}/voices`, {
+      params: { category: params?.category, language: params?.language },
+    });
+    return body.voices ?? [];
   }
 
   /**
-   * List synthesis jobs
+   * Clone a voice from 1-25 https sample URLs. `POST /v1/voice/clone`, answered 201 with the new
+   * voice, ready to pass to `synthesize({ voice_id })`.
    *
-   * Requires: voice:read permission
+   * Billed per clone, so it is sent once and never retried.
+   *
+   * Requires: voice:write permission
    */
+  async cloneVoice(request: CloneVoiceRequest): Promise<Voice> {
+    return this.client.post<Voice>(`${this.basePath}/clone`, request, {
+      timeout: 120_000,
+      noRetry: true,
+    });
+  }
+
+  // ==========================================================================
+  // Unserved (deprecated): each throws RouteNotServedError without a network call
+  // ==========================================================================
+
+  /** @deprecated No single-voice route is served; find the voice in `listVoices()`. */
+  async getVoice(_voiceId: string): Promise<Voice> {
+    throw routeNotServed('voice.getVoice', 'GET /v1/voice/voices/{voiceId}', 'voice.listVoices()');
+  }
+
+  /** @deprecated No voice-settings route is served. */
+  async getVoiceSettings(_voiceId: string): Promise<VoiceSettings> {
+    throw routeNotServed('voice.getVoiceSettings', 'GET /v1/voice/voices/{voiceId}/settings');
+  }
+
+  /** @deprecated No voice-settings route is served. */
+  async updateVoiceSettings(_voiceId: string, _settings: Partial<VoiceSettings>): Promise<VoiceSettings> {
+    throw routeNotServed('voice.updateVoiceSettings', 'PATCH /v1/voice/voices/{voiceId}/settings');
+  }
+
+  /** @deprecated No voice-removal route is served. */
+  async removeVoice(_voiceId: string): Promise<void> {
+    throw routeNotServed('voice.removeVoice', 'DELETE /v1/voice/voices/{voiceId}');
+  }
+
+  /** @deprecated `synthesize()` returns the audio directly; there is no synthesis job to read. */
+  async getSynthesis(_synthesisId: string): Promise<SynthesisResult> {
+    throw routeNotServed('voice.getSynthesis', 'GET /v1/voice/synthesize/{synthesisId}', 'voice.synthesize(), which returns the audio');
+  }
+
+  /** @deprecated `synthesize()` returns the audio directly; there are no synthesis jobs to list. */
   async listSyntheses(
-    params?: PaginationParams & {
+    _params?: PaginationParams & {
       voice_id?: string;
       status?: 'pending' | 'processing' | 'ready' | 'failed';
     }
   ): Promise<PaginatedResponse<SynthesisResult>> {
-    return this.client.get<PaginatedResponse<SynthesisResult>>(
-      `${this.basePath}/synthesize`,
-      { params: params as Record<string, string | number | boolean | undefined> }
-    );
+    throw routeNotServed('voice.listSyntheses', 'GET /v1/voice/synthesize');
   }
 
-  /**
-   * Synthesize speech and stream the audio
-   *
-   * Requires: voice:synthesize permission
-   *
-   * @returns ReadableStream of audio data
-   */
+  /** @deprecated No streaming synthesis route is served; `synthesize()` returns the whole audio. */
   async synthesizeStream(
-    request: Omit<SynthesizeRequest, 'webhook_url'>
+    _request: Omit<SynthesizeRequest, 'webhook_url'>
   ): Promise<ReadableStream<Uint8Array>> {
-    const response = await fetch(
-      `${this.client['config'].baseUrl}${this.basePath}/synthesize/stream`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.client['config'].apiKey}`,
-          'Content-Type': 'application/json',
-          'Accept': 'audio/mpeg',
-        },
-        body: JSON.stringify(request),
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Synthesis stream failed: ${response.statusText}`);
-    }
-
-    if (!response.body) {
-      throw new Error('No response body');
-    }
-
-    return response.body;
+    throw routeNotServed('voice.synthesizeStream', 'POST /v1/voice/synthesize/stream', 'voice.synthesize()');
   }
 
-  /**
-   * Wait for synthesis to complete
-   */
+  /** @deprecated `synthesize()` returns the audio directly; there is nothing to wait for. */
   async waitForSynthesis(
-    synthesisId: string,
-    options?: {
+    _synthesisId: string,
+    _options?: {
       pollInterval?: number;
       timeout?: number;
       onProgress?: (synthesis: SynthesisResult) => void;
     }
   ): Promise<SynthesisResult> {
-    const pollInterval = options?.pollInterval || 1000;
-    const timeout = options?.timeout || 120000; // 2 minutes
-    const startTime = Date.now();
-
-    while (Date.now() - startTime < timeout) {
-      const synthesis = await this.getSynthesis(synthesisId);
-
-      if (options?.onProgress) {
-        options.onProgress(synthesis);
-      }
-
-      if (synthesis.status === 'ready') {
-        return synthesis;
-      }
-
-      if (synthesis.status === 'failed') {
-        throw new Error(`Synthesis failed: ${synthesis.error || 'Unknown error'}`);
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, pollInterval));
-    }
-
-    throw new Error(`Synthesis timed out after ${timeout}ms`);
+    throw routeNotServed('voice.waitForSynthesis', 'GET /v1/voice/synthesize/{synthesisId}', 'voice.synthesize(), which returns the audio');
   }
 
-  // ==========================================================================
-  // Voice Cloning
-  // ==========================================================================
-
-  /**
-   * Start voice cloning job
-   *
-   * Requires: voice:clone permission
-   */
-  async cloneVoice(request: CloneVoiceRequest): Promise<VoiceCloneJob> {
-    return this.client.post<VoiceCloneJob>(
-      `${this.basePath}/clone`,
-      request
-    );
+  /** @deprecated `cloneVoice()` returns the finished voice; there is no clone job to read. */
+  async getCloneJob(_jobId: string): Promise<VoiceCloneJob> {
+    throw routeNotServed('voice.getCloneJob', 'GET /v1/voice/clone/{jobId}', 'voice.cloneVoice(), which returns the voice');
   }
 
-  /**
-   * Get voice clone job status
-   *
-   * Requires: voice:read permission
-   */
-  async getCloneJob(jobId: string): Promise<VoiceCloneJob> {
-    return this.client.get<VoiceCloneJob>(
-      `${this.basePath}/clone/${jobId}`
-    );
-  }
-
-  /**
-   * List voice clone jobs
-   *
-   * Requires: voice:read permission
-   */
+  /** @deprecated `/v1/voice/clone` answers POST only; list voices with `listVoices({ category: 'cloned' })`. */
   async listCloneJobs(
-    params?: PaginationParams & {
+    _params?: PaginationParams & {
       status?: 'pending' | 'processing' | 'training' | 'ready' | 'failed';
     }
   ): Promise<PaginatedResponse<VoiceCloneJob>> {
-    return this.client.get<PaginatedResponse<VoiceCloneJob>>(
-      `${this.basePath}/clone`,
-      { params: params as Record<string, string | number | boolean | undefined> }
-    );
+    throw routeNotServed('voice.listCloneJobs', 'GET /v1/voice/clone', "voice.listVoices({ category: 'cloned' })");
   }
 
-  /**
-   * Cancel a voice clone job
-   *
-   * Requires: voice:clone permission
-   */
-  async cancelCloneJob(jobId: string): Promise<VoiceCloneJob> {
-    return this.client.post<VoiceCloneJob>(
-      `${this.basePath}/clone/${jobId}/cancel`
-    );
+  /** @deprecated `cloneVoice()` is synchronous; there is no clone job to cancel. */
+  async cancelCloneJob(_jobId: string): Promise<VoiceCloneJob> {
+    throw routeNotServed('voice.cancelCloneJob', 'POST /v1/voice/clone/{jobId}/cancel');
   }
 
-  /**
-   * Wait for voice cloning to complete
-   */
+  /** @deprecated `cloneVoice()` returns the finished voice; there is nothing to wait for. */
   async waitForClone(
-    jobId: string,
-    options?: {
+    _jobId: string,
+    _options?: {
       pollInterval?: number;
       timeout?: number;
       onProgress?: (job: VoiceCloneJob) => void;
     }
   ): Promise<VoiceCloneJob> {
-    const pollInterval = options?.pollInterval || 5000;
-    const timeout = options?.timeout || 3600000; // 1 hour
-    const startTime = Date.now();
-
-    while (Date.now() - startTime < timeout) {
-      const job = await this.getCloneJob(jobId);
-
-      if (options?.onProgress) {
-        options.onProgress(job);
-      }
-
-      if (job.status === 'ready') {
-        return job;
-      }
-
-      if (job.status === 'failed') {
-        throw new Error(`Voice cloning failed: ${job.error || 'Unknown error'}`);
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, pollInterval));
-    }
-
-    throw new Error(`Voice cloning timed out after ${timeout}ms`);
+    throw routeNotServed('voice.waitForClone', 'GET /v1/voice/clone/{jobId}', 'voice.cloneVoice(), which returns the voice');
   }
 
-  // ==========================================================================
-  // Utilities
-  // ==========================================================================
-
-  /**
-   * Estimate synthesis cost
-   *
-   * Requires: voice:read permission
-   */
+  /** @deprecated No estimate route is served; the gateway's x402 quote on `/v1/voice` prices a call. */
   async estimateCost(
-    text: string,
-    voiceId: string
+    _text: string,
+    _voiceId: string
   ): Promise<{
     characters: number;
     estimated_duration: number;
     estimated_cost: number;
     currency: string;
   }> {
-    return this.client.post(`${this.basePath}/estimate`, {
-      text,
-      voice_id: voiceId,
-    });
+    throw routeNotServed('voice.estimateCost', 'POST /v1/voice/estimate');
   }
 
-  /**
-   * Get supported languages
-   *
-   * Requires: voice:read permission
-   */
+  /** @deprecated No language-list route is served; `listVoices({ language })` filters by language. */
   async getSupportedLanguages(): Promise<
     Array<{
       code: string;
@@ -389,7 +212,7 @@ export class VoiceAPI {
       locales: Array<{ code: string; name: string }>;
     }>
   > {
-    return this.client.get(`${this.basePath}/languages`);
+    throw routeNotServed('voice.getSupportedLanguages', 'GET /v1/voice/languages', 'voice.listVoices({ language })');
   }
 }
 

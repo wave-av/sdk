@@ -6,6 +6,138 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+Version 3.0.0. A major bump because this release carries the breaking `clips.create()` and
+`voice.synthesize()` changes already on `main` (see Changed below), plus the connectivity fixes
+in this section. Each fix was checked against `api.wave.online` with a WAVE API key; the PR
+that introduced this entry lists the request ids.
+
+### Fixed (connectivity)
+
+- **The README quickstart now runs.** It led with `wave.pipeline.create()`, and the gateway
+  serves no `/v1/streams` route (`404 ROUTE_NOT_FOUND`). The quickstart now uses routes the
+  gateway serves: `wave.inference.models()` / `complete()`, `wave.meter.ledger()` and
+  `wave.realtime.history()`. `pipeline`, `editor`, `collab` and `mail` are marked `planned`
+  in the README and `.wave/repo.json` (`mail` was marked `ga`; every mail route answers
+  `404 ROUTE_NOT_MAPPED`).
+- **`wave.realtime` reaches the gateway.** It targeted `realtime.wave.online`, which has no DNS
+  record. The socket and the REST calls now derive from the client's `baseUrl`
+  (`https://api.wave.online/v1/realtime`, `wss://` for the socket), so a custom `baseUrl` moves
+  realtime too. The API key no longer rides in the socket URL as `?access_token=`: the
+  handshake sends `Authorization: Bearer` (Node 22+ and Bun do this natively; pass
+  `webSocketFactory` elsewhere). `publish`, `presence` and `history` go through `WaveClient`,
+  so a non-2xx answer throws a typed `WaveError` instead of resolving with the error body.
+  Channel names are checked against the gateway's pattern before any network call.
+- **`wave.inference` uses the WAVE API key.** `models()` and `profile()` always threw
+  (`Failed to parse URL from /rest/v1/models`) because they read config fields the client never
+  kept, and were built to query WAVE's internal model registry with a database key.
+  `complete()` posted to a LiteLLM host that rejects WAVE keys. Both now call the gateway:
+  `POST /v1/inference/chat/completions` and `GET /v1/inference/models`. `profile()` has no
+  served route yet and throws `RouteNotServedError` without a network call.
+- **Errors keep the gateway's code.** The gateway answers in three envelopes; the SDK read only
+  the nested one, so a spend-cap 402 surfaced as `HTTP_402 "Payment Required"`. `WaveError`
+  now reads the nested, flat and x402 shapes. New subclasses: `PaymentRequiredError` (402,
+  with the x402 `accepts[]` when present) and `RouteNotServedError` (404 `ROUTE_NOT_FOUND` /
+  `ROUTE_NOT_MAPPED`). `required_scope`, `available_scopes`, `suggestions`, `next_action` and
+  `doc_url` land in `details` beside the envelope's own `error.details`, which passes through
+  as before. From the rest of the body only that allowlist is copied.
+- **The `wave-sdk` CLI works.** It never read an API key, called `https://api.wave.online/models`
+  (no `/v1`, so 404), and crashed with a stack trace on any failure. It now reads
+  `WAVE_API_KEY`, `WAVE_MODEL`, `WAVE_RUNTIME_URL` and `WAVE_BASE_URL`, defaults to the
+  gateway's `/v1/inference` door, prints one redacted line and exits 1 on failure, and answers
+  `--help`. The README documented a `wave` command; the bin has been `wave-sdk` since 2.1.3.
+  The key goes only over `https://`, or plain `http://` to loopback: a `WAVE_RUNTIME_URL` or
+  `WAVE_BASE_URL` such as `http://api.wave.online` exits 2 before any request.
+- `voice.synthesize()` sends `voice_id` as `voiceId`, the field the voice edge reads, so a
+  chosen voice is no longer silently replaced by the default one.
+- `wave.meter` types match the gateway's v0 contract: the ledger is one window
+  (`{ org, from, to, channels, generated_at, tier? }`), not `{ rows: [...] }`; `blocked` is a
+  reason string, not a count; the rollup carries `period`.
+- `User-Agent` carries the real version (`wave-sdk-typescript/3.0.0`), not `1.0.0`.
+- `package.json` `homepage` pointed at `https://docs.wave.online/sdk`, which returns 404; it
+  now points at this README.
+- **The README captions, transcription and clips examples now run.** The gateway forwards
+  `/v1/captions`, `/v1/transcribe`, `/v1/clips` and `/v1/voice` whole to a product edge, and
+  the SDK's shapes for those modules had never matched the edges. With 2.1.3 the README flows
+  failed at step 1: `captions.generate()` posts `/v1/captions/generate` (`405`), and
+  `transcribe.create()` sends snake_case fields the edge rejects (`400 sourceId is required`).
+  The served routes are now called with the edges' own contracts:
+  - `captions.create({ videoId, sourceLanguage?, targetLanguages?, style?, speakerLabels? })`
+    (`POST /v1/captions`), `captions.download(id, { language, format })`, and `get` / `list` /
+    `remove` / `getText` / `waitForReady` on `CaptionJob`.
+  - `transcribe.create({ sourceId, sourceType, language?, speakerLabels?, wordTimestamps?,
+    punctuation?, model? })` (`POST /v1/transcribe`), with `get` / `list` / `remove` /
+    `getText` / `waitForReady` on the served `Transcription`.
+  - `clips.create()` returns what the engine answers (`{ clipId, assets[], clip, ... }`), not a
+    `Clip` whose `id` was undefined; `clips.detect({ videoId, ... })` (`POST /v1/clips/detect`)
+    replaces `detectHighlights()`, which posted to a path nothing serves; `waitForReady()`
+    recognises the engine's `completed` status instead of polling to its 5-minute timeout.
+    The engine renders inside the request, so `create()` waits up to 5 minutes instead of
+    the client's 30-second default, and is never retried.
+  - `voice.listVoices()` returns `Voice[]` from the edge's `{ voices }` body, and
+    `voice.cloneVoice({ name, audioFiles, ... })` sends the fields `POST /v1/voice/clone` reads.
+- **Methods whose route no backend serves fail fast and typed.** On those four modules, every
+  method whose path the owning edge does not serve (for example `captions.translate()`,
+  `clips.exportClip()`, `transcribe.getSegments()`, `voice.getSynthesis()`) is deprecated and
+  throws `RouteNotServedError` (code `ROUTE_NOT_SERVED`) before any network call. Before, they
+  reached the edge and came back as a bare `HTTP_404` / `HTTP_405`.
+- Ten modules the route sweep measured unserved (every GET `ROUTE_NOT_FOUND` /
+  `ROUTE_NOT_MAPPED` with a key) move from `sdk-surface` to `planned`: `audience`, `desktop`,
+  `distribution`, `drm`, `marketplace`, `notifications`, `qr`, `signage`, `slides`, `usb`.
+  `wave.transcripts`, which the module tables did not list, is added as `planned` (its
+  `/v1/realtime/agents/transcripts` routes answer `404 ROUTE_NOT_FOUND` with a key).
+
+### Added (connectivity)
+
+- `scripts/route-sweep.mjs`: extracts every route each SDK method sends, probes each one on the
+  gateway (GETs with a key when `--key-env` is given, everything else without one), and compares
+  each module's measured state with its status in `.wave/repo.json`. `--check` fails when a
+  module marked `lib` or `ga` measures unserved. Two known-served controls must answer 200
+  with their content marker first, and a probe with no answer or a 5xx counts as
+  `unreachable`, so an outage exits 2 (inconclusive) instead of passing.
+- `scripts/smoke-live.mjs --media` runs the README transcription and captions flows end to end
+  on a 3-second public speech sample, and the smoke checks the clips, captions, transcribe and
+  voice list reads.
+
+- Subpath exports `@wave-av/sdk/inference`, `@wave-av/sdk/perception` and
+  `@wave-av/sdk/transcripts`. `InferenceAPI`, `SDK_VERSION`, `PaymentRequiredError` and
+  `RouteNotServedError` from the package root; `parseErrorBody` and `createWaveError` from
+  `@wave-av/sdk/client`.
+- `scripts/smoke-live.mjs`: a strict live check. The known-served controls must answer 200,
+  every quickstart call must answer 200, and unserved or capped routes must surface as the
+  right typed error. `scripts/smoke-quickstart.mjs` now runs the new quickstart.
+
+### Changed (connectivity)
+
+- **Breaking**: `MeterLedger` is `{ org, from, to, channels, generated_at, tier? }`
+  (`MeterLedgerRow` stays as a deprecated alias). `MeterSmsChannel.blocked` is a string.
+- **Breaking**: `inference.models()` returns `{ id, ownedBy }[]` from the gateway instead of
+  registry rows with prices.
+- **Breaking**: `RealtimeAPI.connect()` needs a WebSocket that can send headers (Node 22+, Bun,
+  or `webSocketFactory`); a browser must open the socket from a server.
+- `RuntimeClient` sends its token on `models()` too (the gateway door needs it), reports the
+  gateway's error `code` and `details` on `RuntimeError`, redacts its token from error messages,
+  and `stream()` asks for `stream_options.include_usage` (kept when other stream options are
+  passed). When a door answers `text/event-stream` to `stream: false`, tool-call deltas are
+  merged into the completion, and a body with no decodable frame throws instead of returning an
+  empty answer.
+- `inference.complete()` and `realtime.publish()` are not retried: both are non-idempotent (a
+  completion is billed), so a timeout or 5xx after the gateway acted must not repeat the call.
+  Every read keeps the client's retry policy. The same now holds for the billed media calls:
+  `clips.create()`, `clips.detect()`, `captions.create()`, `transcribe.create()`,
+  `voice.synthesize()` and `voice.cloneVoice()`.
+- **Breaking**: `Clip`, `CreateClipRequest`, `UpdateClipRequest`, `ListClipsParams`,
+  `Transcription`, `CreateTranscriptionRequest`, `ListTranscriptionsParams`,
+  `TranscriptionSegment`, `TranscriptionWord`, `TranscriptionModel`, `Voice`,
+  `CloneVoiceRequest` and `ListVoicesParams` take the served (camelCase) shapes;
+  `ClipQuality` is `'720p' | '1080p' | '4k'`. `clips.create()` returns `ClipCreateResult`,
+  `clips.list()` `ClipList`, `captions.get()` / `list()` `CaptionJob` / `CaptionJobList`,
+  `transcribe.list()` `TranscriptionList`, `voice.listVoices()` `Voice[]`. The old types stay
+  exported (deprecated) where a gated method still names them.
+- The ESLint config lets a deprecated method keep a `_`-prefixed parameter it no longer reads,
+  so callers of the gated methods still compile.
+- x402 challenges: the message comes from the gateway's `error_detail.message` when present, and
+  `error_detail` is kept in `details`.
+
 ### Fixed
 
 - `pr-agent` lane: fork-triggered `/` commands are now refused, and the AI

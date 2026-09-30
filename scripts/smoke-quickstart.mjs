@@ -1,9 +1,13 @@
 #!/usr/bin/env node
 /**
- * Fresh-install / CI regression smoke: runs the README quickstart verbatim against the live
- * WAVE gateway (api.wave.online). Exercises `wave.pipeline.create` and `wave.voice.synthesize`
- * exactly as documented so an ESM/CJS/module-resolution regression in a fresh install surfaces
- * here before it reaches a consumer.
+ * Fresh-install / CI regression smoke: runs the README quickstart's calls against the live
+ * WAVE gateway (api.wave.online): `wave.inference.models()`, `wave.meter.ledger()` and
+ * `wave.realtime.history()`, so an ESM/CJS/module-resolution regression in a fresh install
+ * surfaces here before it reaches a consumer. The quickstart's `inference.complete()` is left
+ * out on purpose: it is billed, and a free read proves the same transport.
+ *
+ * This is a transport smoke. It does NOT prove a route is served (a 402 or 404 also passes);
+ * scripts/smoke-live.mjs is the strict check that does.
  *
  * Exit code contract (see .github/workflows/smoke-install.yml):
  *   0   the SDK produced a well-formed HTTP response of ANY status code (200, 402, 403, 404,
@@ -24,15 +28,19 @@ if (!apiKey) {
   process.exit(0);
 }
 
-const wave = new Wave({
-  apiKey,
-  organizationId: "org_123",
-});
+const wave = new Wave({ apiKey });
 
 async function tryCall(label, fn) {
   try {
     const result = await fn();
-    console.log(`${label}: ok`, JSON.stringify(result).slice(0, 200));
+    // Log the shape only, never values: CI logs of a public repo are public, and a meter ledger
+    // carries the caller's org id and usage.
+    const shape = Array.isArray(result)
+      ? `array(${result.length})`
+      : result && typeof result === "object"
+        ? `{${Object.keys(result).join(",")}}`
+        : typeof result;
+    console.log(`${label}: ok ${shape}`);
     return { label, ok: true };
   } catch (err) {
     const status = err && typeof err === "object" ? err.status ?? err.statusCode : undefined;
@@ -45,26 +53,10 @@ async function tryCall(label, fn) {
 
 const results = [];
 
-// Create and start a live stream (README quickstart, verbatim shape).
-results.push(
-  await tryCall("pipeline.create", () =>
-    wave.pipeline.create({
-      title: "My Live Stream",
-      protocol: "webrtc",
-      recording_enabled: true,
-    }),
-  ),
-);
-
-// Text-to-speech (README quickstart, verbatim shape).
-results.push(
-  await tryCall("voice.synthesize", () =>
-    wave.voice.synthesize({
-      text: "Hello from WAVE",
-      voice_id: "voice_abc",
-    }),
-  ),
-);
+// The README quickstart's free reads, in order.
+results.push(await tryCall("inference.models", () => wave.inference.models()));
+results.push(await tryCall("meter.ledger", () => wave.meter.ledger()));
+results.push(await tryCall("realtime.history", () => wave.realtime.history("stream:demo", 10)));
 
 let sawReachedGateway = false;
 let sawModuleOrTransportError = false;

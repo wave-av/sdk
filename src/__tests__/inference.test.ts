@@ -1,78 +1,114 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { InferenceAPI } from "../inference";
-
-/** A minimal WaveClient stand-in: InferenceAPI only touches getConnectionInfo(). */
-type FakeClient = { getConnectionInfo(): { apiKey: string } };
-function fakeClient(apiKey = "sk-test"): FakeClient {
-  return { getConnectionInfo: () => ({ apiKey }) };
-}
+import { WaveClient } from "../client";
+import { RouteNotServedError, WaveError } from "../errors";
 
 const okCompletion = {
   id: "chatcmpl-1",
-  model: "deepseek-v4",
+  model: "qwen2.5:3b",
   choices: [{ index: 0, message: { role: "assistant", content: "4" }, finish_reason: "stop" }],
   usage: { prompt_tokens: 10, completion_tokens: 4, total_tokens: 14, cost: 8.8e-6 },
 };
 
+function json(body: unknown, status = 200, headers: Record<string, string> = {}): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "content-type": "application/json", ...headers },
+  });
+}
+
+function api(baseUrl?: string): InferenceAPI {
+  return new InferenceAPI(new WaveClient({ apiKey: "wave-test-key", organizationId: "org_1", baseUrl, maxRetries: 0 }));
+}
+
 afterEach(() => vi.unstubAllGlobals());
 
-describe("InferenceAPI (the funnel rendering)", () => {
-  it("complete() posts to inference.wave.online with the bearer key and maps the result", async () => {
-    const fetchMock = vi.fn(async () =>
-      new Response(JSON.stringify(okCompletion), { status: 200, headers: { "content-type": "application/json" } }),
-    );
+describe("InferenceAPI (gateway /v1/inference)", () => {
+  it("complete() posts to the gateway's /v1/inference/chat/completions with the WAVE key and maps the result", async () => {
+    const fetchMock = vi.fn(async () => json(okCompletion));
     vi.stubGlobal("fetch", fetchMock);
-    const api = new InferenceAPI(fakeClient());
-    const r = await api.complete("deepseek-v4", [{ role: "user", content: "2+2" }], 8);
-    expect(r.model).toBe("deepseek-v4");
-    expect(r.content).toBe("4");
-    expect(r.cost).toBeCloseTo(8.8e-6, 12);
-    expect(r.totalTokens).toBe(14);
-    const call = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
-    expect(String(call[0])).toBe("https://inference.wave.online/v1/chat/completions");
-    const hdrs = call[1].headers as Record<string, string>;
-    expect(hdrs.authorization).toBe("Bearer sk-test");
-    expect(JSON.parse(call[1].body as string).max_tokens).toBe(8);
+    const r = await api().complete("qwen2.5:3b", [{ role: "user", content: "2+2" }], 8);
+    expect(r).toEqual({ model: "qwen2.5:3b", content: "4", cost: 8.8e-6, totalTokens: 14 });
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe("https://api.wave.online/v1/inference/chat/completions");
+    expect(init.method).toBe("POST");
+    const hdrs = init.headers as Record<string, string>;
+    expect(hdrs.Authorization).toBe("Bearer wave-test-key");
+    expect(hdrs["X-Organization-Id"]).toBe("org_1");
+    const body = JSON.parse(init.body as string);
+    expect(body).toEqual({ model: "qwen2.5:3b", messages: [{ role: "user", content: "2+2" }], max_tokens: 8, stream: false });
   });
 
-  it("complete() throws with the upstream body on HTTP error", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => new Response('{"error":{"message":"nope"}}', { status: 400 })));
-    const api = new InferenceAPI(fakeClient());
-    await expect(api.complete("m", [{ role: "user", content: "x" }])).rejects.toThrow(/inference 400/);
+  it("complete() never calls the raw LiteLLM host", async () => {
+    const fetchMock = vi.fn(async () => json(okCompletion));
+    vi.stubGlobal("fetch", fetchMock);
+    await api().complete("m", [{ role: "user", content: "x" }]);
+    for (const call of fetchMock.mock.calls as unknown as [string][]) {
+      expect(call[0]).not.toContain("inference.wave.online");
+    }
   });
 
-  it("models() maps registry rows to the priced shape", async () => {
+  it("complete() follows a custom baseUrl", async () => {
+    const fetchMock = vi.fn(async () => json(okCompletion));
+    vi.stubGlobal("fetch", fetchMock);
+    await api("http://localhost:8787").complete("m", [{ role: "user", content: "x" }]);
+    expect((fetchMock.mock.calls[0] as unknown as [string])[0]).toBe("http://localhost:8787/v1/inference/chat/completions");
+  });
+
+  it("complete() throws a typed WaveError with the gateway code on HTTP error", async () => {
     vi.stubGlobal("fetch", vi.fn(async () =>
-      new Response(JSON.stringify([{ id: "deepseek-v4", rail: "openrouter", cost_input_per_m: 1.19, cost_output_per_m: 3.56 }]),
-        { status: 200, headers: { "content-type": "application/json" } })));
-    const api = new InferenceAPI(fakeClient());
-    const rows = await api.models();
-    expect(rows[0].outputPerM).toBe(3.56);
+      json({ error: { code: "model_required", message: "a `model` field is required", request_id: "req-1" } }, 400)));
+    const err = await api().complete("", [{ role: "user", content: "x" }]).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(WaveError);
+    expect((err as WaveError).statusCode).toBe(400);
+    expect((err as WaveError).code).toBe("model_required");
+    expect((err as WaveError).requestId).toBe("req-1");
   });
 
-  it("profile() composes the transition signature + live usage", async () => {
-    const modelRow = { id: "gpt-5.6-luna", rail: "openai", status: "live",
-      health: { floor: 75.4, ceiling: 92.9 }, cost_input_per_m: 2.5, cost_output_per_m: 1.2 };
-    const usageRows = [
-      { cost: 8.8e-6, latency_ms: 2000 },
-      { cost: 1.2e-5, latency_ms: 3000 },
-    ];
-    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
-      const path = String(input);
-      if (path.includes("/rest/v1/models?")) return new Response(JSON.stringify([modelRow]), { status: 200 });
-      if (path.includes("/rest/v1/usage_logs?")) return new Response(JSON.stringify(usageRows), { status: 200 });
-      throw new Error("unexpected " + path);
-    }));
-    const api = new InferenceAPI(fakeClient());
-    const p = await api.profile("gpt-5.6-luna");
-    expect(p.transition).toEqual({ floor: 75.4, ceiling: 92.9 });
-    expect(p.liveUsage.calls).toBe(2);
-    expect(p.liveUsage.avgLatencyMs).toBe(2500);
+  it("complete() is never retried, even on a retryable 503 with retries enabled (billed, not idempotent)", async () => {
+    const fetchMock = vi.fn(async () => json({ error: { code: "SERVICE_UNAVAILABLE", message: "busy" } }, 503));
+    vi.stubGlobal("fetch", fetchMock);
+    const withRetries = new InferenceAPI(new WaveClient({ apiKey: "wave-test-key", maxRetries: 3 }));
+    const err = await withRetries.complete("m", [{ role: "user", content: "x" }]).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(WaveError);
+    expect((err as WaveError).retryable).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it("profile() throws for a model that is not admitted (FK gate)", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify([]), { status: 200 })));
-    const api = new InferenceAPI(fakeClient());
-    await expect(api.profile("not-admitted")).rejects.toThrow(/NOT ADMITTED/);
+  it("complete() reports cost as null when the gateway omits usage.cost", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => json({ ...okCompletion, usage: { total_tokens: 3 } })));
+    const r = await api().complete("m", [{ role: "user", content: "x" }]);
+    expect(r.cost).toBeNull();
+    expect(r.totalTokens).toBe(3);
+  });
+
+  it("models() reads GET /v1/inference/models and maps the OpenAI list", async () => {
+    const fetchMock = vi.fn(async () =>
+      json({ object: "list", data: [{ id: "qwen2.5:3b", object: "model", owned_by: "wave-dispatch" }, { id: "x", object: "model" }] }));
+    vi.stubGlobal("fetch", fetchMock);
+    const rows = await api().models();
+    expect(rows).toEqual([{ id: "qwen2.5:3b", ownedBy: "wave-dispatch" }, { id: "x", ownedBy: "" }]);
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe("https://api.wave.online/v1/inference/models");
+    expect(init.method).toBe("GET");
+  });
+
+  it("models() no longer needs (or reads) any database URL or key", async () => {
+    const fetchMock = vi.fn(async () => json({ object: "list", data: [] }));
+    vi.stubGlobal("fetch", fetchMock);
+    await api().models();
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).not.toContain("/rest/v1/");
+    expect((init.headers as Record<string, string>).apikey).toBeUndefined();
+  });
+
+  it("profile() throws RouteNotServedError without a network call", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const err = await api().profile("qwen2.5:3b").catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(RouteNotServedError);
+    expect((err as RouteNotServedError).code).toBe("ROUTE_NOT_SERVED");
+    expect((err as RouteNotServedError).retryable).toBe(false);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

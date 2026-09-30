@@ -1,16 +1,15 @@
 /**
- * WAVE SDK - Inference API (the funnel rendering)
+ * WAVE SDK - Inference API
  *
- * One OpenAI-compatible completion endpoint fronting 13 providers — measured routing,
- * automatic failover, per-token metering. The SDK forwards your key; auth, budgets,
- * guardrails, and spend tracking are enforced by the funnel plane
- * (inference.wave.online → LiteLLM on Fly → dedicated Postgres).
- *
- * The routing decision is MEASURED: every model carries a floor→ceiling transition
- * profile in the registry. `profile()` returns it alongside live usage.
+ * OpenAI-compatible completions and the model list, served by the WAVE gateway at
+ * `POST /v1/inference/chat/completions` and `GET /v1/inference/models` (the product-noun alias of
+ * the gateway's dispatch routes). Calls go through WaveClient, so they carry the same WAVE API key,
+ * organization header, retries, timeouts, and typed WaveError failures as every other module.
+ * Auth, budgets, guardrails, and metering are enforced by the gateway.
  */
 
 import type { WaveClient } from "./client";
+import { RouteNotServedError } from "./errors";
 
 /** A chat message, OpenAI-compatible shape. */
 export interface InferenceMessage {
@@ -18,17 +17,24 @@ export interface InferenceMessage {
   content: string;
 }
 
-/** One completion through the measured funnel. */
+/** One completion. */
 export interface InferenceResult {
   /** The model that actually served (may differ from the request after fallback). */
   model: string;
   content: string;
-  /** Spend for THIS call, USD to eight decimals (from the funnel's metering). */
+  /** Spend for THIS call in USD, when the gateway reports it in `usage.cost`; otherwise null. */
   cost: number | null;
   totalTokens: number;
 }
 
-/** A model's measured profile — the transition signature + pricing + live usage. */
+/** One entry from `GET /v1/inference/models`. */
+export interface InferenceModel {
+  id: string;
+  /** The rail that serves the model, from the OpenAI-compatible `owned_by` field. */
+  ownedBy: string;
+}
+
+/** A model's measured profile. No served route returns this yet; see `InferenceAPI.profile()`. */
 export interface ModelProfile {
   id: string;
   rail: string;
@@ -39,83 +45,57 @@ export interface ModelProfile {
   liveUsage: { calls: number; spentUsd: number; avgLatencyMs: number | null };
 }
 
+/** Path of the inference plane under the API base URL. */
+export const INFERENCE_PATH = "/v1/inference";
+
+interface ChatCompletionBody {
+  model?: string;
+  choices?: Array<{ message?: { content?: string | null } }>;
+  usage?: { cost?: number | null; total_tokens?: number };
+}
+
 export class InferenceAPI {
   constructor(private client: WaveClient) {}
 
-  /** One completion through the measured funnel. Throws on HTTP errors (OpenAI-compatible body). */
+  /**
+   * One completion. `POST /v1/inference/chat/completions`.
+   * Throws WaveError on a non-2xx answer (e.g. 400 `model_required`, 402 spend cap).
+   */
   async complete(model: string, messages: InferenceMessage[], maxTokens = 1024): Promise<InferenceResult> {
-    const res = await fetch(`${this.funnelBase()}/v1/chat/completions`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        authorization: `Bearer ${this.client.getConnectionInfo().apiKey}`,
-      },
-      body: JSON.stringify({ model, messages, max_tokens: maxTokens }),
-      signal: AbortSignal.timeout(120_000),
-    });
-    if (!res.ok) {
-      const body = await res.text();
-      throw new Error(`inference ${res.status}: ${body.slice(0, 300)}`);
-    }
-    const d = (await res.json()) as { model?: string; choices?: Array<{ message?: { content?: string } }>; usage?: { cost?: number | null; total_tokens?: number } };
+    const d = await this.client.post<ChatCompletionBody>(
+      `${INFERENCE_PATH}/chat/completions`,
+      { model, messages, max_tokens: maxTokens, stream: false },
+      // Not retried: a completion is billed and not idempotent, so a timeout or 5xx after the gateway
+      // dispatched it must not send the prompt again. The caller decides whether to retry.
+      { timeout: 120_000, noRetry: true },
+    );
     const u = d.usage ?? {};
     return {
       model: d.model ?? model,
       content: d.choices?.[0]?.message?.content ?? "",
-      cost: u.cost ?? null,
+      cost: typeof u.cost === "number" ? u.cost : null,
       totalTokens: u.total_tokens ?? 0,
     };
   }
 
-  /** Models admitted to the registry with their per-token pricing. */
-  async models(): Promise<Array<{ id: string; rail: string; inputPerM: number | null; outputPerM: number | null }>> {
-    const url = this.registryUrl();
-    const rows = await this.registryGet<Array<{ id: string; rail: string; cost_input_per_m: number | null; cost_output_per_m: number | null }>>(`${url}/rest/v1/models?select=id,rail,cost_input_per_m,cost_output_per_m&limit=1000`);
-    return rows.map((m) => ({ id: m.id, rail: m.rail, inputPerM: m.cost_input_per_m, outputPerM: m.cost_output_per_m }));
+  /** Models the gateway routes to. `GET /v1/inference/models`. */
+  async models(): Promise<InferenceModel[]> {
+    const body = await this.client.get<{ data?: Array<{ id: string; owned_by?: string }> }>(
+      `${INFERENCE_PATH}/models`,
+    );
+    return (body.data ?? []).map((m) => ({ id: m.id, ownedBy: m.owned_by ?? "" }));
   }
 
-  /** A model's measured profile: the transition signature + pricing + live usage. */
+  /**
+   * A model's measured profile. The gateway does not serve a profile route yet, so this throws
+   * RouteNotServedError without making a network call. (Before 3.0.0 it read WAVE's internal model
+   * registry directly with a database key, which no customer holds, and always failed.)
+   */
   async profile(modelId: string): Promise<ModelProfile> {
-    const url = this.registryUrl();
-    const m = await this.registryGet<Array<Record<string, unknown>>>(`${url}/rest/v1/models?select=*&id=eq.${encodeURIComponent(modelId)}`);
-    if (!m.length) throw new Error(`model ${modelId}: NOT ADMITTED`);
-    const row = m[0] as {
-      id: string; rail: string; status: string;
-      health?: { floor?: number | null; ceiling?: number | null; discriminating?: number | null } | null;
-      cost_input_per_m: number | null; cost_output_per_m: number | null;
-      measured_at: string | null; tasks: string[] | null;
-    };
-    const h = (row.health ?? {}) as { floor?: number | null; ceiling?: number | null; discriminating?: number | null };
-    const usage = await this.registryGet<Array<{ cost: number | string | null; latency_ms: number | null }>>(`${url}/rest/v1/usage_logs?select=cost,latency_ms&model_id=eq.${encodeURIComponent(modelId)}&limit=1000`);
-    const lat = usage.map((x) => Number(x.latency_ms)).filter((n) => Number.isFinite(n) && n > 0);
-    return {
-      id: row.id,
-      rail: row.rail,
-      status: row.status,
-      transition: { floor: h.floor ?? null, ceiling: h.ceiling ?? null },
-      pricing: { inputPerM: row.cost_input_per_m, outputPerM: row.cost_output_per_m },
-      liveUsage: {
-        calls: usage.length,
-        spentUsd: usage.reduce((a, x) => a + Number(x.cost || 0), 0),
-        avgLatencyMs: lat.length ? Math.round(lat.reduce((a, b) => a + b, 0) / lat.length) : null,
-      },
-    };
-  }
-
-  private funnelBase(): string {
-    // the funnel front door (branded edge → LiteLLM); overridable for local dev
-    return (this.client as unknown as { config?: { funnelUrl?: string } }).config?.funnelUrl
-      || "https://inference.wave.online";
-  }
-
-  private registryUrl(): string {
-    return (this.client as unknown as { config?: { supabaseUrl?: string } }).config?.supabaseUrl || "";
-  }
-
-  private async registryGet<T = unknown>(path: string): Promise<T> {
-    const key = (this.client as unknown as { config?: { supabaseKey?: string } }).config?.supabaseKey || "";
-    const res = await fetch(path, { headers: { apikey: key }, signal: AbortSignal.timeout(20_000) });
-    if (!res.ok) throw new Error(`registry ${res.status}: ${(await res.text()).slice(0, 200)}`);
-    return res.json();
+    throw new RouteNotServedError(
+      `inference.profile(${JSON.stringify(modelId)}): no served route returns model profiles yet. ` +
+        `The gateway serves POST ${INFERENCE_PATH}/chat/completions and GET ${INFERENCE_PATH}/models.`,
+      "ROUTE_NOT_SERVED",
+    );
   }
 }

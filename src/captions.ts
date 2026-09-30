@@ -1,75 +1,46 @@
 /**
  * WAVE SDK - Captions API
  *
- * Generate, manage, and translate captions for video content.
+ * Caption recordings and media files, and download the result as SRT, VTT, text or JSON cues.
+ *
+ * The gateway forwards `/v1/captions` to the WAVE captions edge, which serves exactly these routes:
+ *
+ *   POST   /v1/captions                     create()    caption a recording or media URL
+ *   GET    /v1/captions                     list()
+ *   GET    /v1/captions/{jobId}             get()
+ *   DELETE /v1/captions/{jobId}             remove()
+ *   GET    /v1/captions/{jobId}/download    download()  ?language&format=srt|vtt|txt|json
+ *
+ * Captioning runs synchronously: `create()` answers with a job that is already `completed` or
+ * `failed`. The track, cue, translation and burn-in methods of earlier releases have no backend;
+ * they now throw RouteNotServedError before any network call, and are marked deprecated.
  *
  * NOTE: This is a client SDK. All authorization checks are performed server-side.
  * The API will return 403 Forbidden if the user lacks required permissions.
  */
 
+import type { WaveClient, PaginationParams, PaginatedResponse } from './client';
+import { routeNotServed } from './errors';
 import type {
-  WaveClient,
-  PaginationParams,
-  PaginatedResponse,
-} from './client';
-import type { CaptionFormat, CaptionTrack, CaptionCue, GenerateCaptionsRequest, UploadCaptionsRequest, UpdateCaptionsRequest, TranslateCaptionsRequest, BurnInCaptionsRequest, BurnInJob, ListCaptionsParams } from './captions-types';
+  BurnInCaptionsRequest,
+  BurnInJob,
+  CaptionCue,
+  CaptionDownloadFormat,
+  CaptionFormat,
+  CaptionJob,
+  CaptionJobList,
+  CaptionTrack,
+  CreateCaptionJobRequest,
+  GenerateCaptionsRequest,
+  ListCaptionJobsParams,
+  TranslateCaptionsRequest,
+  UpdateCaptionsRequest,
+  UploadCaptionsRequest,
+} from './captions-types';
 export type * from './captions-types';
 
-// ============================================================================
-// Types
-// ============================================================================
-
-/**
- * Caption status
- */
-
-/**
- * Caption format
- */
-
-/**
- * Caption track
- */
-
-/**
- * Caption cue (single caption segment)
- */
-
-/**
- * Word-level timing
- */
-
-/**
- * Caption styling
- */
-
-/**
- * Generate captions request
- */
-
-/**
- * Upload captions request
- */
-
-/**
- * Update captions request
- */
-
-/**
- * Translate captions request
- */
-
-/**
- * Burn-in captions request
- */
-
-/**
- * Burn-in job
- */
-
-/**
- * List captions params
- */
+/** How long `create()` waits: captioning runs inside the request, so it outlives the default. */
+const CREATE_TIMEOUT_MS = 300_000;
 
 // ============================================================================
 // Captions API
@@ -77,6 +48,14 @@ export type * from './captions-types';
 
 /**
  * Captions API client
+ *
+ * @example
+ * ```typescript
+ * const job = await wave.captions.create({ videoId: 'rec_123', sourceLanguage: 'en' });
+ * if (job.status === 'completed') {
+ *   const srt = await wave.captions.download(job.id, { language: job.sourceLanguage, format: 'srt' });
+ * }
+ * ```
  */
 export class CaptionsAPI {
   private readonly client: WaveClient;
@@ -86,295 +65,136 @@ export class CaptionsAPI {
     this.client = client;
   }
 
+  private jobPath(jobId: string): string {
+    return `${this.basePath}/${encodeURIComponent(jobId)}`;
+  }
+
   // ==========================================================================
-  // Caption Tracks
+  // Caption jobs (served)
   // ==========================================================================
 
   /**
-   * Generate captions using AI
+   * Caption a recording or media URL. `POST /v1/captions`, answered 201 with the finished job.
    *
-   * Requires: captions:generate permission
-   */
-  async generate(request: GenerateCaptionsRequest): Promise<CaptionTrack> {
-    return this.client.post<CaptionTrack>(`${this.basePath}/generate`, request);
-  }
-
-  /**
-   * Upload existing captions
+   * Billed per caption minute, so it is sent once and never retried: a timeout after the edge
+   * captioned the media must not caption (and bill) it again. A job whose media could not be
+   * fetched or transcribed comes back with `status: 'failed'` and `errorMessage`, not as a throw.
    *
-   * Requires: captions:create permission
+   * Requires: captions:write permission
    */
-  async upload(request: UploadCaptionsRequest): Promise<CaptionTrack> {
-    return this.client.post<CaptionTrack>(`${this.basePath}/upload`, request);
-  }
-
-  /**
-   * Get a caption track by ID
-   *
-   * Requires: captions:read permission
-   */
-  async get(trackId: string): Promise<CaptionTrack> {
-    return this.client.get<CaptionTrack>(`${this.basePath}/${trackId}`);
-  }
-
-  /**
-   * Update a caption track
-   *
-   * Requires: captions:update permission
-   */
-  async update(trackId: string, request: UpdateCaptionsRequest): Promise<CaptionTrack> {
-    return this.client.patch<CaptionTrack>(`${this.basePath}/${trackId}`, request);
-  }
-
-  /**
-   * Remove a caption track
-   *
-   * Requires: captions:remove permission (server-side RBAC enforced)
-   */
-  async remove(trackId: string): Promise<void> {
-    await this.client.delete(
-      `${this.basePath}/${trackId}`,
-      { method: 'DELETE' }
-    );
-  }
-
-  /**
-   * List caption tracks
-   *
-   * Requires: captions:read permission
-   */
-  async list(params?: ListCaptionsParams): Promise<PaginatedResponse<CaptionTrack>> {
-    return this.client.get<PaginatedResponse<CaptionTrack>>(this.basePath, {
-      params: params as Record<string, string | number | boolean | undefined>,
+  async create(request: CreateCaptionJobRequest): Promise<CaptionJob> {
+    return this.client.post<CaptionJob>(this.basePath, request, {
+      timeout: CREATE_TIMEOUT_MS,
+      noRetry: true,
     });
   }
 
   /**
-   * Get caption tracks for a specific media
+   * Get a caption job. `GET /v1/captions/{jobId}`.
    *
    * Requires: captions:read permission
    */
-  async getForMedia(
-    mediaId: string,
-    mediaType: 'video' | 'audio' | 'stream'
-  ): Promise<CaptionTrack[]> {
-    const result = await this.list({ media_id: mediaId, media_type: mediaType });
+  async get(jobId: string): Promise<CaptionJob> {
+    return this.client.get<CaptionJob>(this.jobPath(jobId));
+  }
+
+  /**
+   * Delete a caption job. `DELETE /v1/captions/{jobId}`.
+   *
+   * Requires: captions:write permission
+   */
+  async remove(jobId: string): Promise<void> {
+    await this.client.delete(this.jobPath(jobId));
+  }
+
+  /**
+   * List caption jobs. `GET /v1/captions`.
+   *
+   * Requires: captions:read permission
+   */
+  async list(params?: ListCaptionJobsParams): Promise<CaptionJobList> {
+    return this.client.get<CaptionJobList>(this.basePath, {
+      params: {
+        page: params?.page,
+        perPage: params?.perPage,
+        videoId: params?.videoId,
+        status: params?.status,
+      },
+    });
+  }
+
+  /**
+   * Caption jobs for one recording or media URL: `list({ videoId })`, first page. The second
+   * parameter of earlier releases is accepted and unused: the id alone names the media.
+   *
+   * Requires: captions:read permission
+   */
+  async getForMedia(videoId: string, _mediaType?: 'video' | 'audio' | 'stream'): Promise<CaptionJob[]> {
+    const result = await this.list({ videoId });
     return result.data;
   }
 
-  // ==========================================================================
-  // Caption Cues
-  // ==========================================================================
-
   /**
-   * Get caption cues (segments)
+   * Download a completed job's captions. `GET /v1/captions/{jobId}/download`.
+   *
+   * `language` must be a language the job produced (see `job.outputs`; today that is
+   * `job.sourceLanguage`). The edge answers 404 when the job is not completed or has no output in
+   * that language. Returns the rendered file content.
    *
    * Requires: captions:read permission
    */
-  async getCues(
-    trackId: string,
-    params?: PaginationParams & { start_time?: number; end_time?: number }
-  ): Promise<PaginatedResponse<CaptionCue>> {
-    return this.client.get<PaginatedResponse<CaptionCue>>(
-      `${this.basePath}/${trackId}/cues`,
-      { params: params as Record<string, string | number | boolean | undefined> }
-    );
-  }
-
-  /**
-   * Update a caption cue
-   *
-   * Requires: captions:update permission
-   */
-  async updateCue(
-    trackId: string,
-    cueId: string,
-    updates: Partial<Pick<CaptionCue, 'text' | 'start_time' | 'end_time' | 'speaker' | 'style'>>
-  ): Promise<CaptionCue> {
-    return this.client.patch<CaptionCue>(
-      `${this.basePath}/${trackId}/cues/${cueId}`,
-      updates
-    );
-  }
-
-  /**
-   * Add a new caption cue
-   *
-   * Requires: captions:update permission
-   */
-  async addCue(
-    trackId: string,
-    cue: Omit<CaptionCue, 'id' | 'confidence' | 'words'>
-  ): Promise<CaptionCue> {
-    return this.client.post<CaptionCue>(
-      `${this.basePath}/${trackId}/cues`,
-      cue
-    );
-  }
-
-  /**
-   * Remove a caption cue
-   *
-   * Requires: captions:update permission (server-side RBAC enforced)
-   */
-  async removeCue(trackId: string, cueId: string): Promise<void> {
-    await this.client.delete(
-      `${this.basePath}/${trackId}/cues/${cueId}`,
-      { method: 'DELETE' }
-    );
-  }
-
-  /**
-   * Bulk update cues
-   *
-   * Requires: captions:update permission
-   */
-  async bulkUpdateCues(
-    trackId: string,
-    updates: Array<{ id: string; text?: string; start_time?: number; end_time?: number }>
-  ): Promise<{ updated: number }> {
-    return this.client.post(`${this.basePath}/${trackId}/cues/bulk`, { updates });
-  }
-
-  // ==========================================================================
-  // Translation
-  // ==========================================================================
-
-  /**
-   * Translate a caption track to another language
-   *
-   * Requires: captions:translate permission
-   */
-  async translate(
-    trackId: string,
-    request: TranslateCaptionsRequest
-  ): Promise<CaptionTrack> {
-    return this.client.post<CaptionTrack>(
-      `${this.basePath}/${trackId}/translate`,
-      request
-    );
-  }
-
-  // ==========================================================================
-  // Export
-  // ==========================================================================
-
-  /**
-   * Export captions in a specific format
-   *
-   * Requires: captions:read permission
-   */
-  async exportFormat(
-    trackId: string,
-    format: CaptionFormat
-  ): Promise<{ url: string; expires_at: string }> {
-    return this.client.get(`${this.basePath}/${trackId}/export`, {
-      params: { format } as unknown as Record<string, string | number | boolean | undefined>,
+  async download(
+    jobId: string,
+    options: { language: string; format?: CaptionDownloadFormat }
+  ): Promise<string> {
+    const result = await this.client.get<{ content: string }>(`${this.jobPath(jobId)}/download`, {
+      params: { language: options.language, format: options.format ?? 'srt' },
     });
+    return result.content;
   }
 
   /**
-   * Get captions as plain text
+   * A completed job's captions as plain text: `download(jobId, { format: 'txt' })` in `language`,
+   * or in the job's source language when `language` is omitted (one extra `get()` to read it).
    *
    * Requires: captions:read permission
    */
-  async getText(trackId: string): Promise<string> {
-    const result = await this.client.get<{ text: string }>(
-      `${this.basePath}/${trackId}/text`
-    );
-    return result.text;
+  async getText(jobId: string, language?: string): Promise<string> {
+    const lang = language ?? (await this.get(jobId)).sourceLanguage;
+    return this.download(jobId, { language: lang, format: 'txt' });
   }
 
-  // ==========================================================================
-  // Burn-In
-  // ==========================================================================
-
   /**
-   * Burn captions into video
+   * Poll a caption job until it is `completed`, or throw when it `failed` or was `cancelled`.
    *
-   * Requires: captions:burnin permission
+   * The edge captions synchronously, so a job from `create()` is already final and this returns
+   * (or throws) on the first poll. Kept for callers written against an asynchronous backend.
    */
-  async burnIn(request: BurnInCaptionsRequest): Promise<BurnInJob> {
-    return this.client.post<BurnInJob>(`${this.basePath}/burn-in`, request);
-  }
-
-  /**
-   * Get burn-in job status
-   *
-   * Requires: captions:read permission
-   */
-  async getBurnInJob(jobId: string): Promise<BurnInJob> {
-    return this.client.get<BurnInJob>(`${this.basePath}/burn-in/${jobId}`);
-  }
-
-  /**
-   * Wait for burn-in to complete
-   */
-  async waitForBurnIn(
+  async waitForReady(
     jobId: string,
     options?: {
       pollInterval?: number;
       timeout?: number;
-      onProgress?: (job: BurnInJob) => void;
+      onProgress?: (job: CaptionJob) => void;
     }
-  ): Promise<BurnInJob> {
-    const pollInterval = options?.pollInterval || 3000;
-    const timeout = options?.timeout || 1800000; // 30 minutes
-    const startTime = Date.now();
-
-    while (Date.now() - startTime < timeout) {
-      const job = await this.getBurnInJob(jobId);
-
-      if (options?.onProgress) {
-        options.onProgress(job);
-      }
-
-      if (job.status === 'ready') {
-        return job;
-      }
-
-      if (job.status === 'failed') {
-        throw new Error(`Burn-in failed: ${job.error || 'Unknown error'}`);
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, pollInterval));
-    }
-
-    throw new Error(`Burn-in timed out after ${timeout}ms`);
-  }
-
-  // ==========================================================================
-  // Utilities
-  // ==========================================================================
-
-  /**
-   * Wait for caption generation to complete
-   */
-  async waitForReady(
-    trackId: string,
-    options?: {
-      pollInterval?: number;
-      timeout?: number;
-      onProgress?: (track: CaptionTrack) => void;
-    }
-  ): Promise<CaptionTrack> {
+  ): Promise<CaptionJob> {
     const pollInterval = options?.pollInterval || 2000;
     const timeout = options?.timeout || 600000; // 10 minutes
     const startTime = Date.now();
 
     while (Date.now() - startTime < timeout) {
-      const track = await this.get(trackId);
+      const job = await this.get(jobId);
 
       if (options?.onProgress) {
-        options.onProgress(track);
+        options.onProgress(job);
       }
 
-      if (track.status === 'ready') {
-        return track;
+      if (job.status === 'completed') {
+        return job;
       }
 
-      if (track.status === 'failed') {
-        throw new Error(`Caption generation failed: ${track.error || 'Unknown error'}`);
+      if (job.status === 'failed' || job.status === 'cancelled') {
+        throw new Error(`Caption job ${job.status}: ${job.errorMessage || 'no reason given'}`);
       }
 
       await new Promise((resolve) => setTimeout(resolve, pollInterval));
@@ -383,11 +203,93 @@ export class CaptionsAPI {
     throw new Error(`Caption generation timed out after ${timeout}ms`);
   }
 
-  /**
-   * Get supported languages
-   *
-   * Requires: captions:read permission
-   */
+  // ==========================================================================
+  // Unserved (deprecated): each throws RouteNotServedError without a network call
+  // ==========================================================================
+
+  /** @deprecated Served as `create({ videoId, sourceLanguage, speakerLabels })`. */
+  async generate(_request: GenerateCaptionsRequest): Promise<CaptionTrack> {
+    throw routeNotServed('captions.generate', 'POST /v1/captions/generate', 'captions.create({ videoId })');
+  }
+
+  /** @deprecated No WAVE backend accepts uploaded caption files. */
+  async upload(_request: UploadCaptionsRequest): Promise<CaptionTrack> {
+    throw routeNotServed('captions.upload', 'POST /v1/captions/upload');
+  }
+
+  /** @deprecated Caption jobs cannot be edited after they run. */
+  async update(_trackId: string, _request: UpdateCaptionsRequest): Promise<CaptionTrack> {
+    throw routeNotServed('captions.update', 'PATCH /v1/captions/{trackId}');
+  }
+
+  /** @deprecated No cue-level route is served; `download(jobId, { format: 'json' })` returns the cues. */
+  async getCues(
+    _trackId: string,
+    _params?: PaginationParams & { start_time?: number; end_time?: number }
+  ): Promise<PaginatedResponse<CaptionCue>> {
+    throw routeNotServed('captions.getCues', 'GET /v1/captions/{trackId}/cues', "captions.download(jobId, { language, format: 'json' })");
+  }
+
+  /** @deprecated No cue-level route is served. */
+  async updateCue(
+    _trackId: string,
+    _cueId: string,
+    _updates: Partial<Pick<CaptionCue, 'text' | 'start_time' | 'end_time' | 'speaker' | 'style'>>
+  ): Promise<CaptionCue> {
+    throw routeNotServed('captions.updateCue', 'PATCH /v1/captions/{trackId}/cues/{cueId}');
+  }
+
+  /** @deprecated No cue-level route is served. */
+  async addCue(_trackId: string, _cue: Omit<CaptionCue, 'id' | 'confidence' | 'words'>): Promise<CaptionCue> {
+    throw routeNotServed('captions.addCue', 'POST /v1/captions/{trackId}/cues');
+  }
+
+  /** @deprecated No cue-level route is served. */
+  async removeCue(_trackId: string, _cueId: string): Promise<void> {
+    throw routeNotServed('captions.removeCue', 'DELETE /v1/captions/{trackId}/cues/{cueId}');
+  }
+
+  /** @deprecated No cue-level route is served. */
+  async bulkUpdateCues(
+    _trackId: string,
+    _updates: Array<{ id: string; text?: string; start_time?: number; end_time?: number }>
+  ): Promise<{ updated: number }> {
+    throw routeNotServed('captions.bulkUpdateCues', 'POST /v1/captions/{trackId}/cues/bulk');
+  }
+
+  /** @deprecated No WAVE backend translates captions yet. */
+  async translate(_trackId: string, _request: TranslateCaptionsRequest): Promise<CaptionTrack> {
+    throw routeNotServed('captions.translate', 'POST /v1/captions/{trackId}/translate');
+  }
+
+  /** @deprecated Served as `download(jobId, { language, format })`, which returns the file content. */
+  async exportFormat(_trackId: string, _format: CaptionFormat): Promise<{ url: string; expires_at: string }> {
+    throw routeNotServed('captions.exportFormat', 'GET /v1/captions/{trackId}/export', 'captions.download(jobId, { language, format })');
+  }
+
+  /** @deprecated No WAVE backend burns captions into video yet. */
+  async burnIn(_request: BurnInCaptionsRequest): Promise<BurnInJob> {
+    throw routeNotServed('captions.burnIn', 'POST /v1/captions/burn-in');
+  }
+
+  /** @deprecated No WAVE backend burns captions into video yet. */
+  async getBurnInJob(_jobId: string): Promise<BurnInJob> {
+    throw routeNotServed('captions.getBurnInJob', 'GET /v1/captions/burn-in/{jobId}');
+  }
+
+  /** @deprecated No WAVE backend burns captions into video yet. */
+  async waitForBurnIn(
+    _jobId: string,
+    _options?: {
+      pollInterval?: number;
+      timeout?: number;
+      onProgress?: (job: BurnInJob) => void;
+    }
+  ): Promise<BurnInJob> {
+    throw routeNotServed('captions.waitForBurnIn', 'GET /v1/captions/burn-in/{jobId}');
+  }
+
+  /** @deprecated No language-list route is served; `create()` answers 400 for an unknown locale. */
   async getSupportedLanguages(): Promise<
     Array<{
       code: string;
@@ -397,26 +299,19 @@ export class CaptionsAPI {
       supports_translation: boolean;
     }>
   > {
-    return this.client.get(`${this.basePath}/languages`);
+    throw routeNotServed('captions.getSupportedLanguages', 'GET /v1/captions/languages');
   }
 
-  /**
-   * Detect language from audio
-   *
-   * Requires: captions:generate permission
-   */
+  /** @deprecated No language-detection route is served. */
   async detectLanguage(
-    mediaId: string,
-    mediaType: 'video' | 'audio' | 'stream'
+    _mediaId: string,
+    _mediaType: 'video' | 'audio' | 'stream'
   ): Promise<{
     detected_language: string;
     confidence: number;
     alternatives: Array<{ language: string; confidence: number }>;
   }> {
-    return this.client.post(`${this.basePath}/detect-language`, {
-      media_id: mediaId,
-      media_type: mediaType,
-    });
+    throw routeNotServed('captions.detectLanguage', 'POST /v1/captions/detect-language');
   }
 }
 

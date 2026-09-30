@@ -1,93 +1,112 @@
 /**
- * WAVE SDK - Transcribe API
+ * WAVE SDK - Transcribe API types
  *
- * Audio and video transcription with speaker diarization.
- *
- * NOTE: This is a client SDK. All authorization checks are performed server-side.
- * The API will return 403 Forbidden if the user lacks required permissions.
+ * The shapes below match what the transcribe edge behind `api.wave.online/v1/transcribe` serves
+ * (wave-av/wave-transcribe-edge, src/types.ts and src/jobs.ts). Types that belong only to methods
+ * no backend serves stay exported, deprecated, so code that names them still compiles.
  */
 
-import type {
-  PaginationParams,
-  Timestamps,
-  Metadata,
-} from './client';
-
+import type { Metadata } from './client';
 
 // ============================================================================
 // Types
 // ============================================================================
 
 /**
- * Transcription status
+ * Transcription status. The edge transcribes synchronously, so `create()` answers with a job that
+ * is already `completed` (or `failed`).
  */
-export type TranscriptionStatus =
-  | 'pending'
-  | 'processing'
-  | 'ready'
-  | 'failed';
+export type TranscriptionStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
 
-/**
- * Transcription model
- */
-export type TranscriptionModel =
-  | 'standard'
-  | 'enhanced'
-  | 'whisper-large'
-  | 'whisper-medium'
-  | 'medical'
-  | 'legal';
+/** Speech-to-text engine to ask for. `default` and `auto` let the edge choose. */
+export type TranscriptionModel = 'default' | 'auto' | 'whisper' | 'deepgram' | 'elevenlabs';
 
-/**
- * Transcription job
- */
-export interface Transcription extends Timestamps {
-  id: string;
-  organization_id: string;
-  source_url?: string;
-  source_type: 'upload' | 'url' | 'stream' | 'recording';
-  source_id?: string;
-  status: TranscriptionStatus;
-  language: string;
-  detected_language?: string;
-  model: TranscriptionModel;
-  duration?: number;
-  word_count?: number;
-  confidence?: number;
-  speaker_count?: number;
-  cost?: number;
-  error?: string;
-  metadata?: Metadata;
+/** The engine that actually transcribed (never `auto`). */
+export type TranscriptionEngine = 'whisper' | 'deepgram' | 'elevenlabs';
+
+/** One timed stretch of the transcript. Present when `speakerLabels` was requested. */
+export interface TranscriptionSegment {
+  /** Start, in seconds. */
+  start: number;
+  /** End, in seconds. */
+  end: number;
+  text: string;
+  /** 0-based speaker index, when the engine labelled speakers. */
+  speaker?: number;
 }
 
-/**
- * Transcription segment
- */
-export interface TranscriptionSegment {
+/** One word with timing. Present when `wordTimestamps` was requested. */
+export interface TranscriptionWord {
+  word: string;
+  start: number;
+  end: number;
+  speaker?: number;
+}
+
+/** A transcription job, as `create()`, `get()` and `list()` return it. */
+export interface Transcription {
   id: string;
-  start_time: number;
-  end_time: number;
-  text: string;
-  speaker?: string;
-  speaker_id?: number;
-  confidence: number;
+  /** The recording id or https media URL that was transcribed. */
+  sourceId: string;
+  sourceType: 'video' | 'audio';
+  status: TranscriptionStatus;
+  language?: string;
+  /** The transcript, once `completed`. */
+  text?: string;
+  /** Media duration, in seconds. */
+  duration?: number;
+  wordCount?: number;
+  confidence?: number;
+  organizationId: string;
+  createdAt: string;
+  updatedAt: string;
+  /** Why the job failed, when it did. */
+  errorMessage?: string;
+  engine?: TranscriptionEngine;
+  /** Whether speaker labels were produced: `speakers`, `not_requested`, `unavailable` or `unsupported`. */
+  diarization?: 'speakers' | 'not_requested' | 'unavailable' | 'unsupported';
+  segments?: TranscriptionSegment[];
   words?: TranscriptionWord[];
 }
 
-/**
- * Word-level transcription
- */
-export interface TranscriptionWord {
-  word: string;
-  start_time: number;
-  end_time: number;
-  confidence: number;
-  speaker_id?: number;
+/** Body of `create()`. */
+export interface CreateTranscriptionRequest {
+  /** A WAVE recording id, or an https URL to an audio or video file. */
+  sourceId: string;
+  sourceType: 'video' | 'audio';
+  /** Spoken language (e.g. `en`). Detected when omitted. */
+  language?: string;
+  /** Label speakers and return `segments`. Default false. */
+  speakerLabels?: boolean;
+  /** Return per-word timing in `words`. Default false. */
+  wordTimestamps?: boolean;
+  /** Default true. */
+  punctuation?: boolean;
+  /** Default `default`. */
+  model?: TranscriptionModel;
 }
 
-/**
- * Speaker info
- */
+/** `list()` filters. */
+export interface ListTranscriptionsParams {
+  /** 1-based page. Default 1. */
+  page?: number;
+  /** Page size. Default 20. */
+  perPage?: number;
+  status?: TranscriptionStatus;
+}
+
+/** A page of transcriptions, as `list()` returns it. */
+export interface TranscriptionList {
+  data: Transcription[];
+  pagination: {
+    page: number;
+    perPage: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+/** @deprecated Belongs to `getSpeakers()`, which no WAVE backend serves. Read `segments[].speaker`. */
 export interface Speaker {
   id: number;
   label: string;
@@ -96,99 +115,10 @@ export interface Speaker {
   confidence?: number;
 }
 
-/**
- * Create transcription request
- */
-export interface CreateTranscriptionRequest {
-  /** Source URL to transcribe */
-  source_url?: string;
-  /** Source type */
-  source_type: 'upload' | 'url' | 'stream' | 'recording';
-  /** Source ID for streams/recordings */
-  source_id?: string;
-  /** Language code (auto-detect if not specified) */
-  language?: string;
-  /** Transcription model */
-  model?: TranscriptionModel;
-  /** Enable speaker diarization */
-  speaker_diarization?: boolean;
-  /** Expected number of speakers */
-  speaker_count?: number;
-  /** Enable punctuation */
-  punctuation?: boolean;
-  /** Filter profanity */
-  profanity_filter?: boolean;
-  /** Custom vocabulary/terms */
-  vocabulary?: string[];
-  /** Boost specific words */
-  vocabulary_boost?: number;
-  /** Enable word timestamps */
-  word_timestamps?: boolean;
-  /** Callback URL for completion */
-  webhook_url?: string;
-  metadata?: Metadata;
-}
-
-/**
- * Update transcription request
- */
+/** @deprecated Belongs to `update()`, which no WAVE backend serves. */
 export interface UpdateTranscriptionRequest {
   metadata?: Metadata;
 }
 
-/**
- * List transcriptions params
- */
-export interface ListTranscriptionsParams extends PaginationParams {
-  status?: TranscriptionStatus;
-  source_type?: 'upload' | 'url' | 'stream' | 'recording';
-  language?: string;
-  model?: TranscriptionModel;
-  created_after?: string;
-  created_before?: string;
-}
-
-/**
- * Export format
- */
-export type TranscriptExportFormat =
-  | 'txt'
-  | 'json'
-  | 'srt'
-  | 'vtt'
-  | 'docx'
-  | 'pdf';
-
-// ============================================================================
-// Transcribe API
-// ============================================================================
-
-/**
- * Transcribe API client
- *
- * All operations require appropriate permissions. Authorization is enforced
- * server-side - the API returns 403 if the authenticated user lacks access.
- *
- * @example
- * ```typescript
- * import { WaveClient } from '@wave/sdk';
- * import { TranscribeAPI } from '@wave/sdk/transcribe';
- *
- * const client = new WaveClient({ apiKey: 'your-api-key' });
- * const transcribe = new TranscribeAPI(client);
- *
- * // Transcribe a video
- * const job = await transcribe.create({
- *   source_url: 'https://example.com/video.mp4',
- *   source_type: 'url',
- *   language: 'en',
- *   speaker_diarization: true,
- * });
- *
- * // Wait for completion
- * const result = await transcribe.waitForReady(job.id);
- *
- * // Get the transcript
- * const segments = await transcribe.getSegments(result.id);
- * ```
- */
+/** @deprecated Belongs to `exportTranscription()`, which no WAVE backend serves. */
+export type TranscriptExportFormat = 'txt' | 'json' | 'srt' | 'vtt' | 'docx' | 'pdf';

@@ -7,11 +7,11 @@
 import { EventEmitter } from 'eventemitter3';
 import type { TelemetryConfig } from './telemetry';
 import { initTelemetry } from './telemetry';
+import { SDK_VERSION } from './version';
 import type {
   WaveClientConfig,
   RequestOptions,
   WaveClientEvents,
-  WaveAPIErrorResponse,
 } from './client-types';
 
 // Re-export shared types so sibling modules and the barrel can import them
@@ -30,111 +30,23 @@ export type {
   WaveAPIErrorResponse,
 } from './client-types';
 
-// Error codes that signal a transient transport/throttling condition and are
-// safe to retry, independent of HTTP status. Module-level so the Set is
-// allocated once rather than on every isRetryable call.
-const RETRYABLE_ERROR_CODES = new Set([
-  'RATE_LIMITED',
-  'TIMEOUT',
-  'NETWORK_ERROR',
-  'SERVICE_UNAVAILABLE',
-  'INTERNAL_ERROR',
-]);
+import {
+  WaveError,
+  RateLimitError,
+  parseErrorBody,
+  createWaveError,
+  type ParsedErrorBody,
+} from './errors';
 
-// ============================================================================
-// Configuration Types
-// ============================================================================
-
-/**
- * SDK configuration options
- */
-
-/**
- * Request options for individual API calls
- */
-
-// ============================================================================
-// Error Types
-// ============================================================================
-
-/**
- * API error response structure
- */
-
-/**
- * WAVE SDK Error class
- */
-export class WaveError extends Error {
-  public readonly code: string;
-  public readonly statusCode: number;
-  public readonly requestId?: string;
-  public readonly details?: Record<string, unknown>;
-  public readonly retryable: boolean;
-
-  constructor(
-    message: string,
-    code: string,
-    statusCode: number,
-    requestId?: string,
-    details?: Record<string, unknown>
-  ) {
-    super(message);
-    this.name = 'WaveError';
-    this.code = code;
-    this.statusCode = statusCode;
-    this.requestId = requestId;
-    this.details = details;
-    this.retryable = this.isRetryable(statusCode, code);
-  }
-
-  /**
-   * Determine whether an error is safe to retry.
-   *
-   * Conservative by design: only transient, server-side or throttling
-   * conditions are retryable. Client errors (4xx other than 408/429) are
-   * treated as permanent so we never re-issue a request the server has
-   * already rejected on its merits (e.g. 400/401/403/404).
-   */
-  private isRetryable(statusCode: number, code: string): boolean {
-    // Server errors are transient and retryable.
-    if (statusCode >= 500) {
-      return true;
-    }
-
-    // Throttling (429) and request timeout (408) are retryable.
-    if (statusCode === 429 || statusCode === 408) {
-      return true;
-    }
-
-    // statusCode 0 indicates a network/transport-level failure (no HTTP
-    // response was received) — these are retryable.
-    if (statusCode === 0) {
-      return true;
-    }
-
-    // Code-based retryable signals for transport/throttling conditions that
-    // may surface without a conventional retryable status code.
-    if (RETRYABLE_ERROR_CODES.has(code)) {
-      return true;
-    }
-
-    return false;
-  }
-
-}
-
-/**
- * Rate limit error with retry information
- */
-export class RateLimitError extends WaveError {
-  public readonly retryAfter: number;
-
-  constructor(message: string, retryAfter: number, requestId?: string) {
-    super(message, 'RATE_LIMITED', 429, requestId);
-    this.name = 'RateLimitError';
-    this.retryAfter = retryAfter;
-  }
-}
+export {
+  WaveError,
+  RateLimitError,
+  PaymentRequiredError,
+  RouteNotServedError,
+  parseErrorBody,
+  createWaveError,
+  type ParsedErrorBody,
+} from './errors';
 
 // ============================================================================
 // Event Types
@@ -412,7 +324,7 @@ export class WaveClient extends EventEmitter<WaveClientEvents> {
       'Authorization': `Bearer ${this.config.apiKey}`,
       'Content-Type': 'application/json',
       'Accept': 'application/json',
-      'User-Agent': `wave-sdk-typescript/1.0.0`,
+      'User-Agent': `wave-sdk-typescript/${SDK_VERSION}`,
       ...this.config.customHeaders,
     };
 
@@ -441,33 +353,30 @@ export class WaveClient extends EventEmitter<WaveClientEvents> {
   /**
    * Parse an error response body into a WaveError (or subclass).
    *
-   * Reads the JSON error envelope (see WaveAPIErrorResponse) when present and
-   * tolerates non-JSON / empty bodies, falling back to the HTTP status text.
-   * The returned error's `retryable` flag is derived from status + code via
-   * WaveError's own logic, so callers can branch on `error.retryable`.
+   * Reads every gateway error envelope (see parseErrorBody) and tolerates
+   * non-JSON / empty bodies, falling back to the HTTP status text. 402 becomes
+   * PaymentRequiredError and 404 ROUTE_NOT_FOUND / ROUTE_NOT_MAPPED becomes
+   * RouteNotServedError. The returned error's `retryable` flag is derived from
+   * status + code via WaveError's own logic.
    */
   private async parseErrorResponse(response: Response): Promise<WaveError> {
     const statusCode = response.status;
     const requestId = response.headers.get('x-request-id') || undefined;
 
-    let code = `HTTP_${statusCode}`;
-    let message = response.statusText || `Request failed with status ${statusCode}`;
-    let details: Record<string, unknown> | undefined;
-    let bodyRequestId: string | undefined;
-
+    let parsed: ParsedErrorBody = {};
     try {
-      const body = (await response.json()) as Partial<WaveAPIErrorResponse>;
-      if (body && typeof body === 'object' && body.error) {
-        code = body.error.code || code;
-        message = body.error.message || message;
-        details = body.error.details;
-      }
-      bodyRequestId = body?.request_id;
+      parsed = parseErrorBody(await response.json());
     } catch {
       // Non-JSON or empty body — keep status-derived defaults.
     }
 
-    return new WaveError(message, code, statusCode, requestId ?? bodyRequestId, details);
+    return createWaveError(
+      parsed.message || response.statusText || `Request failed with status ${statusCode}`,
+      parsed.code || `HTTP_${statusCode}`,
+      statusCode,
+      requestId ?? parsed.requestId,
+      parsed.details
+    );
   }
 
   /**
