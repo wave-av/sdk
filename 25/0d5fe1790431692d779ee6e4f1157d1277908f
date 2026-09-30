@@ -1,0 +1,14 @@
+package.json
+  h_af5ac1a9798224 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "250d5fe1790431692d779ee6e4f1157d1277908f",
+  "prompts": {},
+  "humans": {
+    "h_af5ac1a9798224": {
+      "author": "Jake Fineman <jakefineman@gmail.com>"
+    }
+  }
+}

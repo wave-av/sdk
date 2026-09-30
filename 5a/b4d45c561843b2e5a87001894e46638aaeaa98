@@ -1,0 +1,31 @@
+src/__tests__/cli.test.ts
+  s_ad2a3f7bca33a3::t_39999e34606d4d 8-22,24,26-29
+CHANGELOG.md
+  s_ad2a3f7bca33a3::t_8723f4cc61cef9 8-45
+package-lock.json
+  s_ad2a3f7bca33a3::t_d6a124cc2e6d6a 3,9,14-16
+package.json
+  s_ad2a3f7bca33a3::t_3616a2c940441e 3,322
+src/__tests__/pack-esm-smoke.test.ts
+  s_ad2a3f7bca33a3::t_9a895946ac4f6e 1-96
+src/bin.ts
+  s_ad2a3f7bca33a3::t_36ce531900cb26 1-21
+src/cli.ts
+  s_ad2a3f7bca33a3::t_497fa270793674 2,7-14,31,68,76,86
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "5ab4d45c561843b2e5a87001894e46638aaeaa98",
+  "prompts": {},
+  "sessions": {
+    "s_ad2a3f7bca33a3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-a1cb98583e3fba5e6",
+        "model": "unknown"
+      },
+      "human_author": "Jake Fineman <jakefineman@gmail.com>"
+    }
+  }
+}

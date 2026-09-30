@@ -1,0 +1,20 @@
+src/__tests__/comms.test.ts
+  h_af5ac1a9798224 1-41
+src/comms-types.ts
+  h_af5ac1a9798224 1-28
+src/comms.ts
+  h_af5ac1a9798224 1-42
+src/index.ts
+  h_af5ac1a9798224 344-347,463,527,530-532,598
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "df06350cbd53adc348197411bea5a18441d5eab2",
+  "prompts": {},
+  "humans": {
+    "h_af5ac1a9798224": {
+      "author": "Jake Fineman <jakefineman@gmail.com>"
+    }
+  }
+}

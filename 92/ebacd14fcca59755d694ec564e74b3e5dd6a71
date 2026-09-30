@@ -1,0 +1,27 @@
+src/voice.ts
+  s_60c5725270cba3::t_8ec154fd4aa8b5 149-154,158-175,177-182
+src/clips-types.ts
+  s_60c5725270cba3::t_0fc609fd97e1f4 22-29,31,33-36
+CHANGELOG.md
+  s_60c5725270cba3::t_f7513166bfe78b 8-11
+src/voice-types.ts
+  s_60c5725270cba3::t_f673578f5172c5 28-29
+src/clips.ts
+  s_60c5725270cba3::t_964466a42d2fb2 46-50,55-60
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "92ebacd14fcca59755d694ec564e74b3e5dd6a71",
+  "prompts": {},
+  "sessions": {
+    "s_60c5725270cba3": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_01102325affeiT16qwRvWzIjqe",
+        "model": "deepseek-v4-flash-free"
+      },
+      "human_author": "Jake Fineman <jakefineman@gmail.com>"
+    }
+  }
+}

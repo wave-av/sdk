@@ -1,0 +1,32 @@
+CHANGELOG.md
+  h_af5ac1a9798224 35-41
+README.md
+  h_af5ac1a9798224 41,79
+capabilities.json
+  h_af5ac1a9798224 192-193,195,198,205,211,219
+package-lock.json
+  h_af5ac1a9798224 20,22,1828-1830,1834-1837,2173-2196,2308-2324,2421-2438,2520-2522,2533-2545,2877-2886,2913-2922,2981-2990,3085-3101,3257-3266,3346-3355,3550-3582,3588
+package.json
+  h_af5ac1a9798224 238-242,247,259,321,323,333
+schema/compose.schema.json
+  h_af5ac1a9798224 1-272
+src/__tests__/compose.test.ts
+  h_af5ac1a9798224 1-197
+src/compose-types.ts
+  h_af5ac1a9798224 1-101
+src/compose.ts
+  h_af5ac1a9798224 1-200
+src/index.ts
+  h_af5ac1a9798224 663-691
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "6b16b3c60e91e29e2174ca76c6dead0130448294",
+  "prompts": {},
+  "humans": {
+    "h_af5ac1a9798224": {
+      "author": "Jake Fineman <jakefineman@gmail.com>"
+    }
+  }
+}
