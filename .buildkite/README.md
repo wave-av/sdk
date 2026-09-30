@@ -99,8 +99,9 @@ has no `wrangler.toml`, so it is out of scope for this port.
   credential appearing in their environment would be a guest-image bug, not a feature.
 - Egress: `registry.npmjs.org` is **not** needed (no `npm ci` in this pipeline — sdk needs no npm
   credential for these checks, `BK_NPM_AUTH: none` per wave-foundation's per-repo parameter table).
-  `pypi.org` for `pip install pyyaml`, and `github.com`/`objects.githubusercontent.com` for the pinned
-  gitleaks release tarball.
+  `pypi.org` and `files.pythonhosted.org` for `pip install pyyaml` (PyPI serves the actual wheel/sdist
+  from `files.pythonhosted.org`, not `pypi.org` itself), and `github.com`/`objects.githubusercontent.com`
+  for the pinned gitleaks release tarball.
 - No sudo, global installs, services, GPU or macOS are needed.
 
 ## Pipeline settings (Buildkite UI, not YAML) — operator steps still needed
@@ -150,6 +151,21 @@ An operator still needs to:
 9. Only after 7 consecutive green days: **switch the required contexts** in branch protection from the
    three GitHub check names to the three `buildkite/<pipeline-slug>/<step-key>` contexts below. That is
    a separate, operator-gated ruleset change — not part of this PR.
+
+   **Fork-PR gap this swap opens.** Step 4 leaves "Build PRs from forks" **off** on purpose — sdk is
+   public, and a fork PR's branch/workflow content is attacker-controlled, so it must not get a
+   Buildkite agent on `fpc-isolated` (secrets/agent safety beats convenience here; this stays off even
+   after the swap). Buildkite therefore never builds an external fork PR and never posts its three
+   `buildkite/<slug>/<step-key>` statuses for one. Once step 9 makes those contexts **required**, an
+   external fork PR has no automatic producer for them and sits permanently un-mergeable ("Expected"),
+   even though the shadowed GH Actions checks (which do run on fork PRs) would have passed. There is no
+   required-status "OR": GitHub branch protection requires every listed context, so leaving a GH check
+   required alongside the Buildkite ones does not give forks a way through — it only adds a second
+   context that also never completes for an internal, non-fork PR's parity build. A fork PR only gets
+   real coverage once a maintainer re-pushes its branch/commit into `wave-av/sdk` (e.g. `git push` to a
+   same-repo branch, or `gh pr checkout` + repush) or triggers a Buildkite build for that commit
+   manually — either creates a same-repo build Buildkite (and thus the required contexts) can see. An
+   operator making this swap must accept that gap or keep it in mind for fork-originated contributions.
 
 ## Contexts this pipeline would post (once connected)
 

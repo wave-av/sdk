@@ -48,11 +48,15 @@ bk_gate "Secret scan (fail-closed, allowlist-aware)" bash -c '
 # shellcheck disable=SC2016 # single-quoted on purpose: expansion happens in the inner bash -c, not here
 bk_gate "File-size gate (<= ${MAX} lines)" env MAX="$MAX" bash -c '
   fail=0
-  while IFS= read -r f; do
+  while IFS= read -r -d "" f; do
     grep -qxF "$f" .github/.filesize-allowlist 2>/dev/null && continue   # justified exception
-    n=$(wc -l < "$f")
+    if ! n=$(wc -l < "$f"); then
+      echo "::error::unable to read $f"
+      fail=1
+      continue
+    fi
     if [ "$n" -gt "$MAX" ]; then echo "::error::$f has $n lines (> $MAX)"; fail=1; fi
-  done < <(git ls-files "*.ts" "*.tsx" "*.js" "*.py" | grep -vE "\.(types|d)\.ts$")
+  done < <(git ls-files -z "*.ts" "*.tsx" "*.js" "*.py" | grep -zvE "\.(types|d)\.ts$")
   if [ "$fail" = 0 ]; then echo "file-size gate passed (all <= $MAX lines)"; fi
   exit "$fail"
 '
