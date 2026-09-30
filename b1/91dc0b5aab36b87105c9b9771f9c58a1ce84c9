@@ -1,0 +1,19 @@
+plugin.json
+  s_5c6a04c6436e18::t_126baa58a085f8 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "b191dc0b5aab36b87105c9b9771f9c58a1ce84c9",
+  "prompts": {},
+  "sessions": {
+    "s_5c6a04c6436e18": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-a48004fe17b09476d",
+        "model": "unknown"
+      },
+      "human_author": "Jake Fineman <jakefineman@gmail.com>"
+    }
+  }
+}
