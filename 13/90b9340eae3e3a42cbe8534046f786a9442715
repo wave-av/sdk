@@ -1,0 +1,50 @@
+src/cli.ts
+  s_13ccc7d9001218::t_32f7e279d6a6ce 113-114
+  s_13ccc7d9001218::t_edeee8fae58c0c 17
+  s_13ccc7d9001218::t_723f4338a376a2 67-71,74,78-84,87,92
+  s_13ccc7d9001218::t_b3ef92b6f47a9c 96-97,100
+src/__tests__/errors.test.ts
+  s_13ccc7d9001218::t_578dd316c127c6 107-113,115-116
+  s_13ccc7d9001218::t_63fa8ceed5a7ac 105-106,114,117-118
+scripts/smoke-live.mjs
+  s_13ccc7d9001218::t_6d797adbe99b20 38
+  s_13ccc7d9001218::t_c47ae99d8dd4af 187-188
+CHANGELOG.md
+  s_13ccc7d9001218::t_2c8aaf6470bdcf 41-42
+src/realtime.ts
+  s_13ccc7d9001218::t_dc6a23844a9d3b 162-164
+src/errors.ts
+  s_13ccc7d9001218::t_de76797a8d8915 134-138
+  s_13ccc7d9001218::t_07d0ea194d3045 161-165,167,171-173,199
+src/__tests__/pack-esm-smoke.test.ts
+  s_13ccc7d9001218::t_fea4f2ded742a8 78-98
+  s_13ccc7d9001218::t_23d94abf9ce3c0 23
+src/runtime.ts
+  s_13ccc7d9001218::t_97f5ef55ee7e93 197-203
+  s_13ccc7d9001218::t_e604cfd00f4018 89-90
+  s_13ccc7d9001218::t_a84d82f588a0f4 78-88,91
+  s_13ccc7d9001218::t_b2f9439353a803 173,185,205
+src/__tests__/cli.test.ts
+  s_13ccc7d9001218::t_830ee1b6a51392 105-114
+src/__tests__/realtime.test.ts
+  s_13ccc7d9001218::t_6835d30a2b3332 121-170
+src/__tests__/runtime.test.ts
+  s_13ccc7d9001218::t_9608909356f975 63-78
+  s_13ccc7d9001218::t_0158aba590a7f3 107-121
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "1390b9340eae3e3a42cbe8534046f786a9442715",
+  "prompts": {},
+  "sessions": {
+    "s_13ccc7d9001218": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "11229abc-f617-4541-b5d7-d693c6ae4d9d",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Jake Fineman <jakefineman@gmail.com>"
+    }
+  }
+}

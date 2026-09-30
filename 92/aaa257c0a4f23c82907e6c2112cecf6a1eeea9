@@ -1,0 +1,27 @@
+scripts/route-sweep.mjs
+  s_13ccc7d9001218::t_62c4667c6e4b8b 131
+  s_13ccc7d9001218::t_b95b8e54cf4923 233-241
+  s_13ccc7d9001218::t_fd345aa9f4b7de 251-256,262,271-278
+  s_13ccc7d9001218::t_9993eb0f4c6714 212
+  s_13ccc7d9001218::t_3cdcfc9de21d0f 10-20
+  s_13ccc7d9001218::t_62f08ce1aa6181 30,33-34
+  s_13ccc7d9001218::t_cd6bf3258a043b 124-125
+  s_13ccc7d9001218::t_ce080c35d8335f 170-173
+  s_13ccc7d9001218::t_120fb8a5c10c4a 151-169,174-184
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "92aaa257c0a4f23c82907e6c2112cecf6a1eeea9",
+  "prompts": {},
+  "sessions": {
+    "s_13ccc7d9001218": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "11229abc-f617-4541-b5d7-d693c6ae4d9d",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Jake Fineman <jakefineman@gmail.com>"
+    }
+  }
+}

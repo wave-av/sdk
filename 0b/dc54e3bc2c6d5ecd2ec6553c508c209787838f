@@ -1,0 +1,38 @@
+src/clips.ts
+  s_13ccc7d9001218::t_d20521820da6ef 172-173,178-181
+  s_13ccc7d9001218::t_a71823f18de4ae 39-42,44
+  s_13ccc7d9001218::t_a815ebee29bd96 43
+src/__tests__/media-served.test.ts
+  s_13ccc7d9001218::t_5f3d40e982743e 101-124
+src/cli.ts
+  s_13ccc7d9001218::t_a9104b6b0524c2 176-177
+  s_13ccc7d9001218::t_e81a81583d2592 155-156
+  s_13ccc7d9001218::t_2f15ca79cfcad7 143
+  s_13ccc7d9001218::t_9f146e78523f36 165-166
+  s_13ccc7d9001218::t_bc59fdc37a63c6 203-206
+  s_13ccc7d9001218::t_b0ac16db25217c 103-122
+  s_13ccc7d9001218::t_9e8e65ca065ac5 140-142,144
+src/__tests__/cli.test.ts
+  s_13ccc7d9001218::t_92af55ba1c114f 168-217
+  s_13ccc7d9001218::t_cb37c407b17275 6
+CHANGELOG.md
+  s_13ccc7d9001218::t_80fa947c2925e3 48-49,74-75,94-96
+README.md
+  s_13ccc7d9001218::t_79a5942c018168 438-440
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "0bdc54e3bc2c6d5ecd2ec6553c508c209787838f",
+  "prompts": {},
+  "sessions": {
+    "s_13ccc7d9001218": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "11229abc-f617-4541-b5d7-d693c6ae4d9d",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Jake Fineman <jakefineman@gmail.com>"
+    }
+  }
+}

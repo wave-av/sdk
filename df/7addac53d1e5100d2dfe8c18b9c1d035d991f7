@@ -1,0 +1,54 @@
+src/errors.ts
+  s_13ccc7d9001218::t_d5eca650273f83 152-154
+  s_13ccc7d9001218::t_b9d88b6fc9a616 121-123
+  s_13ccc7d9001218::t_51feb6cc6b10bc 210,213
+src/realtime.ts
+  s_13ccc7d9001218::t_5a655b5c71caa8 231-237
+scripts/smoke-live.mjs
+  s_13ccc7d9001218::t_56c3436e48d4b6 198-200
+scripts/smoke-quickstart.mjs
+  s_13ccc7d9001218::t_db41bdbb3f21ca 36-43
+src/__tests__/cli.test.ts
+  s_13ccc7d9001218::t_732d9a7c53a1a4 84-89,92-94
+  s_13ccc7d9001218::t_2222fc68aa1ab0 90-91
+src/__tests__/realtime.test.ts
+  s_13ccc7d9001218::t_99175b989f4050 232-240
+src/__tests__/errors.test.ts
+  s_13ccc7d9001218::t_315c2fa9a7868c 98-108
+CHANGELOG.md
+  s_13ccc7d9001218::t_1714080721f127 76-85
+src/__tests__/runtime.test.ts
+  s_13ccc7d9001218::t_4a2c39be65b380 63-96
+  s_13ccc7d9001218::t_ea1cfde30f9e74 3
+README.md
+  s_13ccc7d9001218::t_ec860468bd2088 129-134
+  s_13ccc7d9001218::t_ad98f8f8637d1e 115
+src/inference.ts
+  s_13ccc7d9001218::t_313eab65362890 68-70
+src/__tests__/inference.test.ts
+  s_13ccc7d9001218::t_a6314990e9839e 68-77
+src/cli.ts
+  s_13ccc7d9001218::t_a7b8b0141b18e8 191-198,204
+.wave/repo.json
+  s_13ccc7d9001218::t_66d9c7560aa3bb 560,566
+src/bin.ts
+  s_13ccc7d9001218::t_5fbabf263b3732 20,32
+src/runtime.ts
+  s_13ccc7d9001218::t_87eeacf7ea12a7 66-71,76,91-95,99,104,109-137,146-147,155-158,165-166,168-170,174-182,186-189,191,193-201,267,269-271
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "df7addac53d1e5100d2dfe8c18b9c1d035d991f7",
+  "prompts": {},
+  "sessions": {
+    "s_13ccc7d9001218": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "11229abc-f617-4541-b5d7-d693c6ae4d9d",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Jake Fineman <jakefineman@gmail.com>"
+    }
+  }
+}
