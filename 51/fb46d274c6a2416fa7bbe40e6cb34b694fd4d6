@@ -1,0 +1,116 @@
+.github/workflows/foundation-gate.yml
+  h_af5ac1a9798224 21
+.github/workflows/ga-evidence.yml
+  h_af5ac1a9798224 1-113
+.github/workflows/issue-ops-triage.yml
+  h_af5ac1a9798224 14,19-20
+.github/workflows/lint.yml
+  h_af5ac1a9798224 26-30
+.github/workflows/public-repo-guard.yml
+  h_af5ac1a9798224 32
+.github/workflows/release-drift.yml
+  h_af5ac1a9798224 1-58
+.github/workflows/release.yml
+  h_af5ac1a9798224 3-4,6-45,48-52,55-60,66,70-145,153,159,187-188,192,198-214,216,221-226,250-267,272-275,284-285,294,297-307,311,328-329,332,339-340,343-356,362,364-415
+.github/workflows/sbom.yml
+  h_af5ac1a9798224 1-140
+.github/workflows/smoke-install.yml
+  h_af5ac1a9798224 1-102
+.gitignore
+  h_af5ac1a9798224 1-2
+.wave/repo.json
+  h_af5ac1a9798224 5
+AGENTS.md
+  h_af5ac1a9798224 57-69
+CHANGELOG.md
+  h_af5ac1a9798224 8-99
+PERMISSIONS.md
+  h_af5ac1a9798224 1-62
+README.md
+  h_af5ac1a9798224 5,29-33,36-37,47,49,51-53,55-58,60,62-63,70-80,100
+TESTING.md
+  h_af5ac1a9798224 1-46
+capabilities.json
+  h_af5ac1a9798224 13-219
+package-lock.json
+  h_af5ac1a9798224 3,9,15,3031-3033,3051
+package.json
+  h_af5ac1a9798224 3,322
+scripts/ga/check-VER-001.sh
+  h_af5ac1a9798224 1-15
+scripts/ga/check-ver-001.mjs
+  h_af5ac1a9798224 1-291
+scripts/ga/ga-evidence.mjs
+  h_af5ac1a9798224 1-194
+scripts/ga/lib/semver.mjs
+  h_af5ac1a9798224 1-78
+scripts/release/__tests__/check-version.test.ts
+  h_af5ac1a9798224 1-82
+scripts/release/check-version.sh
+  h_af5ac1a9798224 1-39
+scripts/release/create-github-release.sh
+  h_af5ac1a9798224 1-57
+scripts/release/drift-check.sh
+  h_af5ac1a9798224 1-127
+scripts/release/npm-published.sh
+  h_af5ac1a9798224 1-43
+scripts/smoke-quickstart.mjs
+  h_af5ac1a9798224 1-95
+scripts/supply-chain/README.md
+  h_af5ac1a9798224 1-100
+scripts/supply-chain/__tests__/validate-sbom.test.ts
+  h_af5ac1a9798224 1-73
+scripts/supply-chain/__tests__/verify-supply-chain.test.ts
+  h_af5ac1a9798224 1-305
+scripts/supply-chain/targets.json
+  h_af5ac1a9798224 1-45
+scripts/supply-chain/validate-sbom.mjs
+  h_af5ac1a9798224 1-92
+scripts/supply-chain/verify-supply-chain.mjs
+  h_af5ac1a9798224 1-321
+src/__tests__/agent-auth.test.ts
+  h_af5ac1a9798224 1-77
+src/__tests__/capabilities.test.ts
+  h_af5ac1a9798224 1-106
+src/__tests__/cli.test.ts
+  h_af5ac1a9798224 1-3,8-32
+src/__tests__/pack-esm-smoke.test.ts
+  h_af5ac1a9798224 1-96
+src/__tests__/sandbox.test.ts
+  h_af5ac1a9798224 1-116
+src/__tests__/sdk-exports.test.ts
+  h_af5ac1a9798224 117-119,171-172,219,245-246,249-250
+src/__tests__/url-util.test.ts
+  h_af5ac1a9798224 1-26
+src/agent-auth.ts
+  h_af5ac1a9798224 1-136
+src/automations.ts
+  h_af5ac1a9798224 1,25
+src/bin.ts
+  h_af5ac1a9798224 1-21
+src/cli.ts
+  h_af5ac1a9798224 2,7-14,31,68,76,86
+src/custody.ts
+  h_af5ac1a9798224 1,51
+src/index.ts
+  h_af5ac1a9798224 338,344,357,375,387,404-419,478,534,537,540,543,547,550,553-555,609,622-624,628-644
+src/realtime.ts
+  h_af5ac1a9798224 1,27,47,127
+src/runtime.ts
+  h_af5ac1a9798224 1,69
+src/sandbox.ts
+  h_af5ac1a9798224 1-184
+src/url-util.ts
+  h_af5ac1a9798224 1-13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "51fb46d274c6a2416fa7bbe40e6cb34b694fd4d6",
+  "prompts": {},
+  "humans": {
+    "h_af5ac1a9798224": {
+      "author": "Jake Fineman <jakefineman@gmail.com>"
+    }
+  }
+}

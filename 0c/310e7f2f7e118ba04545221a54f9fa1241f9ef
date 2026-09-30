@@ -1,0 +1,14 @@
+README.md
+  h_af5ac1a9798224 104-115
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "0c310e7f2f7e118ba04545221a54f9fa1241f9ef",
+  "prompts": {},
+  "humans": {
+    "h_af5ac1a9798224": {
+      "author": "Jake Fineman <jakefineman@gmail.com>"
+    }
+  }
+}

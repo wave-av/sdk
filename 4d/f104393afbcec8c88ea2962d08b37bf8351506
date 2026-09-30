@@ -1,0 +1,19 @@
+skills/wave-custody/SKILL.md
+  s_2606de950a60c6::t_17d3b275923920 8-10,13-14
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "4df104393afbcec8c88ea2962d08b37bf8351506",
+  "prompts": {},
+  "sessions": {
+    "s_2606de950a60c6": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_fef439bb6ffePesTgCloA0Efke",
+        "model": "deepseek-v4-pro"
+      },
+      "human_author": "Jake Fineman <jakefineman@gmail.com>"
+    }
+  }
+}
