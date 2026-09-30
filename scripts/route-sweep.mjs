@@ -7,13 +7,17 @@
  * 1. Extract. Instantiate `Wave` with a dummy key and fetch stubbed, call every method of every
  *    module with placeholder arguments, and record each (method, path) it would send. A method
  *    that throws RouteNotServedError without calling fetch is recorded as `gated`.
- * 2. Probe. Send each unique route to the gateway WITHOUT credentials (placeholder ids, `{}`
- *    bodies), so nothing is created, changed or billed, and classify the answer by status and
- *    gateway code only. Response bodies are never printed.
- *      unserved  404 ROUTE_NOT_FOUND / ROUTE_NOT_MAPPED: no capability at this path
- *      priced    402: the route is priced (x402). Priced is not proof of served.
- *      auth      401 / 403: an auth or scope rule exists for the route
- *      other     anything else (400, 405, 200, 5xx)
+ * 2. Probe. First, two known-served control routes must answer 200 with their content marker
+ *    (GET /v1/network/surface: `product`; GET /v1/x402/facilitator/supported: `schemes`), or the
+ *    sweep exits 2: with the gateway down or unreachable, no route answer means anything. Then send
+ *    each unique route to the gateway WITHOUT credentials (placeholder ids, `{}` bodies), so
+ *    nothing is created, changed or billed, and classify the answer by status and gateway code
+ *    only. Response bodies are never printed.
+ *      unserved     404 ROUTE_NOT_FOUND / ROUTE_NOT_MAPPED: no capability at this path
+ *      priced       402: the route is priced (x402). Priced is not proof of served.
+ *      auth         401 / 403: an auth or scope rule exists for the route
+ *      unreachable  no HTTP answer (DNS, TLS, connection, timeout) or a 5xx: says nothing
+ *      other        anything else (400, 405, 200)
  *    The gateway also answers ROUTE_NOT_FOUND to an UNAUTHENTICATED call on some routes it does
  *    serve (measured: GET /v1/inference/models is 404 without a key and 200 with one), so an
  *    unauthenticated `unserved` is not conclusive. With --key-env NAME, every GET route is probed
@@ -23,9 +27,11 @@
  *      past-route-check  some route was priced, answered auth, or anything but a route 404
  *      unserved          every route is gated or unserved, and a GET confirmed it with a key
  *      unserved?         every route is gated or unserved, but only without a key: inconclusive
+ *      unreachable?      no route got past the route check, and some got no usable answer
  *    A module that measures `unserved` should be `planned` in .wave/repo.json. `--check` exits 1
  *    when a module marked `lib` or `ga` measures `unserved`, and names (without failing)
- *    `sdk-surface` modules that measure `unserved`. It never acts on `unserved?`.
+ *    `sdk-surface` modules that measure `unserved`. It never acts on `unserved?`. When any route
+ *    was unreachable it exits 2 (inconclusive) instead of 0, so an outage never reads as a pass.
  *
  * The SDK is loaded from WAVE_SDK_ENTRY when set, else from this checkout's dist/.
  * WAVE_SWEEP_BASE_URL overrides the gateway (default https://api.wave.online).
@@ -115,12 +121,14 @@ globalThis.fetch = realFetch;
 // ---------------------------------------------------------------- 2. probe
 const placeholder = (path) => path.replace(/\/(id_[abc]|x|route-sweep-placeholder)(?=\/|$)/g, "/sweep_x");
 const unique = [...new Set(methods.flatMap((m) => m.routes).filter((r) => !r.startsWith("WS ")))];
+/** A probe with no answer in this long counts as unreachable, not as a route verdict. */
+const PROBE_TIMEOUT_MS = 20_000;
 const verdicts = new Map();
 async function probe(route, withKey) {
   const [method, path] = route.split(" ");
   const headers = { accept: "application/json", "user-agent": "wave-sdk-route-sweep" };
   if (withKey) headers.authorization = `Bearer ${key}`;
-  const init = { method, headers, redirect: "manual" };
+  const init = { method, headers, redirect: "manual", signal: AbortSignal.timeout(PROBE_TIMEOUT_MS) };
   if (["POST", "PUT", "PATCH"].includes(method)) {
     init.body = "{}";
     headers["content-type"] = "application/json";
@@ -140,13 +148,40 @@ async function probe(route, withKey) {
   }
 }
 const classify = ({ status, code }) =>
-  status === 404 && /^ROUTE_NOT_(FOUND|MAPPED)$/.test(code)
-    ? "unserved"
-    : status === 402
-      ? "priced"
-      : status === 401 || status === 403
-        ? "auth"
-        : "other";
+  status === 0 || status >= 500
+    ? "unreachable"
+    : status === 404 && /^ROUTE_NOT_(FOUND|MAPPED)$/.test(code)
+      ? "unserved"
+      : status === 402
+        ? "priced"
+        : status === 401 || status === 403
+          ? "auth"
+          : "other";
+
+// Known-served controls: both must answer 200 with their marker before any verdict counts.
+const CONTROLS = [
+  ["/v1/network/surface", (b) => typeof b?.product === "string" && b.product.length > 0],
+  ["/v1/x402/facilitator/supported", (b) => Array.isArray(b?.schemes) || Array.isArray(b?.supportedNetworks)],
+];
+for (const [path, marker] of CONTROLS) {
+  let ok = false;
+  let status = 0;
+  try {
+    const res = await fetch(base + path, {
+      headers: { accept: "application/json", "user-agent": "wave-sdk-route-sweep" },
+      signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
+    });
+    status = res.status;
+    ok = res.status === 200 && marker(await res.json().catch(() => null));
+  } catch {
+    /* no HTTP answer: status stays 0 */
+  }
+  if (!ok) {
+    console.error(`control GET ${path} -> ${status || "no answer"}: the gateway is not answering, so no route verdict counts`);
+    process.exit(2);
+  }
+}
+
 for (let i = 0; i < unique.length; i += 6) {
   await Promise.all(
     unique.slice(i, i + 6).map(async (route) => {
@@ -174,6 +209,7 @@ for (const m of methods) {
     priced: 0,
     auth: 0,
     other: 0,
+    unreachable: 0,
     ws: 0,
     keyedUnserved: 0,
   };
@@ -194,7 +230,15 @@ let drift = 0;
 const rows = [...modules.values()].map((e) => {
   const reached = e.priced + e.auth + e.other + e.ws;
   const measured =
-    reached > 0 ? "past-route-check" : e.keyedUnserved > 0 ? "unserved" : e.unserved + e.gated > 0 ? "unserved?" : "no-route";
+    reached > 0
+      ? "past-route-check"
+      : e.unreachable > 0
+        ? "unreachable?"
+        : e.keyedUnserved > 0
+          ? "unserved"
+          : e.unserved + e.gated > 0
+            ? "unserved?"
+            : "no-route";
   const status = declared.get(e.module) ?? "-";
   let note = "";
   if (measured === "unserved" && (status === "lib" || status === "ga")) {
@@ -204,13 +248,18 @@ const rows = [...modules.values()].map((e) => {
   return { ...e, measured, status, note };
 });
 console.log(`gateway ${base}${key ? ` (GET routes probed with ${keyEnv}, others without a key)` : " (no key: unserved results are inconclusive)"}`);
-console.log("module".padEnd(15), "status".padEnd(12), "measured".padEnd(17), "gated unserved priced auth other ws  note");
+console.log(
+  "module".padEnd(15),
+  "status".padEnd(12),
+  "measured".padEnd(17),
+  "gated unserved priced auth other unreach ws  note",
+);
 for (const r of rows.sort((a, b) => a.module.localeCompare(b.module))) {
   console.log(
     r.module.padEnd(15),
     r.status.padEnd(12),
     r.measured.padEnd(17),
-    [r.gated, r.unserved, r.priced, r.auth, r.other, r.ws].map((n) => String(n).padStart(5)).join(""),
+    [r.gated, r.unserved, r.priced, r.auth, r.other, r.unreachable, r.ws].map((n) => String(n).padStart(5)).join(""),
     "",
     r.note,
   );
@@ -219,5 +268,11 @@ if (jsonOut) {
   const routes = Object.fromEntries([...verdicts].map(([route, v]) => [route, v]));
   writeFileSync(jsonOut, JSON.stringify({ base, authenticatedGets: Boolean(key), modules: rows, methods, routes }, null, 1));
 }
-console.log(`\n${unique.length} routes probed, ${rows.length} modules, ${drift} drift`);
-process.exit(check && drift > 0 ? 1 : 0);
+const unreachable = [...verdicts.values()].filter((v) => v.kind === "unreachable").length;
+console.log(`\n${unique.length} routes probed, ${rows.length} modules, ${drift} drift, ${unreachable} unreachable`);
+if (check && drift > 0) process.exit(1);
+if (check && unreachable > 0) {
+  console.error(`${unreachable} route(s) got no usable answer (network error or 5xx): the check is inconclusive`);
+  process.exit(2);
+}
+process.exit(0);
