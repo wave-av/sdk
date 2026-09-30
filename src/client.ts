@@ -7,6 +7,7 @@
 import { EventEmitter } from 'eventemitter3';
 import type { TelemetryConfig } from './telemetry';
 import { initTelemetry } from './telemetry';
+import { parseErrorBody } from './client-errors';
 import type {
   WaveClientConfig,
   RequestOptions,
@@ -450,24 +451,15 @@ export class WaveClient extends EventEmitter<WaveClientEvents> {
     const statusCode = response.status;
     const requestId = response.headers.get('x-request-id') || undefined;
 
-    let code = `HTTP_${statusCode}`;
-    let message = response.statusText || `Request failed with status ${statusCode}`;
-    let details: Record<string, unknown> | undefined;
-    let bodyRequestId: string | undefined;
-
+    let body: unknown;
     try {
-      const body = (await response.json()) as Partial<WaveAPIErrorResponse>;
-      if (body && typeof body === 'object' && body.error) {
-        code = body.error.code || code;
-        message = body.error.message || message;
-        details = body.error.details;
-      }
-      bodyRequestId = body?.request_id;
+      body = await response.json();
     } catch {
       // Non-JSON or empty body — keep status-derived defaults.
     }
 
-    return new WaveError(message, code, statusCode, requestId ?? bodyRequestId, details);
+    const parsed = parseErrorBody(body, statusCode, response.statusText);
+    return new WaveError(parsed.message, parsed.code, statusCode, requestId ?? parsed.requestId, parsed.details);
   }
 
   /**
