@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
-import { cliOptionsFromEnv, DEFAULT_API_BASE_URL, DEFAULT_RUNTIME_URL, redact, runWaveCli } from "../cli";
+import { cliOptionsFromEnv, DEFAULT_API_BASE_URL, DEFAULT_RUNTIME_URL, insecureDoor, redact, runWaveCli } from "../cli";
 
 describe("src/cli.ts stays a pure library module (no bin-entry side effects)", () => {
   // cli.ts is re-exported from src/index.ts, so it is built to BOTH cjs and esm and its compiled
@@ -164,6 +164,56 @@ describe("wave CLI", () => {
   it("stream without a prompt returns usage + exit 2", async () => {
     const r = await runWaveCli(["stream"], opts);
     expect(r.code).toBe(2);
+  });
+
+  it("never sends the key over cleartext http to a non-loopback door (a WAVE_RUNTIME_URL typo)", async () => {
+    for (const argv of [["models"], ["complete", "--model", "m", "hi"], ["stream", "--model", "m", "hi"]]) {
+      const { calls, fetchImpl } = stubFetch(() => json({ data: [{ id: "m" }] }));
+      const r = await runWaveCli(argv, { ...opts, baseUrl: "http://api.wave.online/v1/inference", fetchImpl });
+      expect(r.code).toBe(2);
+      expect(r.err).toBe(`wave-sdk ${argv[0]}: refusing to send WAVE_API_KEY to http://api.wave.online (use https://)\n`);
+      expect(r.err).not.toContain(TOKEN);
+      expect(calls).toHaveLength(0);
+    }
+  });
+
+  it("transcripts refuses a cleartext WAVE_BASE_URL before building a client", async () => {
+    const r = await runWaveCli(["transcripts", "list", "org_1"], { ...opts, apiBaseUrl: "http://api.wave.online" });
+    expect(r.code).toBe(2);
+    expect(r.err).toMatch(/refusing to send WAVE_API_KEY to http:\/\/api\.wave\.online/);
+  });
+
+  it("plain http to this machine is allowed with a key (local development door)", async () => {
+    const { calls, fetchImpl } = stubFetch(() => json({ data: [{ id: "local-model" }] }));
+    const r = await runWaveCli(["models"], { ...opts, baseUrl: "http://localhost:4000/v1", fetchImpl });
+    expect(r).toEqual({ code: 0, out: "local-model\n" });
+    expect(calls[0].url).toBe("http://localhost:4000/v1/models");
+  });
+
+  it("an http door with no key is not refused: there is no credential to leak", async () => {
+    const { calls, fetchImpl } = stubFetch(() => json({ data: [{ id: "open-model" }] }));
+    const r = await runWaveCli(["models"], { baseUrl: "http://runtime.example/v1", fetchImpl });
+    expect(r).toEqual({ code: 0, out: "open-model\n" });
+    expect(calls).toHaveLength(1);
+  });
+});
+
+describe("insecureDoor (where the CLI may send WAVE_API_KEY)", () => {
+  it("allows https anywhere and http only to loopback", () => {
+    expect(insecureDoor("https://api.wave.online/v1/inference")).toBeUndefined();
+    expect(insecureDoor("http://localhost:1/v1")).toBeUndefined();
+    expect(insecureDoor("http://127.0.0.1:8787")).toBeUndefined();
+    expect(insecureDoor("http://[::1]:8787/v1")).toBeUndefined();
+  });
+
+  it("refuses cleartext http off this machine, other schemes and non-URLs, without echoing userinfo", () => {
+    expect(insecureDoor("http://api.wave.online")).toMatch(/^refusing to send WAVE_API_KEY to http:\/\/api\.wave\.online /);
+    expect(insecureDoor("http://169.254.169.254/latest")).toMatch(/http:\/\/169\.254\.169\.254/);
+    expect(insecureDoor("http://localhost.evil.example/v1")).toMatch(/^refusing/);
+    expect(insecureDoor("ws://api.wave.online")).toMatch(/^refusing/);
+    expect(insecureDoor("file:///etc/passwd")).toMatch(/^refusing/);
+    expect(insecureDoor("http://user:pw@api.wave.online")).not.toContain("pw");
+    expect(insecureDoor("not a url")).toBe("not a URL: not a url");
   });
 });
 

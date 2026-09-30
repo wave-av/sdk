@@ -36,6 +36,12 @@ import type {
 } from './clips-types';
 export type * from './clips-types';
 
+/**
+ * How long `create()` waits: the engine renders the clip inside the request and answers 201 only
+ * once it exists, so a render can outlive the 30s client default. Matches captions and transcribe.
+ */
+const CREATE_TIMEOUT_MS = 300_000;
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -163,12 +169,16 @@ export class ClipsAPI {
    * Produce a clip. `POST /v1/clips`, answered 201 once the clip exists.
    *
    * Billed per output minute, so it is sent once and never retried: a timeout after the engine
-   * produced the clip must not produce (and bill) it again.
+   * produced the clip must not produce (and bill) it again. The render runs inside the request,
+   * so it waits up to 5 minutes rather than the client's default timeout.
    *
    * Requires: clips:write permission
    */
   async create(request: CreateClipRequest): Promise<ClipCreateResult> {
-    return this.client.post<ClipCreateResult>(this.basePath, request, { noRetry: true });
+    return this.client.post<ClipCreateResult>(this.basePath, request, {
+      timeout: CREATE_TIMEOUT_MS,
+      noRetry: true,
+    });
   }
 
   /**

@@ -435,4 +435,6 @@ wave-sdk complete --model qwen2.5:3b "Say hello in five words"
 
 The CLI is a thin arg parser over the same `RuntimeClient` the SDK exports, so every
 command maps 1:1 to the API surface. A failed call prints one line to stderr and exits 1;
-the API key is redacted from anything it prints.
+the API key is redacted from anything it prints. The key is sent only over `https://`, or
+over plain `http://` to `localhost`, `127.0.0.1` or `[::1]`; any other `http://` value in
+`WAVE_RUNTIME_URL` or `WAVE_BASE_URL` exits 2 before a request is made.

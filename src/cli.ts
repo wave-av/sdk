@@ -100,6 +100,26 @@ export function redact(message: string, token?: string): string {
   return redactSecret(message, token);
 }
 
+/** Hosts where plain http never leaves this machine (URL.hostname keeps IPv6 brackets). */
+const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
+
+/**
+ * Why the key must not be sent to `url`, or undefined when it may be. The key goes only over
+ * https, or over plain http to this machine: a WAVE_RUNTIME_URL / WAVE_BASE_URL typo such as
+ * `http://api.wave.online` would otherwise put the Bearer token on the wire in cleartext.
+ */
+export function insecureDoor(url: string): string | undefined {
+  let u: URL;
+  try {
+    u = new URL(url);
+  } catch {
+    return `not a URL: ${oneLine(url)}`;
+  }
+  if (u.protocol === "https:") return undefined;
+  if (u.protocol === "http:" && LOOPBACK_HOSTS.has(u.hostname)) return undefined;
+  return `refusing to send WAVE_API_KEY to ${oneLine(`${u.protocol}//${u.host}`)} (use https://)`;
+}
+
 async function resolveModel(client: RuntimeClient, explicit?: string): Promise<string> {
   if (explicit) return explicit;
   const models = await client.models();
@@ -117,6 +137,11 @@ async function dispatch(argv: string[], opts: WaveCliOptions): Promise<WaveCliRe
     out: "",
     err: `wave-sdk ${what}: an API key is required (set WAVE_API_KEY)\n`,
   });
+  /** Refuse, before any network call, to send the key where it would travel in cleartext. */
+  const refuseDoor = (what: string, url: string): WaveCliResult | undefined => {
+    const why = opts.token ? insecureDoor(url) : undefined;
+    return why ? { code: 2, out: "", err: `wave-sdk ${what}: ${redact(why, opts.token)}\n` } : undefined;
+  };
 
   switch (cmd) {
     case "help":
@@ -127,6 +152,8 @@ async function dispatch(argv: string[], opts: WaveCliOptions): Promise<WaveCliRe
     case "models": {
       // The gateway door needs the key even to list models; another door (WAVE_RUNTIME_URL) may not.
       if (!opts.token && opts.baseUrl === DEFAULT_RUNTIME_URL) return needKey("models");
+      const refused = refuseDoor("models", opts.baseUrl);
+      if (refused) return refused;
       const models = await client.models();
       return { code: 0, out: models.join("\n") + (models.length ? "\n" : "") };
     }
@@ -135,6 +162,8 @@ async function dispatch(argv: string[], opts: WaveCliOptions): Promise<WaveCliRe
       const prompt = rest.join(" ");
       if (!prompt) return { code: 2, out: USAGE };
       if (!opts.token) return needKey("complete");
+      const refused = refuseDoor("complete", opts.baseUrl);
+      if (refused) return refused;
       const model = await resolveModel(client, modelFlag ?? opts.model);
       const res = await client.complete({ model, messages: [{ role: "user", content: prompt }] });
       return { code: 0, out: (res.choices[0]?.message?.content ?? "") + "\n" };
@@ -144,6 +173,8 @@ async function dispatch(argv: string[], opts: WaveCliOptions): Promise<WaveCliRe
       const prompt = rest.join(" ");
       if (!prompt) return { code: 2, out: USAGE };
       if (!opts.token) return needKey("stream");
+      const refused = refuseDoor("stream", opts.baseUrl);
+      if (refused) return refused;
       const model = await resolveModel(client, modelFlag ?? opts.model);
       let out = "";
       for await (const chunk of client.stream({ model, messages: [{ role: "user", content: prompt }] })) {
@@ -169,9 +200,10 @@ async function dispatch(argv: string[], opts: WaveCliOptions): Promise<WaveCliRe
     case "transcripts": {
       const [sub, org, room, session] = rest;
       if (!opts.token) return needKey("transcripts");
-      const api = new TranscriptAPI(
-        new WaveClient({ apiKey: opts.token, baseUrl: opts.apiBaseUrl || DEFAULT_API_BASE_URL }),
-      );
+      const apiBaseUrl = opts.apiBaseUrl || DEFAULT_API_BASE_URL;
+      const refused = refuseDoor("transcripts", apiBaseUrl);
+      if (refused) return refused;
+      const api = new TranscriptAPI(new WaveClient({ apiKey: opts.token, baseUrl: apiBaseUrl }));
       if (sub === "list" && org) {
         const res = await api.list(org);
         return { code: 0, out: JSON.stringify(res, null, 2) + "\n" };

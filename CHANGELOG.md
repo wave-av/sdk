@@ -45,6 +45,8 @@ that introduced this entry lists the request ids.
   `WAVE_API_KEY`, `WAVE_MODEL`, `WAVE_RUNTIME_URL` and `WAVE_BASE_URL`, defaults to the
   gateway's `/v1/inference` door, prints one redacted line and exits 1 on failure, and answers
   `--help`. The README documented a `wave` command; the bin has been `wave-sdk` since 2.1.3.
+  The key goes only over `https://`, or plain `http://` to loopback: a `WAVE_RUNTIME_URL` or
+  `WAVE_BASE_URL` such as `http://api.wave.online` exits 2 before any request.
 - `voice.synthesize()` sends `voice_id` as `voiceId`, the field the voice edge reads, so a
   chosen voice is no longer silently replaced by the default one.
 - `wave.meter` types match the gateway's v0 contract: the ledger is one window
@@ -69,6 +71,8 @@ that introduced this entry lists the request ids.
     `Clip` whose `id` was undefined; `clips.detect({ videoId, ... })` (`POST /v1/clips/detect`)
     replaces `detectHighlights()`, which posted to a path nothing serves; `waitForReady()`
     recognises the engine's `completed` status instead of polling to its 5-minute timeout.
+    The engine renders inside the request, so `create()` waits up to 5 minutes instead of
+    the client's 30-second default, and is never retried.
   - `voice.listVoices()` returns `Voice[]` from the edge's `{ voices }` body, and
     `voice.cloneVoice({ name, audioFiles, ... })` sends the fields `POST /v1/voice/clone` reads.
 - **Methods whose route no backend serves fail fast and typed.** On those four modules, every
@@ -87,7 +91,9 @@ that introduced this entry lists the request ids.
 - `scripts/route-sweep.mjs`: extracts every route each SDK method sends, probes each one on the
   gateway (GETs with a key when `--key-env` is given, everything else without one), and compares
   each module's measured state with its status in `.wave/repo.json`. `--check` fails when a
-  module marked `lib` or `ga` measures unserved.
+  module marked `lib` or `ga` measures unserved. Two known-served controls must answer 200
+  with their content marker first, and a probe with no answer or a 5xx counts as
+  `unreachable`, so an outage exits 2 (inconclusive) instead of passing.
 - `scripts/smoke-live.mjs --media` runs the README transcription and captions flows end to end
   on a 3-second public speech sample, and the smoke checks the clips, captions, transcribe and
   voice list reads.

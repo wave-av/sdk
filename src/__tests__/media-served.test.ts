@@ -98,6 +98,30 @@ describe("clips (wave-clip-engine)", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it("create() outlives the 30s client default: the engine renders inside the request", async () => {
+    vi.useFakeTimers();
+    try {
+      // A render that answers 201 after 90s. The stub honours the abort signal, as fetch does.
+      const fetchMock = vi.fn(
+        (_url: string, init: RequestInit) =>
+          new Promise<Response>((resolve, reject) => {
+            const t = setTimeout(() => resolve(json({ ok: true, clipId: "clip_slow", assets: [] }, 201)), 90_000);
+            init.signal?.addEventListener("abort", () => {
+              clearTimeout(t);
+              reject(new DOMException("The operation was aborted.", "AbortError"));
+            });
+          }),
+      );
+      vi.stubGlobal("fetch", fetchMock);
+      const pending = new ClipsAPI(client()).create({ source: "rec_123", in: "0s", duration: "60s" });
+      await vi.advanceTimersByTimeAsync(90_000);
+      await expect(pending).resolves.toMatchObject({ clipId: "clip_slow" });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("get(), update() and remove() address /v1/clips/{id}, with the id encoded", async () => {
     const { sent } = stubFetch(json(storedClip), json(storedClip), new Response(null, { status: 204 }));
     const clips = new ClipsAPI(client());
