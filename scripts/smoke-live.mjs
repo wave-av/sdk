@@ -35,7 +35,7 @@ if (!apiKey) {
 const redact = (s) => String(s).split(apiKey).join("[redacted]");
 const entry = process.env.WAVE_SDK_ENTRY ?? new URL("../dist/index.mjs", import.meta.url).href;
 const sdk = await import(entry);
-const { Wave, WaveError, PaymentRequiredError, RouteNotServedError } = sdk;
+const { Wave, PaymentRequiredError, RouteNotServedError } = sdk;
 
 // Record every HTTP exchange so each check can cite the gateway's request id.
 const exchanges = [];
@@ -184,7 +184,8 @@ await check(
   (v, e) => {
     if (!e) return isObj(v) ? true : "expected a list body";
     if (e instanceof PaymentRequiredError) return e.code !== "HTTP_402" ? true : "402 lost the gateway code";
-    return e instanceof WaveError && e.code !== `HTTP_${e.statusCode}` ? true : `untyped error ${e?.code}`;
+    // Anything else (404 not served, 401/403 access) means the documented read did not work.
+    return `unexpected ${e?.name}: status=${e?.statusCode} code=${e?.code}`;
   },
 );
 

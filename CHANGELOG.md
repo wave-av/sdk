@@ -38,7 +38,8 @@ that introduced this entry lists the request ids.
   now reads the nested, flat and x402 shapes. New subclasses: `PaymentRequiredError` (402,
   with the x402 `accepts[]` when present) and `RouteNotServedError` (404 `ROUTE_NOT_FOUND` /
   `ROUTE_NOT_MAPPED`). `required_scope`, `available_scopes`, `suggestions`, `next_action` and
-  `doc_url` land in `details` (an allowlist; other body fields are dropped).
+  `doc_url` land in `details` beside the envelope's own `error.details`, which passes through
+  as before. From the rest of the body only that allowlist is copied.
 - **The `wave-sdk` CLI works.** It never read an API key, called `https://api.wave.online/models`
   (no `/v1`, so 404), and crashed with a stack trace on any failure. It now reads
   `WAVE_API_KEY`, `WAVE_MODEL`, `WAVE_RUNTIME_URL` and `WAVE_BASE_URL`, defaults to the

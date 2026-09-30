@@ -75,8 +75,20 @@ export class RuntimeError extends Error {
  * Build a RuntimeError from a non-2xx answer. A JSON error envelope contributes its code and message;
  * any other body contributes its first 120 characters.
  */
-async function upstreamError(op: string, res: Response): Promise<RuntimeError> {
-  const text = await res.text().catch(() => "");
+/**
+ * Shortest token redactSecret() rewrites. Real WAVE keys are far longer, and a one- or two-character
+ * value is not a credential: rewriting it would corrupt every message that contains those characters.
+ */
+export const MIN_REDACT_LENGTH = 8;
+
+/** Replace every occurrence of `token` in `text` with `[redacted]`. */
+export function redactSecret(text: string, token?: string): string {
+  return token && token.length >= MIN_REDACT_LENGTH ? text.split(token).join("[redacted]") : text;
+}
+
+async function upstreamError(op: string, res: Response, token?: string): Promise<RuntimeError> {
+  // The upstream body becomes part of the error message; never let it carry the caller's token back.
+  const text = redactSecret(await res.text().catch(() => ""), token);
   let code: string | undefined;
   let detail: string;
   try {
@@ -158,7 +170,7 @@ export class RuntimeClient {
   /** List the models the door serves. Sends the token when one is set (the gateway requires it). */
   async models(): Promise<string[]> {
     const res = await this.fetchImpl(`${this.baseUrl}/models`, { headers: this.headers() });
-    if (!res.ok) throw await upstreamError("models", res);
+    if (!res.ok) throw await upstreamError("models", res, this.token);
     const body = (await res.json()) as { data?: { id: string }[] };
     return (body.data ?? []).map((m) => m.id);
   }
@@ -170,7 +182,7 @@ export class RuntimeClient {
       headers: this.headers(),
       body: JSON.stringify({ stream: false, ...req }),
     });
-    if (!res.ok) throw await upstreamError("complete", res);
+    if (!res.ok) throw await upstreamError("complete", res, this.token);
     if ((res.headers.get("content-type") ?? "").includes("text/event-stream")) {
       return completionFromSse(await res.text());
     }
@@ -182,9 +194,15 @@ export class RuntimeClient {
     const res = await this.fetchImpl(`${this.baseUrl}/chat/completions`, {
       method: "POST",
       headers: this.headers({ accept: "text/event-stream" }),
-      body: JSON.stringify({ stream: true, stream_options: { include_usage: true }, ...req }),
+      // include_usage defaults to true even when the caller passes other stream_options: the
+      // gateway rejects a stream without it (usage_accounting_required). An explicit false is kept.
+      body: JSON.stringify({
+        stream: true,
+        ...req,
+        stream_options: { include_usage: true, ...req.stream_options },
+      }),
     });
-    if (!res.ok) throw await upstreamError("stream", res);
+    if (!res.ok) throw await upstreamError("stream", res, this.token);
     if (!res.body) throw new RuntimeError(`stream: upstream ${res.status} sent no body`, res.status);
 
     const decoder = new TextDecoder();

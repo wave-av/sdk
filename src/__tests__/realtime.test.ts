@@ -118,6 +118,56 @@ describe("RealtimeAPI.connect", () => {
     ch.close();
   });
 
+  it("keeps retrying with growing backoff after a failed reconnect, and recovers when the factory does", () => {
+    vi.useFakeTimers();
+    let n = 0;
+    const sockets: FakeSocket[] = [];
+    const factory: RealtimeSocketFactory = () => {
+      n++;
+      // First open works, the next two reconnects fail, the fourth attempt succeeds.
+      if (n === 2 || n === 3) throw new Error(`transient ${n}`);
+      const s = new FakeSocket();
+      sockets.push(s);
+      return s as unknown as WebSocket;
+    };
+    const ch = new RealtimeAPI(client(), { webSocketFactory: factory }).connect("room:x");
+    const onError = vi.fn();
+    ch.on("error", onError);
+    sockets[0].fire("close", { code: 1006, reason: "" });
+    vi.advanceTimersByTime(500); // attempt 2 (500ms) fails
+    expect(n).toBe(2);
+    vi.advanceTimersByTime(999);
+    expect(n).toBe(2); // backoff grew to 1000ms, not yet due
+    vi.advanceTimersByTime(1); // attempt 3 (1000ms) fails
+    expect(n).toBe(3);
+    vi.advanceTimersByTime(2000); // attempt 4 (2000ms) succeeds
+    expect(n).toBe(4);
+    expect(sockets).toHaveLength(2);
+    expect(onError).toHaveBeenCalledTimes(2);
+    ch.close();
+    vi.advanceTimersByTime(60_000);
+    expect(n).toBe(4); // close() stops the loop
+  });
+
+  it("close() during a failing reconnect loop stops further attempts", () => {
+    vi.useFakeTimers();
+    let n = 0;
+    const factory: RealtimeSocketFactory = () => {
+      if (n++ > 0) throw new Error("down");
+      return new FakeSocket() as unknown as WebSocket;
+    };
+    const ch = new RealtimeAPI(client(), { webSocketFactory: factory }).connect("room:x");
+    ch.on("error", () => {});
+    const first = n;
+    // Drive the first socket's close through the channel's own listener.
+    (ch as unknown as { ws: FakeSocket }).ws.fire("close", { code: 1006, reason: "" });
+    vi.advanceTimersByTime(500);
+    expect(n).toBe(first + 1);
+    ch.close();
+    vi.advanceTimersByTime(60_000);
+    expect(n).toBe(first + 1);
+  });
+
   it("the default factory passes the headers to the runtime's WebSocket init dict", () => {
     const ctor = vi.fn();
     class StubWebSocket extends FakeSocket {

@@ -102,6 +102,20 @@ describe("parseErrorBody", () => {
     expect(p.details).not.toHaveProperty("internal_trace");
   });
 
+  it("passes the envelope's own error.details through whole, as before, alongside allowlisted siblings", () => {
+    const p = parseErrorBody({
+      error: {
+        code: "VALIDATION_ERROR",
+        message: "bad",
+        details: { field: "title", error: "too_long" },
+        doc_url: "https://d",
+        internal: 1,
+      },
+    });
+    // error.details.error is data the server chose to send; it survives.
+    expect(p.details).toEqual({ field: "title", error: "too_long", doc_url: "https://d" });
+  });
+
   it("reads a request_id nested inside error", () => {
     expect(parseErrorBody(notFound).requestId).toBe("rid-404");
   });

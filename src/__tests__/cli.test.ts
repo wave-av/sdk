@@ -102,6 +102,16 @@ describe("wave CLI", () => {
     expect(body.messages).toEqual([{ role: "user", content: "say ok" }]);
   });
 
+  it("--model with no value is a usage error, never a silent fallback to another model", async () => {
+    for (const argv of [["complete", "hi", "--model"], ["complete", "--model", "--x", "hi"], ["stream", "-m"], ["complete", "--model=", "hi"]]) {
+      const { calls, fetchImpl } = stubFetch(() => json({ data: [{ id: "other-model" }] }));
+      const r = await runWaveCli(argv, { ...opts, fetchImpl });
+      expect(r.code).toBe(2);
+      expect(r.err).toMatch(/--model needs a value/);
+      expect(calls).toHaveLength(0);
+    }
+  });
+
   it("complete without --model or WAVE_MODEL uses the first model the door lists", async () => {
     const { calls, fetchImpl } = stubFetch((url) =>
       url.endsWith("/models")

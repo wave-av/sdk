@@ -60,6 +60,22 @@ describe("RuntimeClient", () => {
     expect(err.message).toBe("models: upstream 404 (ROUTE_NOT_FOUND: No WAVE capability is served at this path.)");
   });
 
+  it("a RuntimeError never carries the client's token, even when the upstream echoes it", async () => {
+    const token = "wave_live_ECHOED_SECRET_1";
+    const echo = vi.fn(async () => new Response(`invalid key ${token}`, { status: 401 }));
+    const c = new RuntimeClient({ baseUrl: "https://api.wave.online/v1/inference", token, fetchImpl: echo });
+    const err = (await c.complete({ messages: [{ role: "user", content: "hi" }] }).catch((e: unknown) => e)) as RuntimeError;
+    expect(err).toBeInstanceOf(RuntimeError);
+    expect(err.message).not.toContain(token);
+    expect(err.message).toContain("[redacted]");
+
+    const jsonEcho = vi.fn(async () => jsonResponse({ error: { code: "AUTH_INVALID_KEY", message: `bad key ${token}` } }, 401));
+    const c2 = new RuntimeClient({ baseUrl: "https://api.wave.online/v1/inference", token, fetchImpl: jsonEcho });
+    const err2 = (await c2.models().catch((e: unknown) => e)) as RuntimeError;
+    expect(err2.code).toBe("AUTH_INVALID_KEY");
+    expect(err2.message).not.toContain(token);
+  });
+
   it("complete() folds an SSE answer into one completion when the door streams despite stream:false", async () => {
     // Observed live on the runtime door: a `stream: false` request answered `text/event-stream`.
     const fetchMock = vi.fn(async () =>
@@ -86,6 +102,21 @@ describe("RuntimeClient", () => {
     const body = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string);
     expect(body.stream).toBe(true);
     expect(body.stream_options).toEqual({ include_usage: true });
+  });
+
+  it("stream() keeps include_usage when the caller passes other stream_options, and honours an explicit false", async () => {
+    const fetchMock = vi.fn(async () => sseResponse(["data: [DONE]\n\n"]));
+    const c = new RuntimeClient({ baseUrl: "https://api.wave.online/v1/inference", token: "t", fetchImpl: fetchMock });
+    const drain = async (req: Parameters<typeof c.stream>[0]) => {
+      for await (const chunk of c.stream(req)) void chunk;
+    };
+    const msgs = [{ role: "user" as const, content: "hi" }];
+    await drain({ model: "m", messages: msgs, stream_options: {} });
+    await drain({ model: "m", messages: msgs, stream_options: { include_usage: false } });
+    const sent = fetchMock.mock.calls.map((call) => JSON.parse((call[1] as RequestInit).body as string));
+    expect(sent[0].stream_options).toEqual({ include_usage: true });
+    expect(sent[1].stream_options).toEqual({ include_usage: false });
+    expect(sent.every((b) => b.stream === true)).toBe(true);
   });
 
   it("streams SSE data chunks until [DONE]", async () => {

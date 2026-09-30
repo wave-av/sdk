@@ -20,7 +20,7 @@
  * explicitly with `RUN_PACK_SMOKE=1 npx vitest run src/__tests__/pack-esm-smoke.test.ts`.
  */
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it, beforeAll, afterAll } from "vitest";
@@ -73,6 +73,27 @@ describe.skipIf(!RUN)("fresh install of the packed tarball (ESM entry-guard regr
     );
     const out = execFileSync("node", [probePath], { cwd: installDir, encoding: "utf8" });
     expect(out).toContain("PROBE_OK");
+  });
+
+  it("every package.json exports subpath loads from the installed tarball, via ESM and via CJS", () => {
+    const pkg = JSON.parse(readFileSync(join(pkgRoot, "package.json"), "utf8")) as {
+      exports: Record<string, unknown>;
+    };
+    const specifiers = Object.keys(pkg.exports).map((k) => (k === "." ? "@wave-av/sdk" : `@wave-av/sdk/${k.slice(2)}`));
+    expect(specifiers.length).toBeGreaterThan(1);
+    const list = JSON.stringify(specifiers);
+    writeFileSync(
+      join(installDir, "probe-all.mjs"),
+      `for (const s of ${list}) { const m = await import(s); if (!Object.keys(m).length) throw new Error("empty " + s); }\n` +
+        'process.stdout.write("ESM_ALL_OK\\n");\n',
+    );
+    writeFileSync(
+      join(installDir, "probe-all.cjs"),
+      `for (const s of ${list}) { const m = require(s); if (!Object.keys(m).length) throw new Error("empty " + s); }\n` +
+        'process.stdout.write("CJS_ALL_OK\\n");\n',
+    );
+    expect(execFileSync("node", ["probe-all.mjs"], { cwd: installDir, encoding: "utf8" })).toContain("ESM_ALL_OK");
+    expect(execFileSync("node", ["probe-all.cjs"], { cwd: installDir, encoding: "utf8" })).toContain("CJS_ALL_OK");
   });
 
   it("the installed bin runs (no ReferenceError, no import-time crash)", () => {

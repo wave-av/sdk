@@ -14,7 +14,7 @@
  * CHANGELOG for the incident. Keep the bin-only side effect confined to src/bin.ts, which is never
  * imported by anything else and therefore never gets bundled into a shared chunk.
  */
-import { RuntimeClient } from "./runtime";
+import { RuntimeClient, redactSecret } from "./runtime";
 import { listProducts, ProductClient } from "./products";
 import { TranscriptAPI } from "./transcripts";
 import { WaveClient } from "./client";
@@ -64,32 +64,40 @@ export function cliOptionsFromEnv(env: Record<string, string | undefined>): Wave
   };
 }
 
-/** Split `--model <id>` / `--model=<id>` out of argv. */
-function takeModelFlag(args: string[]): { model?: string; rest: string[] } {
+/**
+ * Split `--model <id>` / `--model=<id>` out of argv. A flag with no value sets `missing`, so the
+ * caller refuses instead of silently falling back to another model.
+ */
+function takeModelFlag(args: string[]): { model?: string; rest: string[]; missing: boolean } {
   const rest: string[] = [];
   let model: string | undefined;
+  let missing = false;
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
     if (a === "--model" || a === "-m") {
-      model = args[++i];
+      const v = args[i + 1];
+      if (v === undefined || v === "" || v.startsWith("-")) {
+        missing = true;
+      } else {
+        model = v;
+        i++;
+      }
     } else if (a.startsWith("--model=")) {
       model = a.slice("--model=".length);
+      if (!model) missing = true;
     } else {
       rest.push(a);
     }
   }
-  return { model, rest };
+  return { model, rest, missing };
 }
 
 /**
- * Shortest token redact() rewrites. Real WAVE keys are far longer; redacting a one- or two-character
- * value would corrupt every message that happens to contain those characters.
+ * Never let a credential reach the terminal, even if an upstream echoes it back. Tokens shorter than
+ * MIN_REDACT_LENGTH are left alone (see redactSecret in ./runtime).
  */
-const MIN_REDACT_LENGTH = 8;
-
-/** Never let a credential reach the terminal, even if an upstream echoes it back. */
 export function redact(message: string, token?: string): string {
-  return token && token.length >= MIN_REDACT_LENGTH ? message.split(token).join("[redacted]") : message;
+  return redactSecret(message, token);
 }
 
 async function resolveModel(client: RuntimeClient, explicit?: string): Promise<string> {
@@ -102,7 +110,8 @@ async function resolveModel(client: RuntimeClient, explicit?: string): Promise<s
 async function dispatch(argv: string[], opts: WaveCliOptions): Promise<WaveCliResult> {
   const client = new RuntimeClient({ baseUrl: opts.baseUrl, token: opts.token, fetchImpl: opts.fetchImpl });
   const [cmd, ...args] = argv;
-  const { model: modelFlag, rest } = takeModelFlag(args);
+  const { model: modelFlag, rest, missing: modelMissing } = takeModelFlag(args);
+  if (modelMissing) return { code: 2, out: USAGE, err: `wave-sdk ${cmd}: --model needs a value\n` };
   const needKey = (what: string): WaveCliResult => ({
     code: 2,
     out: "",

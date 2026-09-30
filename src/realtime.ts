@@ -159,6 +159,9 @@ export class RealtimeChannel extends EventEmitter {
         this.open();
       } catch (err) {
         this.emit('error', err instanceof Error ? err : new Error(String(err)));
+        // No socket was created, so no 'close' event will re-arm reconnection: schedule the next
+        // attempt here, with the backoff still growing, until close() is called.
+        if (!this.closedByUser) this.scheduleReconnect();
       }
     }, delay);
   }

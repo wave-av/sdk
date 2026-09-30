@@ -131,8 +131,11 @@ export class RouteNotServedError extends WaveError {
 const ROUTE_NOT_SERVED_CODES = new Set(['ROUTE_NOT_FOUND', 'ROUTE_NOT_MAPPED', 'ROUTE_NOT_SERVED']);
 
 /**
- * Error-body fields copied into `WaveError.details`. An allowlist on purpose: the SDK surfaces
- * the fields the gateway documents as actionable and drops anything else it may carry.
+ * Error-body fields copied into `WaveError.details`, besides the envelope's own `error.details`
+ * object. An allowlist on purpose: from the rest of the body the SDK surfaces the fields the
+ * gateway documents as actionable and drops anything else it may carry. `error.details` itself
+ * is the envelope's documented details channel (see WaveAPIErrorResponse) and passes through
+ * whole, exactly as it did before these other envelopes were parsed.
  */
 const ERROR_DETAIL_FIELDS = [
   'error',
@@ -155,11 +158,18 @@ function nonEmptyString(v: unknown): string | undefined {
   return typeof v === 'string' && v.length > 0 ? v : undefined;
 }
 
-function pickDetails(source: Record<string, unknown>, into: Record<string, unknown>): void {
+function pickDetails(
+  source: Record<string, unknown>,
+  into: Record<string, unknown>,
+  skip: ReadonlySet<string> = new Set(),
+): void {
   for (const field of ERROR_DETAIL_FIELDS) {
-    if (source[field] !== undefined) into[field] = source[field];
+    if (!skip.has(field) && source[field] !== undefined) into[field] = source[field];
   }
 }
+
+/** In the nested envelope `error` is the envelope itself, so it is never a detail to copy. */
+const NESTED_SKIP: ReadonlySet<string> = new Set(['error']);
 
 /** Parsed form of any gateway error body. */
 export interface ParsedErrorBody {
@@ -186,8 +196,7 @@ export function parseErrorBody(body: unknown): ParsedErrorBody {
     out.message = nonEmptyString(err.message);
     out.requestId = nonEmptyString(err.request_id) ?? nonEmptyString(body.request_id);
     if (isRecord(err.details)) Object.assign(details, err.details);
-    pickDetails(err, details);
-    delete details.error;
+    pickDetails(err, details, NESTED_SKIP);
   } else {
     const isX402 = body.x402Version !== undefined || Array.isArray(body.accepts);
     const errString = nonEmptyString(err);
