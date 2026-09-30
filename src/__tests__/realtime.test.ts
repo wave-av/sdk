@@ -229,6 +229,15 @@ describe("RealtimeAPI REST (through WaveClient)", () => {
     expect(REALTIME_CHANNEL_PATTERN.test("stream:abc_1-2")).toBe(true);
   });
 
+  it("publish() is never retried, even on a retryable 503 with retries enabled (not idempotent)", async () => {
+    const fetchMock = vi.fn(async () => json({ error: { code: "SERVICE_UNAVAILABLE", message: "busy" } }, 503));
+    vi.stubGlobal("fetch", fetchMock);
+    const withRetries = new WaveClient({ apiKey: "wave-test-key", maxRetries: 3 });
+    const err = await new RealtimeAPI(withRetries).publish("c", "note", { n: 1 }).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(WaveError);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("presence() GETs /v1/realtime/channels/{c}/presence", async () => {
     const fetchMock = vi.fn(async () => json({ channel: "c", members: [] }));
     vi.stubGlobal("fetch", fetchMock);

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { RuntimeClient, RuntimeError } from "../runtime";
+import { RuntimeClient, RuntimeError, completionFromSse } from "../runtime";
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
@@ -58,6 +58,40 @@ describe("RuntimeClient", () => {
     expect(err.status).toBe(404);
     expect(err.code).toBe("ROUTE_NOT_FOUND");
     expect(err.message).toBe("models: upstream 404 (ROUTE_NOT_FOUND: No WAVE capability is served at this path.)");
+  });
+
+  it("a RuntimeError carries the gateway's actionable details (required_scope, x402 accepts)", async () => {
+    const fetchMock = vi.fn(async () =>
+      jsonResponse({ error: { code: "SCOPE_INSUFFICIENT", message: "requires scope: dispatch:write", required_scope: "dispatch:write" } }, 403));
+    const c = new RuntimeClient({ baseUrl: "https://api.wave.online/v1/inference", token: "wave-test-token", fetchImpl: fetchMock });
+    const err = (await c.complete({ messages: [{ role: "user", content: "hi" }] }).catch((e: unknown) => e)) as RuntimeError;
+    expect(err.code).toBe("SCOPE_INSUFFICIENT");
+    expect(err.details?.required_scope).toBe("dispatch:write");
+
+    const x402 = vi.fn(async () => jsonResponse({ x402Version: 1, error: "payment required", accepts: [{ scheme: "exact" }] }, 402));
+    const c2 = new RuntimeClient({ baseUrl: "https://api.wave.online/v1/inference", token: "wave-test-token", fetchImpl: x402 });
+    const err2 = (await c2.complete({ messages: [{ role: "user", content: "hi" }] }).catch((e: unknown) => e)) as RuntimeError;
+    expect(err2.code).toBe("PAYMENT_REQUIRED");
+    expect(err2.details?.accepts).toEqual([{ scheme: "exact" }]);
+  });
+
+  it("completionFromSse merges tool-call deltas by index instead of dropping them", () => {
+    const body = [
+      'data: {"id":"c2","model":"m","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":"call_1","type":"function","function":{"name":"get_","arguments":"{\\"ci"}}]}}]}',
+      'data: {"id":"c2","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"name":"weather","arguments":"ty\\":\\"x\\"}"}}]}}]}',
+      'data: {"id":"c2","choices":[{"index":0,"delta":{},"finish_reason":"tool_calls"}]}',
+      "data: [DONE]",
+    ].join("\n");
+    const res = completionFromSse(body);
+    expect(res.choices[0].finish_reason).toBe("tool_calls");
+    expect(res.choices[0].message.content).toBe("");
+    expect(res.choices[0].message.tool_calls).toEqual([
+      { id: "call_1", type: "function", function: { name: "get_weather", arguments: '{"city":"x"}' } },
+    ]);
+  });
+
+  it("completionFromSse refuses a body with no decodable frame rather than returning an empty answer", () => {
+    expect(() => completionFromSse(": keep-alive\n\ndata: not-json\n\ndata: [DONE]\n")).toThrow(RuntimeError);
   });
 
   it("a RuntimeError never carries the client's token, even when the upstream echoes it", async () => {

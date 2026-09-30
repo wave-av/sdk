@@ -81,6 +81,17 @@ describe("wave CLI", () => {
     expect(redact("key wave_live_SECRET123 bad", "wave_live_SECRET123")).toBe("key [redacted] bad");
   });
 
+  it("an upstream message cannot add lines or terminal escapes to the one-line error", async () => {
+    const { fetchImpl } = stubFetch(() =>
+      json({ error: { code: "BAD", message: "line one\nFAKE: injected\r\u001b[2Kcleared" } }, 400));
+    const r = await runWaveCli(["models"], { ...opts, fetchImpl });
+    expect(r.code).toBe(1);
+    expect(r.err?.endsWith("\n")).toBe(true);
+    const line = r.err?.slice(0, -1) ?? "";
+    for (const ch of ["\r", "\n", "\u001b"]) expect(line.includes(ch)).toBe(false);
+    expect(r.err).toContain("line one FAKE: injected [2Kcleared");
+  });
+
   it("the API key never reaches the terminal, even if an upstream echoes it", async () => {
     const secret = "wave_live_SECRET123";
     const { fetchImpl } = stubFetch(() => new Response(`bad key ${secret}`, { status: 401 }));

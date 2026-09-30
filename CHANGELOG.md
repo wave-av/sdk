@@ -73,7 +73,16 @@ that introduced this entry lists the request ids.
 - **Breaking**: `RealtimeAPI.connect()` needs a WebSocket that can send headers (Node 22+, Bun,
   or `webSocketFactory`); a browser must open the socket from a server.
 - `RuntimeClient` sends its token on `models()` too (the gateway door needs it), reports the
-  gateway's error `code`, and `stream()` asks for `stream_options.include_usage`.
+  gateway's error `code` and `details` on `RuntimeError`, redacts its token from error messages,
+  and `stream()` asks for `stream_options.include_usage` (kept when other stream options are
+  passed). When a door answers `text/event-stream` to `stream: false`, tool-call deltas are
+  merged into the completion, and a body with no decodable frame throws instead of returning an
+  empty answer.
+- `inference.complete()` and `realtime.publish()` are not retried: both are non-idempotent (a
+  completion is billed), so a timeout or 5xx after the gateway acted must not repeat the call.
+  Every read keeps the client's retry policy.
+- x402 challenges: the message comes from the gateway's `error_detail.message` when present, and
+  `error_detail` is kept in `details`.
 
 ### Fixed
 

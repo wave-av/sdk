@@ -17,7 +17,7 @@
  * WAVE_RUNTIME_URL, WAVE_BASE_URL. runWaveCli never rejects; the rejection handler below is a last
  * guard so an unexpected throw still prints one line and exits 1 instead of a stack trace.
  */
-import { cliOptionsFromEnv, redact, runWaveCli } from "./cli";
+import { cliOptionsFromEnv, oneLine, redact, runWaveCli } from "./cli";
 
 const opts = cliOptionsFromEnv(process.env);
 
@@ -29,7 +29,7 @@ runWaveCli(process.argv.slice(2), opts).then(
   },
   (e: unknown) => {
     const message = e instanceof Error ? e.message : String(e);
-    process.stderr.write(`wave-sdk: ${redact(message, opts.token)}\n`);
+    process.stderr.write(`wave-sdk: ${oneLine(redact(message, opts.token))}\n`);
     process.exit(1);
   },
 );

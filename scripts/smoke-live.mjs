@@ -195,8 +195,9 @@ if (!process.env.WAVE_SDK_ENTRY && existsSync(bin)) {
   const run = (argv, env) => spawnSync(process.execPath, [bin, ...argv], { env, encoding: "utf8", timeout: 60_000 });
   const base = { PATH: process.env.PATH ?? "" };
   const withKey = run(["models"], { ...base, WAVE_API_KEY: apiKey });
-  const ok1 = withKey.status === 0 && withKey.stdout.trim().split("\n").length > 0 && !withKey.stdout.includes(apiKey);
-  console.log(`${ok1 ? "PASS" : "FAIL"} wave-sdk models (WAVE_API_KEY set) exit=${withKey.status} lines=${withKey.stdout.trim().split("\n").length}`);
+  const modelLines = withKey.stdout.split("\n").filter((l) => l.trim().length > 0);
+  const ok1 = withKey.status === 0 && modelLines.length > 0 && !withKey.stdout.includes(apiKey);
+  console.log(`${ok1 ? "PASS" : "FAIL"} wave-sdk models (WAVE_API_KEY set) exit=${withKey.status} models=${modelLines.length}`);
   if (!ok1) console.log(redact(`     stderr: ${withKey.stderr.trim()}`));
   results.push({ label: "wave-sdk models", ok: ok1 });
 

@@ -188,11 +188,19 @@ async function dispatch(argv: string[], opts: WaveCliOptions): Promise<WaveCliRe
   }
 }
 
+/**
+ * Make untrusted text safe for one terminal line: every control character (newlines, carriage
+ * returns, escape sequences) becomes a space, so upstream text cannot add lines or drive the terminal.
+ */
+export function oneLine(text: string): string {
+  return text.replace(/\p{Cc}+/gu, " ").trim();
+}
+
 export async function runWaveCli(argv: string[], opts: WaveCliOptions): Promise<WaveCliResult> {
   try {
     return await dispatch(argv, opts);
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
-    return { code: 1, out: "", err: `wave-sdk ${argv[0] ?? ""}: ${redact(message, opts.token)}\n` };
+    return { code: 1, out: "", err: `wave-sdk ${oneLine(argv[0] ?? "")}: ${oneLine(redact(message, opts.token))}\n` };
   }
 }

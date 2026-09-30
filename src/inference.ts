@@ -65,7 +65,9 @@ export class InferenceAPI {
     const d = await this.client.post<ChatCompletionBody>(
       `${INFERENCE_PATH}/chat/completions`,
       { model, messages, max_tokens: maxTokens, stream: false },
-      { timeout: 120_000 },
+      // Not retried: a completion is billed and not idempotent, so a timeout or 5xx after the gateway
+      // dispatched it must not send the prompt again. The caller decides whether to retry.
+      { timeout: 120_000, noRetry: true },
     );
     const u = d.usage ?? {};
     return {

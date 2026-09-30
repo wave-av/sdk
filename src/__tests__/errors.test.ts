@@ -95,6 +95,17 @@ describe("parseErrorBody", () => {
     expect(p.details?.x402Version).toBe(1);
   });
 
+  it("uses the x402 error_detail message and keeps error_detail in details", () => {
+    const body = {
+      ...x402,
+      error_detail: { code: "PAYMENT_REQUIRED", message: "Pay 0.003 USDC on base to call this route.", suggestions: ["Sign the permit."] },
+    };
+    const p = parseErrorBody(body);
+    expect(p.code).toBe("PAYMENT_REQUIRED");
+    expect(p.message).toBe("Pay 0.003 USDC on base to call this route.");
+    expect(p.details?.error_detail).toEqual(body.error_detail);
+  });
+
   it("reads the nested envelope and keeps only allowlisted sibling fields", () => {
     const p = parseErrorBody(scope);
     expect(p.code).toBe("SCOPE_INSUFFICIENT");

@@ -228,10 +228,13 @@ export class RealtimeAPI {
 
   /** Publish one event to a channel via REST (for producers that don't hold a socket). Requires realtime:write. */
   async publish(channel: string, event: string, data?: unknown): Promise<{ ok: boolean; delivered: number }> {
-    return this.client.post<{ ok: boolean; delivered: number }>(this.channelPath(channel, 'publish'), {
-      event,
-      data,
-    });
+    // Not retried: publishing is not idempotent, so a lost response or 5xx after delivery must not
+    // deliver (and meter) the event twice. The caller decides whether to retry.
+    return this.client.post<{ ok: boolean; delivered: number }>(
+      this.channelPath(channel, 'publish'),
+      { event, data },
+      { noRetry: true },
+    );
   }
 
   /** Current presence for a channel (REST). Requires realtime:read. */

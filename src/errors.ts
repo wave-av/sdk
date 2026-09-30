@@ -118,8 +118,9 @@ export class PaymentRequiredError extends WaveError {
  * The gateway serves nothing at this path and method (404 `ROUTE_NOT_FOUND` or
  * `ROUTE_NOT_MAPPED`), or the SDK knows before calling that no route exists
  * (`ROUTE_NOT_SERVED`). Several SDK modules are typed ahead of their backend; this is the
- * error they raise until the backend ships. The capability index at
- * https://gateway.wave.online/.well-known/wave-skills.json lists every callable route.
+ * error they raise until the backend ships. The gateway's capability index at
+ * https://gateway.wave.online/.well-known/wave-skills.json lists the routes it advertises; it can
+ * list a route before that route is served, so the live answer (this error or not) is the test.
  */
 export class RouteNotServedError extends WaveError {
   constructor(message: string, code: string, requestId?: string, details?: Record<string, unknown>) {
@@ -148,6 +149,9 @@ const ERROR_DETAIL_FIELDS = [
   'doc_url',
   'x402Version',
   'accepts',
+  // x402 challenges carry the human-readable half (message, suggestions, remediation) here, since
+  // the protocol's own top-level `error` is a string.
+  'error_detail',
 ] as const;
 
 function isRecord(v: unknown): v is Record<string, unknown> {
@@ -203,9 +207,10 @@ export function parseErrorBody(body: unknown): ParsedErrorBody {
     out.code =
       nonEmptyString(body.code) ??
       (isX402 ? 'PAYMENT_REQUIRED' : errString && /^[A-Za-z0-9_.-]+$/.test(errString) ? errString : undefined);
+    const x402Detail = isRecord(body.error_detail) ? nonEmptyString(body.error_detail.message) : undefined;
     out.message =
       nonEmptyString(body.message) ??
-      (isX402 ? 'Payment required: this route is priced per call over x402' : errString);
+      (isX402 ? (x402Detail ?? 'Payment required: this route is priced per call over x402') : errString);
     out.requestId = nonEmptyString(body.request_id);
     pickDetails(body, details);
   }

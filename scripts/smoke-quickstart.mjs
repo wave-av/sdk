@@ -33,7 +33,14 @@ const wave = new Wave({ apiKey });
 async function tryCall(label, fn) {
   try {
     const result = await fn();
-    console.log(`${label}: ok`, JSON.stringify(result).slice(0, 200));
+    // Log the shape only, never values: CI logs of a public repo are public, and a meter ledger
+    // carries the caller's org id and usage.
+    const shape = Array.isArray(result)
+      ? `array(${result.length})`
+      : result && typeof result === "object"
+        ? `{${Object.keys(result).join(",")}}`
+        : typeof result;
+    console.log(`${label}: ok ${shape}`);
     return { label, ok: true };
   } catch (err) {
     const status = err && typeof err === "object" ? err.status ?? err.statusCode : undefined;

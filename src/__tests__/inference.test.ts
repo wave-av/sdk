@@ -65,6 +65,16 @@ describe("InferenceAPI (gateway /v1/inference)", () => {
     expect((err as WaveError).requestId).toBe("req-1");
   });
 
+  it("complete() is never retried, even on a retryable 503 with retries enabled (billed, not idempotent)", async () => {
+    const fetchMock = vi.fn(async () => json({ error: { code: "SERVICE_UNAVAILABLE", message: "busy" } }, 503));
+    vi.stubGlobal("fetch", fetchMock);
+    const withRetries = new InferenceAPI(new WaveClient({ apiKey: "wave-test-key", maxRetries: 3 }));
+    const err = await withRetries.complete("m", [{ role: "user", content: "x" }]).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(WaveError);
+    expect((err as WaveError).retryable).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("complete() reports cost as null when the gateway omits usage.cost", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => json({ ...okCompletion, usage: { total_tokens: 3 } })));
     const r = await api().complete("m", [{ role: "user", content: "x" }]);

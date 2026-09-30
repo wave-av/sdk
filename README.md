@@ -112,7 +112,7 @@ backend has not shipped yet (see the Status column below) throws `RouteNotServed
 
 ## What the Status column means
 
-`lib` — the TypeScript client surface exists AND a live fleet backend serves it today. `planned` — the client surface exists, the backend does not yet; calling it will not work against production, and the gateway's `404 ROUTE_NOT_FOUND` / `ROUTE_NOT_MAPPED` answer reaches you as a `RouteNotServedError`. `sdk-surface` — the client module is exported and typed, but this repo's SSOT declares no backend status for it, so treat it as unproven. Statuses come from `.wave/repo.json`, the same file this README is generated from. The gateway's free capability index, `https://gateway.wave.online/.well-known/wave-skills.json`, lists every route it routes.
+`lib` — the TypeScript client surface exists AND a live fleet backend serves it today. `planned` — the client surface exists, the backend does not yet; calling it will not work against production, and the gateway's `404 ROUTE_NOT_FOUND` / `ROUTE_NOT_MAPPED` answer reaches you as a `RouteNotServedError`. `sdk-surface` — the client module is exported and typed, but this repo's SSOT declares no backend status for it, so treat it as unproven. Statuses come from `.wave/repo.json`, the same file this README is generated from. The gateway's free capability index, `https://gateway.wave.online/.well-known/wave-skills.json`, lists the routes it advertises; it can list a route before that route is served, so treat a live call as the test.
 
 ## Product example — Realtime
 
@@ -126,9 +126,12 @@ await wave.realtime.publish("stream:demo", "note", { text: "hello" });
 const { members } = await wave.realtime.presence("stream:demo");
 
 // Live events over a WebSocket at wss://api.wave.online/v1/realtime/connect. The key travels in
-// the Authorization header of the handshake, never in the URL. Node 22+ and Bun can send that
-// header natively; elsewhere pass webSocketFactory, e.g. with the ws package:
-//   wave.realtime.connect("stream:demo", { webSocketFactory: (url, headers) => new WS(url, { headers }) })
+// the Authorization header of the handshake, never in the URL. Node 22+ and Bun send that header
+// natively, so this runs as-is there. On Node 18-21, `npm i ws` and pass a factory:
+//   import WS from "ws";
+//   wave.realtime.connect("stream:demo", {
+//     webSocketFactory: (url, headers) => new WS(url, { headers }) as unknown as WebSocket,
+//   });
 const channel = wave.realtime.connect("stream:demo");
 channel.on("caption.cue", (data) => console.log("cue", data));
 channel.on("error", (err) => console.error(err));
