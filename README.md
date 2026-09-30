@@ -68,26 +68,26 @@ backend has not shipped yet (see the Status column below) throws `RouteNotServed
 
 | API | Access | Status | Description |
 | --- | --- | --- | --- |
-| `wave.clips` | `ClipsAPI` | lib | Video clips, exports, AI highlights |
+| `wave.clips` | `ClipsAPI` | lib | Cut clips from recordings (`create`, `list`, `get`, `update`, `remove`) and find highlight candidates (`detect`) |
 | `wave.editor` | `EditorAPI` | planned | Video editing, tracks, transitions, effects |
-| `wave.voice` | `VoiceAPI` | lib | Text-to-speech via `synthesize()`; voice-clone methods are SDK surface only |
+| `wave.voice` | `VoiceAPI` | lib | Text-to-speech (`synthesize`), the voice catalog (`listVoices`) and instant voice cloning (`cloneVoice`) |
 | `wave.phone` | `PhoneAPI` | planned | Voice calling, conferences, numbers |
 | `wave.collab` | `CollabAPI` | planned | Real-time collaboration rooms |
-| `wave.captions` | `CaptionsAPI` | lib | Auto-captions, translation, burn-in |
+| `wave.captions` | `CaptionsAPI` | lib | Caption a recording or media URL (`create`) and download SRT, VTT, text or JSON cues (`download`) |
 | `wave.chapters` | `ChaptersAPI` | sdk-surface | Video chapters and markers |
 | `wave.studioAI` | `StudioAIAPI` | sdk-surface | AI production assistant, suggestions |
-| `wave.transcribe` | `TranscribeAPI` | lib | Transcription with speaker diarization |
+| `wave.transcribe` | `TranscribeAPI` | lib | Transcription with speaker labels and word timing (`create`, `get`, `list`, `remove`) |
 | `wave.sentiment` | `SentimentAPI` | sdk-surface | Sentiment and emotion analysis |
 | `wave.search` | `SearchAPI` | sdk-surface | Full-text, visual, and audio search |
 | `wave.scene` | `SceneAPI` | sdk-surface | AI scene detection and shot classification |
 | `wave.vault` | `VaultAPI` | planned | Recording storage, VOD, archive policies |
-| `wave.marketplace` | `MarketplaceAPI` | sdk-surface | Templates, plugins, graphics marketplace |
+| `wave.marketplace` | `MarketplaceAPI` | planned | Templates, plugins, graphics marketplace |
 | `wave.connect` | `ConnectAPI` | sdk-surface | Third-party integrations, webhooks |
-| `wave.distribution` | `DistributionAPI` | sdk-surface | Social simulcasting, scheduled posts |
-| `wave.desktop` | `DesktopAPI` | sdk-surface | Desktop Node app management |
-| `wave.signage` | `SignageAPI` | sdk-surface | Digital signage displays, playlists |
-| `wave.qr` | `QrAPI` | sdk-surface | Dynamic QR codes, analytics |
-| `wave.audience` | `AudienceAPI` | sdk-surface | Polls, Q&A, reactions, engagement |
+| `wave.distribution` | `DistributionAPI` | planned | Social simulcasting, scheduled posts |
+| `wave.desktop` | `DesktopAPI` | planned | Desktop Node app management |
+| `wave.signage` | `SignageAPI` | planned | Digital signage displays, playlists |
+| `wave.qr` | `QrAPI` | planned | Dynamic QR codes, analytics |
+| `wave.audience` | `AudienceAPI` | planned | Polls, Q&A, reactions, engagement |
 | `wave.creator` | `CreatorAPI` | planned | Monetization, subscriptions, tips, payouts |
 
 ## API modules — Specialized
@@ -95,24 +95,25 @@ backend has not shipped yet (see the Status column below) throws `RouteNotServed
 | API | Access | Status | Description |
 | --- | --- | --- | --- |
 | `wave.podcast` | `PodcastAPI` | planned | Podcast episodes, RSS, distribution |
-| `wave.slides` | `SlidesAPI` | sdk-surface | Presentation-to-video conversion |
-| `wave.usb` | `UsbAPI` | sdk-surface | USB device relay and management |
+| `wave.slides` | `SlidesAPI` | planned | Presentation-to-video conversion |
+| `wave.usb` | `UsbAPI` | planned | USB device relay and management |
 
 ## API modules — Platform
 
 | API | Access | Status | Description |
 | --- | --- | --- | --- |
-| `wave.drm` | `DrmAPI` | sdk-surface | Digital Rights Management: content protection with Widevine, FairPlay, and PlayReady |
-| `wave.notifications` | `NotificationsAPI` | sdk-surface | User notification preferences, delivery channels, and notification management |
+| `wave.drm` | `DrmAPI` | planned | Digital Rights Management: content protection with Widevine, FairPlay, and PlayReady |
+| `wave.notifications` | `NotificationsAPI` | planned | User notification preferences, delivery channels, and notification management |
 | `wave.perception` | `PerceptionAPI` | sdk-surface | Agentic live-media perception: one `subscribe()` verb attaches an agent to any live stream |
 | `wave.realtime` | `RealtimeAPI` | lib | Control & event plane: presence, pub/sub broadcast, and the streaming-event bus, at `api.wave.online/v1/realtime` |
+| `wave.transcripts` | `TranscriptAPI` | planned | Voice-agent session transcripts (the gateway serves no `/v1/realtime/agents/transcripts` route yet) |
 | `wave.inference` | `InferenceAPI` | lib | OpenAI-compatible completions and the model list, at `api.wave.online/v1/inference` |
 | `wave.meter` | `MeterAPI` | lib | Usage ledger and rollup by channel (mail, voice, sms, realtime, storage) |
 | `wave.mail` | `MailAPI` | planned | Agent email send, reply, search, transcript email, and SMS |
 
 ## What the Status column means
 
-`lib` — the TypeScript client surface exists AND a live fleet backend serves it today. `planned` — the client surface exists, the backend does not yet; calling it will not work against production, and the gateway's `404 ROUTE_NOT_FOUND` / `ROUTE_NOT_MAPPED` answer reaches you as a `RouteNotServedError`. `sdk-surface` — the client module is exported and typed, but this repo's SSOT declares no backend status for it, so treat it as unproven. Statuses come from `.wave/repo.json`, the same file this README is generated from. The gateway's free capability index, `https://gateway.wave.online/.well-known/wave-skills.json`, lists the routes it advertises; it can list a route before that route is served, so treat a live call as the test.
+`lib` — the TypeScript client surface exists AND a live fleet backend serves it today. A `lib` module's methods that no backend serves (for example `wave.captions.translate()`) are marked deprecated and throw `RouteNotServedError` (code `ROUTE_NOT_SERVED`) before any network call. `planned` — the client surface exists, the backend does not yet; calling it will not work against production, and the gateway's `404 ROUTE_NOT_FOUND` / `ROUTE_NOT_MAPPED` answer reaches you as a `RouteNotServedError`. `sdk-surface` — the client module is exported and typed, but this repo's SSOT declares no backend status for it, so treat it as unproven. Statuses come from `.wave/repo.json`, the same file this README is generated from, and `node scripts/route-sweep.mjs --key-env WAVE_API_KEY` re-measures them against the gateway. The gateway's free capability index, `https://gateway.wave.online/.well-known/wave-skills.json`, lists the routes it advertises; it can list a route before that route is served, so treat a live call as the test.
 
 ## Product example — Realtime
 
@@ -147,15 +148,20 @@ import { Wave } from "@wave-av/sdk";
 
 const wave = new Wave({ apiKey: process.env.WAVE_API_KEY! });
 
-// source is a recording id; in and out are time offsets into it.
-const clip = await wave.clips.create({
-  title: "Best Moment",
+// Cut 30 seconds starting 2 minutes into a recording. The clip engine produces the clip inside
+// the request, so create() returns the finished files, not a job to poll.
+const { clipId, assets } = await wave.clips.create({
   source: "rec_123",
   in: "2m",
   out: "2m30s",
+  title: "Best Moment",
 });
-const ready = await wave.clips.waitForReady(clip.id);
-console.log(`Clip URL: ${ready.playback_url}`);
+console.log(clipId, assets.map((a) => a.url));
+
+// Candidate highlights, scored from the recording's speech. Pass a candidate's in and duration
+// to create() to cut it.
+const { results } = await wave.clips.detect({ videoId: "rec_123", maxClips: 3 });
+for (const c of results) console.log(c.in, c.duration, c.score);
 ```
 
 ## Product example — Captions
@@ -165,14 +171,14 @@ import { Wave } from "@wave-av/sdk";
 
 const wave = new Wave({ apiKey: process.env.WAVE_API_KEY! });
 
-const track = await wave.captions.generate({
-  media_id: "video_123",
-  media_type: "video",
-  language: "en",
-  speaker_diarization: true,
-});
-const ready = await wave.captions.waitForReady(track.id);
-await wave.captions.translate(ready.id, { target_language: "es" });
+// Captioning runs inside the request: the job comes back completed or failed.
+const job = await wave.captions.create({ videoId: "rec_123", sourceLanguage: "en" });
+if (job.status === "completed") {
+  const srt = await wave.captions.download(job.id, { language: "en", format: "srt" });
+  console.log(srt);
+} else {
+  console.error(job.errorMessage);
+}
 ```
 
 ## Product example — Voice
@@ -196,15 +202,19 @@ import { Wave } from "@wave-av/sdk";
 
 const wave = new Wave({ apiKey: process.env.WAVE_API_KEY! });
 
+// sourceId is a recording id or an https URL to an audio or video file. Transcription runs
+// inside the request: the job comes back completed or failed.
 const job = await wave.transcribe.create({
-  source_type: "recording",
-  source_id: "rec_456",
-  language: "en",
-  speaker_diarization: true,
+  sourceId: "rec_456",
+  sourceType: "video",
+  speakerLabels: true,
 });
-const result = await wave.transcribe.waitForReady(job.id);
-const text = await wave.transcribe.getText(result.id, { include_speakers: true });
-console.log(text);
+if (job.status === "completed") {
+  console.log(job.text);
+  for (const s of job.segments ?? []) console.log(`[speaker ${s.speaker ?? "?"}] ${s.text}`);
+} else {
+  console.error(job.errorMessage);
+}
 ```
 
 ## Product example — Inference
@@ -269,7 +279,8 @@ try {
     // 402: SPEND_CAP_TIER_BLOCKED (message says what to do) or an x402 price (error.accepts).
     console.log(`${error.code}: ${error.message}`, error.accepts ?? "");
   } else if (error instanceof RouteNotServedError) {
-    // 404 ROUTE_NOT_FOUND / ROUTE_NOT_MAPPED: this module's backend has not shipped.
+    // 404 ROUTE_NOT_FOUND / ROUTE_NOT_MAPPED from the gateway, or ROUTE_NOT_SERVED from a
+    // deprecated method before any call: no backend serves this route yet.
     console.log(`${error.code}: ${error.message}`);
   } else if (error instanceof WaveError) {
     // e.g. 403 SCOPE_INSUFFICIENT: error.details.required_scope names the scope to add.
@@ -349,8 +360,8 @@ const { Wave } = require("@wave-av/sdk");
 
 | Capability | Status |
 | --- | --- |
-| Auto-captions, translation, burn-in via `wave.captions` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
-| Video clips, exports, AI highlights via `wave.clips` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| Caption a recording or media URL and download SRT, VTT, text or JSON via `wave.captions` (`POST /v1/captions`, `GET /v1/captions/{id}/download`); translation, cue editing and burn-in have no backend and throw `RouteNotServedError` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| Cut clips from recordings and find highlight candidates via `wave.clips` (`POST /v1/clips`, `POST /v1/clips/detect`); clip exports and highlight-to-clip have no backend and throw `RouteNotServedError` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
 | Monetization, subscriptions, tips, payouts via `wave.creator` (SDK TypeScript surface; no live backend yet) | ![planned](https://img.shields.io/badge/planned-lightgrey?style=flat-square) |
 | Video editing, tracks, transitions, effects via `wave.editor` (SDK TypeScript surface; the gateway serves no `/v1/editor` route yet) | ![planned](https://img.shields.io/badge/planned-lightgrey?style=flat-square) |
 | Desktop Node fleet management, health, commands via `wave.fleet` (SDK TypeScript surface; no live backend yet) | ![planned](https://img.shields.io/badge/planned-lightgrey?style=flat-square) |
@@ -363,12 +374,12 @@ const { Wave } = require("@wave-av/sdk");
 | Virtual Device Bridge (NDI/ONVIF/VISCA/Dante to USB UVC/UAC) via `wave.prism` (SDK TypeScript surface; no live backend yet) | ![planned](https://img.shields.io/badge/planned-lightgrey?style=flat-square) |
 | Analytics, BI dashboards, revenue metrics via `wave.pulse` (SDK TypeScript surface; no live backend yet) | ![planned](https://img.shields.io/badge/planned-lightgrey?style=flat-square) |
 | Multi-camera production, scenes, transitions, graphics, audio mixing via `wave.studio` (SDK TypeScript surface; no live backend yet) | ![planned](https://img.shields.io/badge/planned-lightgrey?style=flat-square) |
-| Transcription with speaker diarization via `wave.transcribe` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| Transcription with speaker labels and word timing via `wave.transcribe` (`POST /v1/transcribe`); segment and speaker editing, export and real-time methods have no backend and throw `RouteNotServedError` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
 | Agent email send, reply, search, transcript email, and SMS via `wave.mail` (SDK TypeScript surface; the gateway has no route for `/v1/mail/*`, `/v1/sms/send` or `/v1/transcripts/email` yet and answers `404 ROUTE_NOT_MAPPED`) | ![planned](https://img.shields.io/badge/planned-lightgrey?style=flat-square) |
 | Realtime presence, publish, history and the WebSocket event bus via `wave.realtime`, at `api.wave.online/v1/realtime` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
 | Usage metering ledger and rollup by channel (mail/voice/sms/realtime/storage) via `wave.meter` (requires `meter:read` scope) | ![ga](https://img.shields.io/badge/ga-brightgreen?style=flat-square) |
 | Recording storage, VOD, archive policies via `wave.vault` (SDK TypeScript surface; no live backend yet) | ![planned](https://img.shields.io/badge/planned-lightgrey?style=flat-square) |
-| Text-to-speech via `wave.voice.synthesize()`; voice-clone methods exist as SDK client surface but are not backed by a live voice product yet | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
+| Text-to-speech via `wave.voice.synthesize()`, the voice catalog via `listVoices()` and instant voice cloning via `cloneVoice()`; the synthesis-job and clone-job methods have no backend and throw `RouteNotServedError` | ![lib](https://img.shields.io/badge/lib-blueviolet?style=flat-square) |
 | Agent routing (route/pool) and an OpenAI-compatible proxy for LLM/agent traffic, shipped at the WAVE gateway; completions and the model list via `wave.inference` and the `wave-sdk` CLI, the rest via the base `WaveClient` request methods | ![ga](https://img.shields.io/badge/ga-brightgreen?style=flat-square) |
 
 ## The receipts
@@ -384,7 +395,7 @@ const { Wave } = require("@wave-av/sdk");
 | Current package.json version is 3.0.0, and the User-Agent header carries it (`wave-sdk-typescript/3.0.0`) | grep `package.json`, `src/version.ts` |
 | Each API module is independently importable via a package.json subpath export (e.g. @wave-av/sdk/pipeline) | grep `package.json` |
 | `compose()`/`saveFlow()` are independently importable via `@wave-av/sdk/compose`, and their types are generated from `src/compose-types.ts` (copied verbatim from the gateway's `POST /v1/compose` contract) into `schema/compose.schema.json` via `npm run schema:generate` | grep `package.json` exports, `schema/compose.schema.json` |
-| `wave.voice.synthesize()` implements text-to-speech against `POST /v1/voice` and returns the audio bytes; the SDK also declares `cloneVoice()` client methods that are not backed by a live voice product | grep the voice module source |
+| `wave.voice.synthesize()` implements text-to-speech against `POST /v1/voice` and returns the audio bytes; `cloneVoice()` posts to `POST /v1/voice/clone` and returns the new voice | grep the voice module source |
 | A single `Wave` client class composes every API module as a readonly property | grep the SDK entry point |
 | Takes zod `^3.22.0 \|\| ^4.4.3` and `@opentelemetry/api ^1.7.0` as peer dependencies | grep `package.json` |
 

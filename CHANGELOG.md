@@ -53,8 +53,44 @@ that introduced this entry lists the request ids.
 - `User-Agent` carries the real version (`wave-sdk-typescript/3.0.0`), not `1.0.0`.
 - `package.json` `homepage` pointed at `https://docs.wave.online/sdk`, which returns 404; it
   now points at this README.
+- **The README captions, transcription and clips examples now run.** The gateway forwards
+  `/v1/captions`, `/v1/transcribe`, `/v1/clips` and `/v1/voice` whole to a product edge, and
+  the SDK's shapes for those modules had never matched the edges. With 2.1.3 the README flows
+  failed at step 1: `captions.generate()` posts `/v1/captions/generate` (`405`), and
+  `transcribe.create()` sends snake_case fields the edge rejects (`400 sourceId is required`).
+  The served routes are now called with the edges' own contracts:
+  - `captions.create({ videoId, sourceLanguage?, targetLanguages?, style?, speakerLabels? })`
+    (`POST /v1/captions`), `captions.download(id, { language, format })`, and `get` / `list` /
+    `remove` / `getText` / `waitForReady` on `CaptionJob`.
+  - `transcribe.create({ sourceId, sourceType, language?, speakerLabels?, wordTimestamps?,
+    punctuation?, model? })` (`POST /v1/transcribe`), with `get` / `list` / `remove` /
+    `getText` / `waitForReady` on the served `Transcription`.
+  - `clips.create()` returns what the engine answers (`{ clipId, assets[], clip, ... }`), not a
+    `Clip` whose `id` was undefined; `clips.detect({ videoId, ... })` (`POST /v1/clips/detect`)
+    replaces `detectHighlights()`, which posted to a path nothing serves; `waitForReady()`
+    recognises the engine's `completed` status instead of polling to its 5-minute timeout.
+  - `voice.listVoices()` returns `Voice[]` from the edge's `{ voices }` body, and
+    `voice.cloneVoice({ name, audioFiles, ... })` sends the fields `POST /v1/voice/clone` reads.
+- **Methods whose route no backend serves fail fast and typed.** On those four modules, every
+  method whose path the owning edge does not serve (for example `captions.translate()`,
+  `clips.exportClip()`, `transcribe.getSegments()`, `voice.getSynthesis()`) is deprecated and
+  throws `RouteNotServedError` (code `ROUTE_NOT_SERVED`) before any network call. Before, they
+  reached the edge and came back as a bare `HTTP_404` / `HTTP_405`.
+- Ten modules the route sweep measured unserved (every GET `ROUTE_NOT_FOUND` /
+  `ROUTE_NOT_MAPPED` with a key) move from `sdk-surface` to `planned`: `audience`, `desktop`,
+  `distribution`, `drm`, `marketplace`, `notifications`, `qr`, `signage`, `slides`, `usb`.
+  `wave.transcripts`, which the module tables did not list, is added as `planned` (its
+  `/v1/realtime/agents/transcripts` routes answer `404 ROUTE_NOT_FOUND` with a key).
 
 ### Added (connectivity)
+
+- `scripts/route-sweep.mjs`: extracts every route each SDK method sends, probes each one on the
+  gateway (GETs with a key when `--key-env` is given, everything else without one), and compares
+  each module's measured state with its status in `.wave/repo.json`. `--check` fails when a
+  module marked `lib` or `ga` measures unserved.
+- `scripts/smoke-live.mjs --media` runs the README transcription and captions flows end to end
+  on a 3-second public speech sample, and the smoke checks the clips, captions, transcribe and
+  voice list reads.
 
 - Subpath exports `@wave-av/sdk/inference`, `@wave-av/sdk/perception` and
   `@wave-av/sdk/transcripts`. `InferenceAPI`, `SDK_VERSION`, `PaymentRequiredError` and
@@ -80,7 +116,19 @@ that introduced this entry lists the request ids.
   empty answer.
 - `inference.complete()` and `realtime.publish()` are not retried: both are non-idempotent (a
   completion is billed), so a timeout or 5xx after the gateway acted must not repeat the call.
-  Every read keeps the client's retry policy.
+  Every read keeps the client's retry policy. The same now holds for the billed media calls:
+  `clips.create()`, `clips.detect()`, `captions.create()`, `transcribe.create()`,
+  `voice.synthesize()` and `voice.cloneVoice()`.
+- **Breaking**: `Clip`, `CreateClipRequest`, `UpdateClipRequest`, `ListClipsParams`,
+  `Transcription`, `CreateTranscriptionRequest`, `ListTranscriptionsParams`,
+  `TranscriptionSegment`, `TranscriptionWord`, `TranscriptionModel`, `Voice`,
+  `CloneVoiceRequest` and `ListVoicesParams` take the served (camelCase) shapes;
+  `ClipQuality` is `'720p' | '1080p' | '4k'`. `clips.create()` returns `ClipCreateResult`,
+  `clips.list()` `ClipList`, `captions.get()` / `list()` `CaptionJob` / `CaptionJobList`,
+  `transcribe.list()` `TranscriptionList`, `voice.listVoices()` `Voice[]`. The old types stay
+  exported (deprecated) where a gated method still names them.
+- The ESLint config lets a deprecated method keep a `_`-prefixed parameter it no longer reads,
+  so callers of the gated methods still compile.
 - x402 challenges: the message comes from the gateway's `error_detail.message` when present, and
   `error_detail` is kept in `details`.
 
