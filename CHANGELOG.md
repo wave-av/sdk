@@ -6,6 +6,74 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+Version 3.0.0. A major bump because this release carries the breaking `clips.create()` and
+`voice.synthesize()` changes already on `main` (see Changed below), plus the connectivity fixes
+in this section. Each fix was checked against `api.wave.online` with a WAVE API key; the PR
+that introduced this entry lists the request ids.
+
+### Fixed (connectivity)
+
+- **The README quickstart now runs.** It led with `wave.pipeline.create()`, and the gateway
+  serves no `/v1/streams` route (`404 ROUTE_NOT_FOUND`). The quickstart now uses routes the
+  gateway serves: `wave.inference.models()` / `complete()`, `wave.meter.ledger()` and
+  `wave.realtime.history()`. `pipeline`, `editor`, `collab` and `mail` are marked `planned`
+  in the README and `.wave/repo.json` (`mail` was marked `ga`; every mail route answers
+  `404 ROUTE_NOT_MAPPED`).
+- **`wave.realtime` reaches the gateway.** It targeted `realtime.wave.online`, which has no DNS
+  record. The socket and the REST calls now derive from the client's `baseUrl`
+  (`https://api.wave.online/v1/realtime`, `wss://` for the socket), so a custom `baseUrl` moves
+  realtime too. The API key no longer rides in the socket URL as `?access_token=`: the
+  handshake sends `Authorization: Bearer` (Node 22+ and Bun do this natively; pass
+  `webSocketFactory` elsewhere). `publish`, `presence` and `history` go through `WaveClient`,
+  so a non-2xx answer throws a typed `WaveError` instead of resolving with the error body.
+  Channel names are checked against the gateway's pattern before any network call.
+- **`wave.inference` uses the WAVE API key.** `models()` and `profile()` always threw
+  (`Failed to parse URL from /rest/v1/models`) because they read config fields the client never
+  kept, and were built to query WAVE's internal model registry with a database key.
+  `complete()` posted to a LiteLLM host that rejects WAVE keys. Both now call the gateway:
+  `POST /v1/inference/chat/completions` and `GET /v1/inference/models`. `profile()` has no
+  served route yet and throws `RouteNotServedError` without a network call.
+- **Errors keep the gateway's code.** The gateway answers in three envelopes; the SDK read only
+  the nested one, so a spend-cap 402 surfaced as `HTTP_402 "Payment Required"`. `WaveError`
+  now reads the nested, flat and x402 shapes. New subclasses: `PaymentRequiredError` (402,
+  with the x402 `accepts[]` when present) and `RouteNotServedError` (404 `ROUTE_NOT_FOUND` /
+  `ROUTE_NOT_MAPPED`). `required_scope`, `available_scopes`, `suggestions`, `next_action` and
+  `doc_url` land in `details` (an allowlist; other body fields are dropped).
+- **The `wave-sdk` CLI works.** It never read an API key, called `https://api.wave.online/models`
+  (no `/v1`, so 404), and crashed with a stack trace on any failure. It now reads
+  `WAVE_API_KEY`, `WAVE_MODEL`, `WAVE_RUNTIME_URL` and `WAVE_BASE_URL`, defaults to the
+  gateway's `/v1/inference` door, prints one redacted line and exits 1 on failure, and answers
+  `--help`. The README documented a `wave` command; the bin has been `wave-sdk` since 2.1.3.
+- `voice.synthesize()` sends `voice_id` as `voiceId`, the field the voice edge reads, so a
+  chosen voice is no longer silently replaced by the default one.
+- `wave.meter` types match the gateway's v0 contract: the ledger is one window
+  (`{ org, from, to, channels, generated_at, tier? }`), not `{ rows: [...] }`; `blocked` is a
+  reason string, not a count; the rollup carries `period`.
+- `User-Agent` carries the real version (`wave-sdk-typescript/3.0.0`), not `1.0.0`.
+- `package.json` `homepage` pointed at `https://docs.wave.online/sdk`, which returns 404; it
+  now points at this README.
+
+### Added (connectivity)
+
+- Subpath exports `@wave-av/sdk/inference`, `@wave-av/sdk/perception` and
+  `@wave-av/sdk/transcripts`. `InferenceAPI`, `SDK_VERSION`, `PaymentRequiredError` and
+  `RouteNotServedError` from the package root; `parseErrorBody` and `createWaveError` from
+  `@wave-av/sdk/client`.
+- `scripts/smoke-live.mjs`: a strict live check. The known-served controls must answer 200,
+  every quickstart call must answer 200, and unserved or capped routes must surface as the
+  right typed error. `scripts/smoke-quickstart.mjs` now runs the new quickstart.
+
+### Changed (connectivity)
+
+- **Breaking**: `MeterLedger` is `{ org, from, to, channels, generated_at, tier? }`
+  (`MeterLedgerRow` stays as a deprecated alias). `MeterSmsChannel.blocked` is a string.
+- **Breaking**: `inference.models()` returns `{ id, ownedBy }[]` from the gateway instead of
+  registry rows with prices.
+- **Breaking**: `RealtimeAPI.connect()` needs a WebSocket that can send headers (Node 22+, Bun,
+  or `webSocketFactory`); a browser must open the socket from a server.
+- `RuntimeClient` sends its token on `models()` too (the gateway door needs it), reports the
+  gateway's error `code`, and `stream()` asks for `stream_options.include_usage`.
+
 ### Fixed
 
 - `pr-agent` lane: fork-triggered `/` commands are now refused, and the AI

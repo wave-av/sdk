@@ -24,8 +24,8 @@
   "capabilities": [
     {
       "id": "pipeline",
-      "does": "Live stream lifecycle, protocols, recordings, viewer metrics via `wave.pipeline`",
-      "status": "lib"
+      "does": "Live stream lifecycle, protocols, recordings, viewer metrics via `wave.pipeline` (SDK TypeScript surface; the gateway serves no `/v1/streams` route yet)",
+      "status": "planned"
     },
     {
       "id": "clips",
@@ -34,8 +34,8 @@
     },
     {
       "id": "editor",
-      "does": "Video editing, tracks, transitions, effects via `wave.editor`",
-      "status": "lib"
+      "does": "Video editing, tracks, transitions, effects via `wave.editor` (SDK TypeScript surface; the gateway serves no `/v1/editor` route yet)",
+      "status": "planned"
     },
     {
       "id": "voice",
@@ -104,12 +104,27 @@
     },
     {
       "id": "wave-dispatch",
-      "does": "Agent routing (route/pool) and an OpenAI-compatible proxy for LLM/agent traffic, shipped at the WAVE gateway; reachable from the SDK today via the base `WaveClient` request methods (no dedicated wrapper module yet)",
+      "does": "Agent routing (route/pool) and an OpenAI-compatible proxy for LLM/agent traffic, shipped at the WAVE gateway; completions and the model list via `wave.inference` and the `wave-sdk` CLI, the rest via the base `WaveClient` request methods",
       "status": "ga"
     },
     {
       "id": "gateway-agent-payments",
       "does": "x402 and MPP card-rail agent payments with scope-gate and settlement-guard, shipped at the WAVE gateway; reachable from the SDK today via the base `WaveClient` request methods (no dedicated wrapper module yet)",
+      "status": "ga"
+    },
+    {
+      "id": "mail",
+      "does": "Agent email send, reply, search, transcript email, and SMS via `wave.mail` (SDK TypeScript surface; the gateway has no route for `/v1/mail/*`, `/v1/sms/send` or `/v1/transcripts/email` yet and answers `404 ROUTE_NOT_MAPPED`)",
+      "status": "planned"
+    },
+    {
+      "id": "realtime",
+      "does": "Realtime presence, publish, history and the WebSocket event bus via `wave.realtime`, at `api.wave.online/v1/realtime`",
+      "status": "lib"
+    },
+    {
+      "id": "meter",
+      "does": "Usage metering ledger and rollup by channel (mail/voice/sms/realtime/storage) via `wave.meter` (requires `meter:read` scope)",
       "status": "ga"
     }
   ],
@@ -125,20 +140,20 @@
     },
     {
       "id": "package-version",
-      "text": "Current package.json version is 2.1.0-next.0",
+      "text": "Current package.json version is 3.0.0",
       "resolver": {
         "type": "grep",
         "target": "package.json",
-        "expect": "\"version\": \"2.1.0-next.0\""
+        "expect": "\"version\": \"3.0.0\""
       }
     },
     {
       "id": "module-count",
-      "text": "42 independently-importable API module subpaths are declared under package.json exports, plus the package root",
+      "text": "49 independently-importable API module subpaths are declared under package.json exports, plus the package root",
       "resolver": {
         "type": "grep",
         "target": "package.json",
-        "expect": "\"./realtime\":"
+        "expect": "\"./inference\":"
       }
     },
     {
@@ -170,7 +185,7 @@
     },
     {
       "id": "voice-tts-not-cloning",
-      "text": "wave.voice.synthesize() implements text-to-speech; the SDK also declares cloneVoice() client methods that are not backed by the wave-voice product",
+      "text": "wave.voice.synthesize() implements text-to-speech against POST /v1/voice and returns the audio bytes; the SDK also declares cloneVoice() client methods that are not backed by the wave-voice product",
       "resolver": {
         "type": "grep",
         "target": "src/voice.ts",
@@ -179,11 +194,11 @@
     },
     {
       "id": "docs-surface",
-      "text": "Documentation surface is docs.wave.online",
+      "text": "The package homepage is this README (github.com/wave-av/sdk#readme); product docs are at docs.wave.online",
       "resolver": {
         "type": "grep",
         "target": "package.json",
-        "expect": "\"homepage\": \"https://docs.wave.online/sdk\""
+        "expect": "\"homepage\": \"https://github.com/wave-av/sdk#readme\""
       }
     },
     {
@@ -212,6 +227,15 @@
         "target": "package.json",
         "expect": "\"zod\": \"^3.22.0\""
       }
+    },
+    {
+      "id": "user-agent-version",
+      "text": "The User-Agent header carries the package version (wave-sdk-typescript/<version>)",
+      "resolver": {
+        "type": "grep",
+        "target": "src/version.ts",
+        "expect": "SDK_VERSION = \"3.0.0\""
+      }
     }
   ],
   "install": [
@@ -222,10 +246,10 @@
   ],
   "quickstart": {
     "lang": "ts",
-    "code": "import { Wave } from \"@wave-av/sdk\";\n\nconst wave = new Wave({\n  apiKey: process.env.WAVE_API_KEY!,\n  organizationId: \"org_123\",\n});\n\n// Create and start a live stream\nconst stream = await wave.pipeline.create({\n  title: \"My Live Stream\",\n  protocol: \"webrtc\",\n  recording_enabled: true,\n});\nawait wave.pipeline.start(stream.id);\n\n// Text-to-speech\nconst synthesis = await wave.voice.synthesize({\n  text: \"Hello from WAVE\",\n  voice_id: \"voice_abc\",\n});"
+    "code": "import { Wave } from \"@wave-av/sdk\";\n\nconst wave = new Wave({ apiKey: process.env.WAVE_API_KEY! });\n\n// OpenAI-compatible inference through the WAVE gateway, on your WAVE API key.\nconst models = await wave.inference.models();\nconst reply = await wave.inference.complete(\n  models[0].id,\n  [{ role: \"user\", content: \"Say hello in five words.\" }],\n  64,\n);\nconsole.log(`${reply.model}: ${reply.content}`);\n\n// Today's usage ledger by channel (mail, voice, sms, realtime, storage). Requires meter:read.\nconst ledger = await wave.meter.ledger();\nconsole.log(`${ledger.channels.voice?.minutes ?? 0} voice minutes today`);\n\n// Recent events on a realtime channel, over REST. Requires realtime:read.\nconst { events } = await wave.realtime.history(\"stream:demo\", 10);\nconsole.log(`${events.length} recent events`);"
   },
   "links": {
-    "docs": "https://docs.wave.online/sdk",
+    "docs": "https://docs.wave.online",
     "npm": "https://www.npmjs.com/package/@wave-av/sdk",
     "repo": "https://github.com/wave-av/sdk"
   },
@@ -243,7 +267,7 @@
         [
           "`wave.pipeline`",
           "`PipelineAPI`",
-          "lib",
+          "planned",
           "Live stream lifecycle, protocols, recordings, viewer metrics"
         ],
         [
@@ -327,7 +351,7 @@
         [
           "`wave.editor`",
           "`EditorAPI`",
-          "lib",
+          "planned",
           "Video editing, tracks, transitions, effects"
         ],
         [
@@ -345,7 +369,7 @@
         [
           "`wave.collab`",
           "`CollabAPI`",
-          "sdk-surface",
+          "planned",
           "Real-time collaboration rooms"
         ],
         [
@@ -507,27 +531,45 @@
         [
           "`wave.realtime`",
           "`RealtimeAPI`",
-          "sdk-surface",
-          "Control & event plane: presence, pub/sub broadcast, and the streaming-event bus"
+          "lib",
+          "Control & event plane: presence, pub/sub broadcast, and the streaming-event bus, at `api.wave.online/v1/realtime`"
+        ],
+        [
+          "`wave.inference`",
+          "`InferenceAPI`",
+          "lib",
+          "OpenAI-compatible completions and the model list, at `api.wave.online/v1/inference`"
+        ],
+        [
+          "`wave.meter`",
+          "`MeterAPI`",
+          "lib",
+          "Usage ledger and rollup by channel (mail, voice, sms, realtime, storage)"
+        ],
+        [
+          "`wave.mail`",
+          "`MailAPI`",
+          "planned",
+          "Agent email send, reply, search, transcript email, and SMS"
         ]
       ]
     },
     {
       "kind": "prose",
       "heading": "What the Status column means",
-      "body": "`lib` — the TypeScript client surface exists AND a live fleet backend serves it today. `planned` — the client surface exists, the backend does not yet; calling it will not work against production. `sdk-surface` — the client module is exported and typed, but this repo's SSOT declares no backend status for it, so treat it as unproven. Statuses come from `.wave/repo.json`, the same file this README is generated from."
+      "body": "`lib` — the TypeScript client surface exists AND a live fleet backend serves it today. `planned` — the client surface exists, the backend does not yet; calling it will not work against production, and the gateway's `404 ROUTE_NOT_FOUND` / `ROUTE_NOT_MAPPED` answer reaches you as a `RouteNotServedError`. `sdk-surface` — the client module is exported and typed, but this repo's SSOT declares no backend status for it, so treat it as unproven. Statuses come from `.wave/repo.json`, the same file this README is generated from. The gateway's free capability index, `https://gateway.wave.online/.well-known/wave-skills.json`, lists every route it routes."
     },
     {
       "kind": "code",
-      "heading": "Product example — Streams (Pipeline)",
+      "heading": "Product example — Realtime",
       "lang": "typescript",
-      "body": "import { Wave } from \"@wave-av/sdk\";\n\nconst wave = new Wave({ apiKey: process.env.WAVE_API_KEY! });\n\nconst stream = await wave.pipeline.create({\n  title: \"My Live Stream\",\n  protocol: \"webrtc\",\n  recording_enabled: true,\n});\nawait wave.pipeline.start(stream.id);\nconst live = await wave.pipeline.waitForLive(stream.id);\nconsole.log(`Playback: ${live.playback_url}`);\nawait wave.pipeline.stop(stream.id);"
+      "body": "import { Wave } from \"@wave-av/sdk\";\n\nconst wave = new Wave({ apiKey: process.env.WAVE_API_KEY! });\n\n// REST, no socket needed: publish (realtime:write), presence and history (realtime:read).\nawait wave.realtime.publish(\"stream:demo\", \"note\", { text: \"hello\" });\nconst { members } = await wave.realtime.presence(\"stream:demo\");\n\n// Live events over a WebSocket at wss://api.wave.online/v1/realtime/connect. The key travels in\n// the Authorization header of the handshake, never in the URL. Node 22+ and Bun can send that\n// header natively; elsewhere pass webSocketFactory, e.g. with the ws package:\n//   wave.realtime.connect(\"stream:demo\", { webSocketFactory: (url, headers) => new WS(url, { headers }) })\nconst channel = wave.realtime.connect(\"stream:demo\");\nchannel.on(\"caption.cue\", (data) => console.log(\"cue\", data));\nchannel.on(\"error\", (err) => console.error(err));"
     },
     {
       "kind": "code",
       "heading": "Product example — Clips",
       "lang": "typescript",
-      "body": "import { Wave } from \"@wave-av/sdk\";\n\nconst wave = new Wave({ apiKey: process.env.WAVE_API_KEY! });\n\nconst clip = await wave.clips.create({\n  title: \"Best Moment\",\n  source: { type: \"stream\", id: \"stream_123\", start_time: 120, end_time: 150 },\n});\nconst ready = await wave.clips.waitForReady(clip.id);\nconsole.log(`Clip URL: ${ready.playback_url}`);"
+      "body": "import { Wave } from \"@wave-av/sdk\";\n\nconst wave = new Wave({ apiKey: process.env.WAVE_API_KEY! });\n\n// source is a recording id; in and out are time offsets into it.\nconst clip = await wave.clips.create({\n  title: \"Best Moment\",\n  source: \"rec_123\",\n  in: \"2m\",\n  out: \"2m30s\",\n});\nconst ready = await wave.clips.waitForReady(clip.id);\nconsole.log(`Clip URL: ${ready.playback_url}`);"
     },
     {
       "kind": "code",
@@ -539,7 +581,7 @@
       "kind": "code",
       "heading": "Product example — Voice",
       "lang": "typescript",
-      "body": "import { Wave } from \"@wave-av/sdk\";\n\nconst wave = new Wave({ apiKey: process.env.WAVE_API_KEY! });\n\nconst voices = await wave.voice.listVoices({ language: \"en\" });\nconst result = await wave.voice.synthesize({\n  text: \"Welcome to WAVE live streaming.\",\n  voice_id: voices.data[0].id,\n  format: \"mp3\",\n});\nconst audio = await wave.voice.waitForSynthesis(result.id);\nconsole.log(`Audio: ${audio.audio_url}`);"
+      "body": "import { writeFile } from \"node:fs/promises\";\nimport { Wave } from \"@wave-av/sdk\";\n\nconst wave = new Wave({ apiKey: process.env.WAVE_API_KEY! });\n\n// POST /v1/voice answers with the audio itself (audio/mpeg), not a job to poll.\n// Omit voice_id for the default voice.\nconst audio = await wave.voice.synthesize({ text: \"Welcome to WAVE live streaming.\" });\nawait writeFile(\"welcome.mp3\", new Uint8Array(audio));"
     },
     {
       "kind": "code",
@@ -549,9 +591,9 @@
     },
     {
       "kind": "code",
-      "heading": "Product example — Editor",
+      "heading": "Product example — Inference",
       "lang": "typescript",
-      "body": "import { Wave } from \"@wave-av/sdk\";\n\nconst wave = new Wave({ apiKey: process.env.WAVE_API_KEY! });\n\nconst project = await wave.editor.createProject({\n  name: \"Highlight Reel\",\n  width: 1920,\n  height: 1080,\n  frame_rate: 30,\n});\nconst track = await wave.editor.addTrack(project.id, { name: \"Main\", type: \"video\" });\nawait wave.editor.addElement(project.id, {\n  track_id: track.id,\n  type: \"clip\",\n  source_id: \"clip_789\",\n  start_time: 0,\n});\nconst job = await wave.editor.render(project.id, { format: \"mp4\", quality: \"high\" });\nconst rendered = await wave.editor.waitForRender(project.id, job.id);\nconsole.log(`Output: ${rendered.output_url}`);"
+      "body": "import { Wave, PaymentRequiredError } from \"@wave-av/sdk\";\n\nconst wave = new Wave({ apiKey: process.env.WAVE_API_KEY! });\n\n// GET /v1/inference/models and POST /v1/inference/chat/completions on the gateway. Auth, budgets,\n// guardrails and metering are the gateway's; failures arrive as typed WaveErrors.\nconst models = await wave.inference.models(); // [{ id, ownedBy }]\ntry {\n  const r = await wave.inference.complete(models[0].id, [{ role: \"user\", content: \"One word: ok\" }], 16);\n  console.log(r.content, r.totalTokens, r.cost);\n} catch (err) {\n  if (err instanceof PaymentRequiredError) console.error(`${err.code}: ${err.message}`);\n  else throw err;\n}"
     },
     {
       "kind": "code",
@@ -563,13 +605,13 @@
       "kind": "code",
       "heading": "Individual API imports",
       "lang": "typescript",
-      "body": "import { WaveClient, PipelineAPI, PrismAPI } from \"@wave-av/sdk\";\n\nconst client = new WaveClient({ apiKey: \"key\" });\nconst pipeline = new PipelineAPI(client);\nconst prism = new PrismAPI(client);"
+      "body": "import { WaveClient, MeterAPI, InferenceAPI } from \"@wave-av/sdk\";\n\nconst client = new WaveClient({ apiKey: \"key\" });\nconst meter = new MeterAPI(client);\nconst inference = new InferenceAPI(client);"
     },
     {
       "kind": "code",
       "heading": "Error handling",
       "lang": "typescript",
-      "body": "import { WaveError, RateLimitError } from \"@wave-av/sdk\";\n\ntry {\n  await wave.pipeline.get(\"invalid-id\");\n} catch (error) {\n  if (error instanceof RateLimitError) {\n    console.log(`Rate limited. Retry after ${error.retryAfter}ms`);\n  } else if (error instanceof WaveError) {\n    console.log(`${error.code}: ${error.message} (${error.statusCode})`);\n  }\n}"
+      "body": "import { WaveError, RateLimitError, PaymentRequiredError, RouteNotServedError } from \"@wave-av/sdk\";\n\ntry {\n  await wave.meter.ledger();\n} catch (error) {\n  if (error instanceof RateLimitError) {\n    console.log(`Rate limited. Retry after ${error.retryAfter}ms`);\n  } else if (error instanceof PaymentRequiredError) {\n    // 402: SPEND_CAP_TIER_BLOCKED (message says what to do) or an x402 price (error.accepts).\n    console.log(`${error.code}: ${error.message}`, error.accepts ?? \"\");\n  } else if (error instanceof RouteNotServedError) {\n    // 404 ROUTE_NOT_FOUND / ROUTE_NOT_MAPPED: this module's backend has not shipped.\n    console.log(`${error.code}: ${error.message}`);\n  } else if (error instanceof WaveError) {\n    // e.g. 403 SCOPE_INSUFFICIENT: error.details.required_scope names the scope to add.\n    console.log(`${error.code}: ${error.message} (${error.statusCode})`, error.details);\n  }\n}"
     },
     {
       "kind": "code",
@@ -613,7 +655,7 @@
     {
       "kind": "prose",
       "heading": "Requirements",
-      "body": "- Node.js 18+ (`engines.node` is `>=18.0.0`)\n- TypeScript 4.7+ for subpath type resolution (`moduleResolution: node16`); this package is built with TypeScript 5.9"
+      "body": "- Node.js 18+ (`engines.node` is `>=18.0.0`); `wave.realtime.connect()` needs Node 22+ or Bun for a header-carrying WebSocket, or a `webSocketFactory` (e.g. the `ws` package) on older runtimes\n- TypeScript 4.7+ for subpath type resolution (`moduleResolution: node16`); this package is built with TypeScript 5.9"
     },
     {
       "kind": "table",
