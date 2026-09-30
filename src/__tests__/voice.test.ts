@@ -24,7 +24,7 @@ describe("VoiceAPI.synthesize", () => {
     const [path, body, opts] = post.mock.calls[0];
     expect(path).toBe("/v1/voice");
     expect(body).toEqual({ text: "Hello from WAVE" });
-    expect(opts).toMatchObject({ responseType: "arraybuffer", headers: { Accept: "audio/mpeg" } });
+    expect(opts).toMatchObject({ responseType: "arraybuffer", headers: { Accept: "audio/mpeg" }, noRetry: true });
   });
 
   it("sends voice_id as voiceId, the field the voice edge reads", async () => {

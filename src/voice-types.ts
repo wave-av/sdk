@@ -1,27 +1,33 @@
-import type { Timestamps, Metadata, PaginationParams } from './client-types';
+import type { Timestamps } from './client-types';
 
+/** @deprecated Belongs to a voice method no WAVE backend serves. */
 export type VoiceModelType =
   | 'standard'
   | 'neural'
   | 'cloned'
   | 'professional';
+/** @deprecated Belongs to a voice method no WAVE backend serves. */
 export type VoiceGender = 'male' | 'female' | 'neutral';
 export type AudioFormat = 'mp3' | 'wav' | 'ogg' | 'flac' | 'pcm';
-export interface Voice extends Timestamps {
+/**
+ * A voice from the catalog, as `listVoices()` and `cloneVoice()` return it (the voice edge behind
+ * `api.wave.online/v1/voice`, wave-av/wave-voice-edge src/voices.ts).
+ */
+export interface Voice {
+  /** Pass as `voice_id` to `synthesize()`. */
   id: string;
-  organization_id?: string;
   name: string;
   description?: string;
-  model_type: VoiceModelType;
-  gender: VoiceGender;
-  language: string;
-  locale: string;
-  preview_url?: string;
-  is_public: boolean;
-  is_cloned: boolean;
-  tags?: string[];
-  metadata?: Metadata;
+  previewUrl?: string;
+  /** e.g. `premade`, `cloned`. */
+  category?: string;
+  /** Free-form labels such as `accent`, `language`, `gender`. */
+  labels?: Record<string, string>;
 }
+/**
+ * Body of `synthesize()`. The voice edge reads `text` and `voice_id` (sent as `voiceId`); it does
+ * not read the other fields today, so they do not change the audio.
+ */
 export interface SynthesizeRequest {
   /** Text to convert to speech */
   text: string;
@@ -48,6 +54,7 @@ export interface SynthesizeRequest {
   /** Webhook URL for completion notification */
   webhook_url?: string;
 }
+/** @deprecated Belongs to a voice method no WAVE backend serves. */
 export interface SynthesisResult extends Timestamps {
   id: string;
   organization_id: string;
@@ -62,29 +69,16 @@ export interface SynthesisResult extends Timestamps {
   file_size?: number;
   error?: string;
 }
+/** Body of `cloneVoice()`. */
 export interface CloneVoiceRequest {
+  /** Up to 100 characters. */
   name: string;
+  /** 1-25 https URLs of clean speech samples. */
+  audioFiles: string[];
   description?: string;
-  /** Audio sample URLs (minimum 1 minute of clean audio) */
-  sample_urls: string[];
-  /** Optional text transcripts for samples */
-  transcripts?: string[];
-  /** Target language */
-  language?: string;
-  /** Voice gender */
-  gender?: VoiceGender;
-  /** Additional training options */
-  options?: {
-    /** Remove background noise from samples */
-    denoise?: boolean;
-    /** Number of training epochs */
-    epochs?: number;
-    /** Fine-tuning quality */
-    quality?: 'standard' | 'high' | 'professional';
-  };
-  tags?: string[];
-  metadata?: Metadata;
+  labels?: Record<string, string>;
 }
+/** @deprecated Belongs to a voice method no WAVE backend serves. */
 export interface VoiceCloneJob extends Timestamps {
   id: string;
   organization_id: string;
@@ -96,14 +90,14 @@ export interface VoiceCloneJob extends Timestamps {
   total_duration: number;
   error?: string;
 }
-export interface ListVoicesParams extends PaginationParams {
-  model_type?: VoiceModelType;
-  gender?: VoiceGender;
+/** `listVoices()` filters, applied by the voice edge. */
+export interface ListVoicesParams {
+  /** Only voices in this category, e.g. `premade` or `cloned`. */
+  category?: string;
+  /** Only voices whose `language` (or `accent`) label matches. */
   language?: string;
-  is_public?: boolean;
-  is_cloned?: boolean;
-  tags?: string[];
 }
+/** @deprecated Belongs to a voice method no WAVE backend serves. */
 export interface VoiceSettings {
   stability: number;
   similarity_boost: number;

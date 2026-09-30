@@ -132,6 +132,26 @@ export class RouteNotServedError extends WaveError {
 const ROUTE_NOT_SERVED_CODES = new Set(['ROUTE_NOT_FOUND', 'ROUTE_NOT_MAPPED', 'ROUTE_NOT_SERVED']);
 
 /**
+ * The error an SDK method throws, before any network call, when no WAVE backend serves its route.
+ *
+ * Used on the modules whose whole prefix the gateway forwards to one product edge (`/v1/clips`,
+ * `/v1/captions`, `/v1/transcribe`, `/v1/voice`). The edge owns every sub-path under that prefix,
+ * so a sub-path it does not serve comes back as the edge's own plain 404 or 405, which carries no
+ * gateway route code. The SDK labels those methods here instead, so the caller still gets a
+ * RouteNotServedError and not an HTTP_405 that looks like a bug in their request.
+ *
+ * @param method  the SDK method, e.g. `clips.exportClip`
+ * @param route   the route it would have called, e.g. `POST /v1/clips/{clipId}/export`
+ * @param instead the served method to use instead, when there is one
+ */
+export function routeNotServed(method: string, route: string, instead?: string): RouteNotServedError {
+  return new RouteNotServedError(
+    `${method}: no WAVE backend serves ${route} yet${instead ? `; use ${instead}` : ''}.`,
+    'ROUTE_NOT_SERVED',
+  );
+}
+
+/**
  * Error-body fields copied into `WaveError.details`, besides the envelope's own `error.details`
  * object. An allowlist on purpose: from the rest of the body the SDK surfaces the fields the
  * gateway documents as actionable and drops anything else it may carry. `error.details` itself
