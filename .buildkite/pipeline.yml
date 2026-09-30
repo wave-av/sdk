@@ -52,6 +52,8 @@ steps:
   - label: ":closed_lock_with_key: Secrets + content policy (gitleaks + content-policy.sh)"
     key: secrets-content-policy
     command: .buildkite/steps/secrets-content-policy.sh
+    secrets:
+      - GUARD_PRIVATE_REPOS
     timeout_in_minutes: 10
     retry:
       automatic:

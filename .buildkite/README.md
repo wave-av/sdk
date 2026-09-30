@@ -68,11 +68,14 @@ leave a binary behind. The download URL, the version, and the sha256 are unchang
 (`vars.GUARD_PRIVATE_REPOS`) and passes it through as a plain env var to `content-policy.sh`, which skips
 its private-repo-name rule when the variable is unset. This script does the same — it never hardcodes,
 prints, or writes the value; it only passes through whatever is already in the job's environment. On
-Buildkite, the operator must export `GUARD_PRIVATE_REPOS` from the **agent environment hook** for this
-pipeline (mirroring the org variable), never from `pipeline.yml` or a committed script — baking that
-list into a public repo's tree would itself be exactly the leak `content-policy.sh` exists to catch.
-Left unset, the step still runs (gitleaks and the rest of content-policy.sh's rules are unaffected); only
-the private-repo-name rule is skipped, same as running the GH job locally today.
+Buildkite, the `secrets-content-policy` step's `secrets: [GUARD_PRIVATE_REPOS]` attribute in
+`pipeline.yml` exports the Buildkite cluster secret of that name (org `wave`, cluster "WAVE self-hosted
+CI") as the `GUARD_PRIVATE_REPOS` env var for that step only — Buildkite redacts the value from build
+logs if it is ever printed. Never set this from a literal value in `pipeline.yml` or a committed script —
+baking that list into a public repo's tree would itself be exactly the leak `content-policy.sh` exists to
+catch. Left unset (no cluster secret configured), the step still runs (gitleaks and the rest of
+content-policy.sh's rules are unaffected); only the private-repo-name rule is skipped, same as running
+the GH job locally today.
 
 **Not ported**: `body-guard`, the other job in `public-repo-guard.yml`. It scans PR/issue/comment/review
 **text** read from the GitHub event payload (`$GITHUB_EVENT_PATH`), which has no Buildkite equivalent —
