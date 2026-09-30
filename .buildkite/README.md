@@ -160,8 +160,7 @@ An operator still needs to:
    external fork PR has no automatic producer for them and sits permanently un-mergeable ("Expected"),
    even though the shadowed GH Actions checks (which do run on fork PRs) would have passed. There is no
    required-status "OR": GitHub branch protection requires every listed context, so leaving a GH check
-   required alongside the Buildkite ones does not give forks a way through — it only adds a second
-   context that also never completes for an internal, non-fork PR's parity build. A fork PR only gets
+   required alongside the Buildkite ones does not give forks a way through. A fork PR only gets
    real coverage once a maintainer re-pushes its branch/commit into `wave-av/sdk` (e.g. `git push` to a
    same-repo branch, or `gh pr checkout` + repush) or triggers a Buildkite build for that commit
    manually — either creates a same-repo build Buildkite (and thus the required contexts) can see. An
