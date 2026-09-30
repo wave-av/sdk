@@ -1,0 +1,69 @@
+capabilities.json
+  s_1563247862564f::t_b8a4a6b6fe01bf 201,206,209
+package-lock.json
+  s_1563247862564f::t_17b6b951f5a0ed 3,9
+package.json
+  s_1563247862564f::t_5e1d97662103ef 3,243-257,314
+scripts/release/__tests__/check-version.test.ts
+  s_1563247862564f::t_074d2cbc6ffdc1 3,44-52,58,66
+src/__tests__/cli.test.ts
+  s_1563247862564f::t_81a7def86798f3 6,34-35,37-129,148-171
+src/__tests__/errors.test.ts
+  s_1563247862564f::t_e38f3f707c147b 1-179
+src/__tests__/inference.test.ts
+  s_1563247862564f::t_7c04f818e26b7b 3-4,8,13-23,26-43,45-48,51-55,58,60-83,86-92,95-102
+src/__tests__/meter.test.ts
+  s_1563247862564f::t_16361c07bd93ba 20-21,23-32,40,44,69-81,93,120-121
+src/__tests__/realtime.test.ts
+  s_1563247862564f::t_4d48a926d54722 1-202
+src/__tests__/runtime.test.ts
+  s_1563247862564f::t_19bae98f6df14c 27,29,32-33,40-45,52-90
+src/__tests__/version.test.ts
+  s_1563247862564f::t_14de0faf23de4d 1-22
+src/__tests__/voice.test.ts
+  s_1563247862564f::t_e6018a96982179 1-45
+src/bin.ts
+  s_1563247862564f::t_546f8111fbd7f3 15-18,20-22,24-35
+src/cli.ts
+  s_1563247862564f::t_c1fe2d26ea7f32 6-8,22-30,32,34,36-41,47-48,51-55,57-110,113-117,119-120,128-130,137-138,140,162-165,181-189
+src/client-types.ts
+  s_1563247862564f::t_fbf2824e0db0f8 34-38
+src/client.ts
+  s_1563247862564f::t_655ef4e4a123bd 10,33-49,327,356-360,366,368,373-379
+src/errors.ts
+  s_1563247862564f::t_2a0e831ffaca3b 1-223
+src/index.ts
+  s_1563247862564f::t_67d66f60ad1a79 16-17,28,346-347,386,570
+src/inference.ts
+  s_1563247862564f::t_2a307c95fa73c5 2,4-8,12,20,25,30-37,48-56,60-63,65-69,74,79-84,87-91,93-97
+src/meter-types.ts
+  s_1563247862564f::t_a6b5e978fae4a9 4-10,13,17,21-22,25,29,31-32,35,39-40,43,47-48,51,55-56,59,68-74,77-80,82-90,92-93,96-103,113-114
+src/meter.ts
+  s_1563247862564f::t_ed1343474c8a12 4-5,26,59,62,72
+src/realtime-types.ts
+  s_1563247862564f::t_d29ce231b65322 4-6,40-47,51-54,56-57
+src/realtime.ts
+  s_1563247862564f::t_9a217876b3d141 5-7,9-15,20,27,30-37,39-53,56-89,99,105,108-110,114-116,123-126,157-162,186-187,192-193,195-198,201-208,211,213-218,221-226,228-230,234,236,239,241-242,247-250
+src/runtime.ts
+  s_1563247862564f::t_e19aef937538d9 2,4,6-15,32-33,55,57,64-66,68,70-129,131-138,152,154,158,160-161,173-175,185,187-188
+src/version.ts
+  s_1563247862564f::t_44854825948a31 1-6
+src/voice.ts
+  s_1563247862564f::t_3403e83103d2c3 151-155,163-165
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "e14754c9ab0439fff3f94de8359f47fbedcea14e",
+  "prompts": {},
+  "sessions": {
+    "s_1563247862564f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-a771a73bedb1bbd85",
+        "model": "unknown"
+      },
+      "human_author": "Jake Fineman <jakefineman@gmail.com>"
+    }
+  }
+}
