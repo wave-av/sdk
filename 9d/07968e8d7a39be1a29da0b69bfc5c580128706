@@ -1,0 +1,22 @@
+scripts/smoke-live.mjs
+  s_13ccc7d9001218::t_1efe34f0a76bf2 140-164
+  s_13ccc7d9001218::t_599714a8043785 1-139,165-211
+scripts/smoke-quickstart.mjs
+  s_13ccc7d9001218::t_73f6f8d0bbbca7 3-10,31,49-52
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "9d07968e8d7a39be1a29da0b69bfc5c580128706",
+  "prompts": {},
+  "sessions": {
+    "s_13ccc7d9001218": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "11229abc-f617-4541-b5d7-d693c6ae4d9d",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Jake Fineman <jakefineman@gmail.com>"
+    }
+  }
+}
