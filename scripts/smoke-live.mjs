@@ -7,11 +7,14 @@
  * little, so every check asserts the shape of the answer, and two known-served control routes
  * must answer 200 in the same run before any other result counts.
  *
- *   node scripts/smoke-live.mjs [KEY_ENV_NAME] [--complete]
+ *   node scripts/smoke-live.mjs [KEY_ENV_NAME] [--complete] [--media
+ *     [--transcribe-key-env NAME] [--captions-key-env NAME]]
  *
  * KEY_ENV_NAME names the environment variable holding a WAVE API key (default WAVE_API_KEY).
- * The key is read from the environment only and never printed; any echo of it is redacted.
+ * Keys are read from the environment only and never printed; any echo of one is redacted.
  * --complete also runs one 8-token inference completion (billed, a tiny fraction of a cent).
+ * --media also runs the README transcription and captions flows on a 3-second public speech
+ * sample (billed, well under one cent), with the main key unless a product key env is named.
  *
  * The SDK is loaded from WAVE_SDK_ENTRY when set (e.g. "@wave-av/sdk" in a fresh install), else
  * from this checkout's dist/ (run `npm run build` first).
@@ -24,15 +27,23 @@ import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 const args = process.argv.slice(2);
-const keyName = args.find((a) => !a.startsWith("--")) ?? "WAVE_API_KEY";
+const VALUE_FLAGS = new Set(["--transcribe-key-env", "--captions-key-env"]);
+const argValue = (flag) => {
+  const i = args.indexOf(flag);
+  return i >= 0 ? args[i + 1] : undefined;
+};
+const keyName = args.find((a, i) => !a.startsWith("--") && !VALUE_FLAGS.has(args[i - 1])) ?? "WAVE_API_KEY";
 const runComplete = args.includes("--complete");
+const runMedia = args.includes("--media");
 const apiKey = process.env[keyName];
 if (!apiKey) {
   console.error(`no key: set ${keyName}`);
   process.exit(2);
 }
 
-const redact = (s) => String(s).split(apiKey).join("[redacted]");
+/** Every key this run uses, so each can be redacted from anything printed. */
+const extraKeys = [];
+const redact = (s) => [apiKey, ...extraKeys].reduce((out, k) => out.split(k).join("[redacted]"), String(s));
 const entry = process.env.WAVE_SDK_ENTRY ?? new URL("../dist/index.mjs", import.meta.url).href;
 const sdk = await import(entry);
 const { Wave, PaymentRequiredError, RouteNotServedError } = sdk;
@@ -179,15 +190,63 @@ await check(
   expectError(RouteNotServedError, ["ROUTE_NOT_SERVED"]),
 );
 await check(
-  "clips.list() -> data, or a 402 that keeps the gateway code",
-  () => wave.clips.list({ limit: 1 }),
-  (v, e) => {
-    if (!e) return isObj(v) ? true : "expected a list body";
-    if (e instanceof PaymentRequiredError) return e.code !== "HTTP_402" ? true : "402 lost the gateway code";
-    // Anything else (404 not served, 401/403 access) means the documented read did not work.
-    return `unexpected ${e?.name}: status=${e?.statusCode} code=${e?.code}`;
-  },
+  "captions.translate() -> RouteNotServedError, no network call",
+  () => wave.captions.translate("any", { target_language: "es" }),
+  expectError(RouteNotServedError, ["ROUTE_NOT_SERVED"]),
 );
+
+// Reads on the media edges. A key whose org is at its spend cap gets a 402 before routing, so a
+// 402 that keeps the gateway code passes; it proves the error is typed, not that the route serves.
+const readOrCapped = (pred, what) => (v, e) => {
+  if (!e) return pred(v) ? true : `expected ${what}`;
+  if (e instanceof PaymentRequiredError) return e.code !== "HTTP_402" ? true : "402 lost the gateway code";
+  // Anything else (404 not served, 401/403 access) means the documented read did not work.
+  return `unexpected ${e?.name}: status=${e?.statusCode} code=${e?.code}`;
+};
+const isPage = (v) => isObj(v) && Array.isArray(v.data) && isObj(v.pagination);
+await check("clips.list() -> a page, or a 402 that keeps the gateway code", () => wave.clips.list({ perPage: 1 }), readOrCapped(isPage, "{ data[], pagination }"));
+await check("captions.list() -> a page, or a 402 that keeps the gateway code", () => wave.captions.list({ perPage: 1 }), readOrCapped(isPage, "{ data[], pagination }"));
+await check("transcribe.list() -> a page, or a 402 that keeps the gateway code", () => wave.transcribe.list({ perPage: 1 }), readOrCapped(isPage, "{ data[], pagination }"));
+await check("voice.listVoices() -> voices, or a 402 that keeps the gateway code", () => wave.voice.listVoices(), readOrCapped(Array.isArray, "Voice[]"));
+
+// --media: the README captions and transcription flows end to end, on a 3-second public speech
+// sample (billed: a few seconds of transcription and captioning, well under one cent). Each flow
+// cleans up after itself. --transcribe-key-env / --captions-key-env name a key with that product's
+// write scope when the main key lacks it.
+if (runMedia) {
+  const SAMPLE = "https://raw.githubusercontent.com/mozilla/DeepSpeech/master/data/smoke_test/LDC93S1.wav";
+  const waveFor = (flag) => {
+    const name = argValue(flag);
+    const k = name ? process.env[name] : apiKey;
+    if (!k) throw new Error(`${flag} ${name}: variable is not set`);
+    extraKeys.push(k);
+    return new Wave({ apiKey: k, maxRetries: 0 });
+  };
+  const tw = waveFor("--transcribe-key-env");
+  const job = await check(
+    "transcribe.create(3s public sample) -> completed with text",
+    () => tw.transcribe.create({ sourceId: SAMPLE, sourceType: "audio", speakerLabels: true }),
+    expectValue((v) => isObj(v) && v.status === "completed" && typeof v.text === "string" && v.text.length > 0, "a completed job with text"),
+  );
+  if (isObj(job) && typeof job.id === "string") {
+    await check("transcribe.getText(id)", () => tw.transcribe.getText(job.id), expectValue((t) => t === job.text, "the job's text"));
+    await check("transcribe.remove(id)", () => tw.transcribe.remove(job.id), (v, e) => (e ? `remove failed: ${e.code}` : true));
+  }
+  const cw = waveFor("--captions-key-env");
+  const cap = await check(
+    "captions.create(3s public sample) -> completed",
+    () => cw.captions.create({ videoId: SAMPLE, sourceLanguage: "en" }),
+    expectValue((v) => isObj(v) && v.status === "completed" && isObj(v.outputs) && "en" in v.outputs, "a completed job with an en output"),
+  );
+  if (isObj(cap) && typeof cap.id === "string") {
+    await check(
+      "captions.download(id, srt)",
+      () => cw.captions.download(cap.id, { language: "en", format: "srt" }),
+      expectValue((s) => typeof s === "string" && s.includes("-->"), "SRT content with a cue"),
+    );
+    await check("captions.remove(id)", () => cw.captions.remove(cap.id), (v, e) => (e ? `remove failed: ${e.code}` : true));
+  }
+}
 
 // The wave-sdk bin, when this checkout's build is under test.
 const bin = fileURLToPath(new URL("../dist/bin.js", import.meta.url));
