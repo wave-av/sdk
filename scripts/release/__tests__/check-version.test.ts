@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -41,15 +41,21 @@ describe('check-version.sh', () => {
     while (tmpDirs.length) rmSync(tmpDirs.pop()!, { recursive: true, force: true });
   });
 
-  it('defaults ROOT to its own repo (dirname-relative) when RELEASE_PKG_ROOT is unset — this repo is at 2.1.3', () => {
-    const out = run(['sdk-v2.1.3']);
-    expect(out).toMatch(/OK: tag version matches package\.json version \(2\.1\.3\)/);
+  // This repo's own version, read rather than hardcoded, so a release bump does not break the test.
+  const REPO_VERSION = (
+    JSON.parse(readFileSync(join(__dirname, '..', '..', '..', 'package.json'), 'utf8')) as { version: string }
+  ).version;
+  const escaped = REPO_VERSION.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+  it('defaults ROOT to its own repo (dirname-relative) when RELEASE_PKG_ROOT is unset', () => {
+    const out = run([`sdk-v${REPO_VERSION}`]);
+    expect(out).toMatch(new RegExp(`OK: tag version matches package\\.json version \\(${escaped}\\)`));
   });
 
   it('rejects a tag/package.json mismatch against the default (in-tree) root', () => {
     const err = runExpectFailure(['sdk-v9.9.9']);
     expect(err.status).toBe(1);
-    expect(err.stderr).toMatch(/tag sdk-v9\.9\.9 implies version 9\.9\.9 but package\.json is 2\.1\.3/);
+    expect(err.stderr).toMatch(new RegExp(`tag sdk-v9\\.9\\.9 implies version 9\\.9\\.9 but package\\.json is ${escaped}`));
   });
 
   it('RELEASE_PKG_ROOT overrides the dirname-relative default — the exact seam release.yml relies on when the script is checked out to .release-tooling, separate from the tag-pinned package.json it must assert against', () => {
@@ -57,7 +63,7 @@ describe('check-version.sh', () => {
     tmpDirs.push(root);
     writeFileSync(join(root, 'package.json'), JSON.stringify({ version: '3.4.5' }));
 
-    // Would fail against THIS repo's real package.json (2.1.3) if the
+    // Would fail against THIS repo's real package.json (not 3.4.5) if the
     // override were ignored — proves RELEASE_PKG_ROOT, not the script's own
     // location, decides which package.json gets checked.
     const out = run(['sdk-v3.4.5'], { RELEASE_PKG_ROOT: root });

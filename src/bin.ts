@@ -12,10 +12,24 @@
  *
  * Because this module is only ever loaded as the process entry (never imported as a library), it
  * runs unconditionally — no entry-point guard is needed here, ESM-safe or otherwise.
+ *
+ * Configuration comes from the environment (see cliOptionsFromEnv): WAVE_API_KEY, WAVE_MODEL,
+ * WAVE_RUNTIME_URL, WAVE_BASE_URL. runWaveCli never rejects; the rejection handler below is a last
+ * guard so an unexpected throw still prints one line and exits 1 instead of a stack trace.
  */
-import { runWaveCli } from "./cli";
+import { cliOptionsFromEnv, redact, runWaveCli } from "./cli";
 
-void runWaveCli(process.argv.slice(2), { baseUrl: "https://api.wave.online" }).then((r) => {
-  process.stdout.write(r.out ?? "");
-  process.exit(r.code ?? 0);
-});
+const opts = cliOptionsFromEnv(process.env);
+
+runWaveCli(process.argv.slice(2), opts).then(
+  (r) => {
+    process.stdout.write(r.out ?? "");
+    if (r.err) process.stderr.write(r.err);
+    process.exit(r.code ?? 0);
+  },
+  (e: unknown) => {
+    const message = e instanceof Error ? e.message : String(e);
+    process.stderr.write(`wave-sdk: ${redact(message, opts.token)}\n`);
+    process.exit(1);
+  },
+);

@@ -148,10 +148,11 @@ export class VoiceAPI {
   /**
    * Synthesize text to speech.
    *
-   * Live contract (verified against api.wave.online): POST `/v1/voice` with a
-   * JSON body (`{ text, voice_id?, ...options }`) returns the audio bytes
-   * directly (`audio/mpeg`), not a JSON job object. The returned bytes are
-   * the synthesized speech.
+   * Contract: POST `/v1/voice` with a JSON body returns the audio bytes directly
+   * (`audio/mpeg`), not a JSON job object. The gateway forwards `/v1/voice` to the
+   * wave-voice edge, whose speak handler reads the voice as `voiceId`; the SDK keeps
+   * its snake_case `voice_id` option and renames it on the wire, so a chosen voice is
+   * not silently replaced by the default one. Omit `voice_id` for the default voice.
    *
    * Goes through the standard client request path, so retries, rate-limit
    * handling, timeouts, custom headers, and `WaveError`-typed failures apply.
@@ -159,7 +160,9 @@ export class VoiceAPI {
    * Requires: voice:synthesize permission
    */
   async synthesize(request: SynthesizeRequest): Promise<ArrayBuffer> {
-    return this.client.post<ArrayBuffer>(this.basePath, request, {
+    const { voice_id, ...rest } = request;
+    const body = voice_id ? { ...rest, voiceId: voice_id } : rest;
+    return this.client.post<ArrayBuffer>(this.basePath, body, {
       headers: { Accept: 'audio/mpeg' },
       responseType: 'arraybuffer',
     });

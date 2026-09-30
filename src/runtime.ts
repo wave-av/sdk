@@ -1,13 +1,18 @@
 import { stripTrailingSlashes } from './url-util';
+import { parseErrorBody } from './errors';
 /**
- * WAVE Runtime API client — the OpenAI-compatible runtime door.
+ * WAVE Runtime API client — a thin typed client for any OpenAI-compatible WAVE door.
  *
- * API-first foundation for the "any harness, one WAVE runtime" surface: `runtime.wave.online/v1`
- * (canonical) / `dsh.wave.online/v1` (alias), served by wave-runtime-spoke → gateway → provider star.
- * This module is the thin typed client the `wave` CLI and the wave-runtime MCP server both call, so
- * the door's contract lives in exactly one place. Bearer-token auth (the door is key-gated on
- * completions; the models list is open). Standalone — deliberately not coupled to WaveClient's
- * API-key auth, since the door uses a different credential axis (DISPATCH_PROOF_BEARER / per-user key).
+ * Two doors speak this contract:
+ * - the WAVE API gateway at `https://api.wave.online/v1/inference`, authenticated by a WAVE API key
+ *   (what the `wave-sdk` CLI uses by default; models and completions both need the key), and
+ * - the runtime door at `runtime.wave.online/v1` (alias `dsh.wave.online/v1`), which lists models
+ *   without auth and gates completions on its own credential (DISPATCH_PROOF_BEARER / per-user key).
+ *
+ * The `wave-sdk` CLI and the wave-runtime MCP server both call this client, so the contract lives in
+ * one place. Standalone — deliberately not coupled to WaveClient, since the runtime door uses a
+ * different credential axis. The token, when set, is sent as a Bearer header on every call and only
+ * to the configured base URL.
  */
 
 export interface ChatMessage {
@@ -24,6 +29,8 @@ export interface CompletionRequest {
   model?: string;
   messages: ChatMessage[];
   stream?: boolean;
+  /** OpenAI stream options. `stream()` sets `include_usage: true`; the gateway meters streams by it. */
+  stream_options?: { include_usage?: boolean };
   tools?: ToolSpec[];
   temperature?: number;
   max_tokens?: number;
@@ -45,19 +52,90 @@ export interface CompletionResponse {
 }
 
 export interface RuntimeClientOptions {
-  /** Base URL of the runtime door, e.g. https://runtime.wave.online/v1 */
+  /** Base URL of the door, e.g. https://api.wave.online/v1/inference or https://runtime.wave.online/v1 */
   baseUrl: string;
-  /** Bearer token for completion auth (models list is open; completions are gated). */
+  /** Bearer token. Required by the gateway for every call; the runtime door needs it for completions. */
   token?: string;
   fetchImpl?: typeof fetch;
 }
 
 export class RuntimeError extends Error {
   readonly status?: number;
-  constructor(message: string, status?: number) {
+  /** The gateway's error code (e.g. `ROUTE_NOT_FOUND`, `usage_accounting_required`), when it sent one. */
+  readonly code?: string;
+  constructor(message: string, status?: number, code?: string) {
     super(message);
+    this.name = "RuntimeError";
     this.status = status;
+    this.code = code;
   }
+}
+
+/**
+ * Build a RuntimeError from a non-2xx answer. A JSON error envelope contributes its code and message;
+ * any other body contributes its first 120 characters.
+ */
+async function upstreamError(op: string, res: Response): Promise<RuntimeError> {
+  const text = await res.text().catch(() => "");
+  let code: string | undefined;
+  let detail: string;
+  try {
+    const parsed = parseErrorBody(JSON.parse(text));
+    code = parsed.code;
+    detail = [parsed.code, parsed.message].filter(Boolean).join(": ");
+  } catch {
+    detail = text.trim().slice(0, 120);
+  }
+  return new RuntimeError(`${op}: upstream ${res.status}${detail ? ` (${detail})` : ""}`, res.status, code);
+}
+
+interface StreamChunk {
+  id?: string;
+  created?: number;
+  model?: string;
+  choices?: Array<{
+    index?: number;
+    delta?: { content?: string | null };
+    message?: { content?: string | null };
+    finish_reason?: string | null;
+  }>;
+  usage?: CompletionResponse["usage"] | null;
+}
+
+/**
+ * Fold an SSE body into one CompletionResponse. Some doors answer `text/event-stream` even when the
+ * request says `stream: false`; parsing that body as JSON would throw on its `data:` prefix.
+ */
+export function completionFromSse(body: string): CompletionResponse {
+  let first: StreamChunk | undefined;
+  let content = "";
+  let finish: string | null = null;
+  let usage: CompletionResponse["usage"];
+  for (const raw of body.split("\n")) {
+    const line = raw.trim();
+    if (!line.startsWith("data:")) continue;
+    const payload = line.slice(5).trim();
+    if (!payload || payload === "[DONE]") continue;
+    let chunk: StreamChunk;
+    try {
+      chunk = JSON.parse(payload) as StreamChunk;
+    } catch {
+      continue;
+    }
+    first ??= chunk;
+    const choice = chunk.choices?.[0];
+    content += choice?.delta?.content ?? choice?.message?.content ?? "";
+    if (choice?.finish_reason) finish = choice.finish_reason;
+    if (chunk.usage) usage = chunk.usage;
+  }
+  return {
+    id: first?.id ?? "",
+    object: "chat.completion",
+    created: first?.created ?? 0,
+    model: first?.model ?? "",
+    choices: [{ index: 0, message: { role: "assistant", content }, finish_reason: finish }],
+    ...(usage ? { usage } : {}),
+  };
 }
 
 export class RuntimeClient {
@@ -71,16 +149,16 @@ export class RuntimeClient {
     this.fetchImpl = opts.fetchImpl ?? fetch;
   }
 
-  private headers(extra: Record<string, string> = {}, auth = true): Record<string, string> {
+  private headers(extra: Record<string, string> = {}): Record<string, string> {
     const h: Record<string, string> = { "content-type": "application/json", ...extra };
-    if (auth && this.token) h.authorization = `Bearer ${this.token}`;
+    if (this.token) h.authorization = `Bearer ${this.token}`;
     return h;
   }
 
-  /** List the models the door serves (open — no auth required). */
+  /** List the models the door serves. Sends the token when one is set (the gateway requires it). */
   async models(): Promise<string[]> {
-    const res = await this.fetchImpl(`${this.baseUrl}/models`, { headers: this.headers({}, false) });
-    if (!res.ok) throw new RuntimeError(`models: upstream ${res.status}`, res.status);
+    const res = await this.fetchImpl(`${this.baseUrl}/models`, { headers: this.headers() });
+    if (!res.ok) throw await upstreamError("models", res);
     const body = (await res.json()) as { data?: { id: string }[] };
     return (body.data ?? []).map((m) => m.id);
   }
@@ -92,9 +170,9 @@ export class RuntimeClient {
       headers: this.headers(),
       body: JSON.stringify({ stream: false, ...req }),
     });
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      throw new RuntimeError(`complete: upstream ${res.status}${text ? ` (${text.slice(0, 120)})` : ""}`, res.status);
+    if (!res.ok) throw await upstreamError("complete", res);
+    if ((res.headers.get("content-type") ?? "").includes("text/event-stream")) {
+      return completionFromSse(await res.text());
     }
     return (await res.json()) as CompletionResponse;
   }
@@ -104,9 +182,10 @@ export class RuntimeClient {
     const res = await this.fetchImpl(`${this.baseUrl}/chat/completions`, {
       method: "POST",
       headers: this.headers({ accept: "text/event-stream" }),
-      body: JSON.stringify({ stream: true, ...req }),
+      body: JSON.stringify({ stream: true, stream_options: { include_usage: true }, ...req }),
     });
-    if (!res.ok || !res.body) throw new RuntimeError(`stream: upstream ${res.status}`, res.status);
+    if (!res.ok) throw await upstreamError("stream", res);
+    if (!res.body) throw new RuntimeError(`stream: upstream ${res.status} sent no body`, res.status);
 
     const decoder = new TextDecoder();
     let buffer = "";

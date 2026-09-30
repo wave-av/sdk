@@ -13,6 +13,8 @@ export {
   createClient,
   WaveError,
   RateLimitError,
+  PaymentRequiredError,
+  RouteNotServedError,
   type WaveClientConfig,
   type RequestOptions,
   type WaveAPIErrorResponse,
@@ -23,6 +25,7 @@ export {
   type Timestamps,
   type Metadata,
 } from "./client";
+export { SDK_VERSION } from "./version";
 
 // Clips API
 export {
@@ -340,6 +343,8 @@ export { RealtimeAPI, RealtimeChannel, createRealtimeAPI } from "./realtime";
 export * from "./realtime-types";
 export { TranscriptAPI } from "./transcripts";
 export type { Transcript, TranscriptList, TranscriptMessage } from "./transcripts";
+export { InferenceAPI } from "./inference";
+export type { InferenceMessage, InferenceResult, InferenceModel, ModelProfile } from "./inference";
 
 // Enhance — AI video super-resolution
 export {
@@ -378,6 +383,7 @@ export {
   type MeterSmsChannel,
   type MeterRealtimeChannel,
   type MeterStorageChannel,
+  type MeterTier,
   type MeterRollup,
   type MeterRollupTotals,
 } from "./meter";
@@ -561,7 +567,7 @@ export class Wave {
   // Enhance — AI video super-resolution
   public readonly enhance: EnhanceAPI;
 
-  // Inference: the measured funnel (route/fallback/meter, inference.wave.online)
+  // Inference: OpenAI-compatible completions + model list via the gateway (/v1/inference/*)
   public readonly inference: InferenceAPI;
 
   // Sandbox: safe contained command execution (preview -> approve -> apply)

@@ -1,6 +1,6 @@
 {
   "name": "@wave-av/sdk",
-  "version": "2.1.3",
+  "version": "3.0.0",
   "description": "Official WAVE SDK - 35 API modules covering streaming, production, device management, analytics, content, monetization, and more",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -240,6 +240,21 @@
       "types": "./dist/compose.d.ts",
       "import": "./dist/compose.mjs",
       "require": "./dist/compose.js"
+    },
+    "./transcripts": {
+      "types": "./dist/transcripts.d.ts",
+      "import": "./dist/transcripts.mjs",
+      "require": "./dist/transcripts.js"
+    },
+    "./perception": {
+      "types": "./dist/perception.d.ts",
+      "import": "./dist/perception.mjs",
+      "require": "./dist/perception.js"
+    },
+    "./inference": {
+      "types": "./dist/inference.d.ts",
+      "import": "./dist/inference.mjs",
+      "require": "./dist/inference.js"
     }
   },
   "files": [
@@ -296,7 +311,7 @@
     "url": "https://github.com/wave-av/sdk.git",
     "directory": "."
   },
-  "homepage": "https://docs.wave.online/sdk",
+  "homepage": "https://github.com/wave-av/sdk#readme",
   "bugs": {
     "url": "https://github.com/wave-av/sdk/issues"
   },
