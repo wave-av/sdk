@@ -73,9 +73,24 @@ Buildkite, the `secrets-content-policy` step's `secrets: [GUARD_PRIVATE_REPOS]` 
 CI") as the `GUARD_PRIVATE_REPOS` env var for that step only — Buildkite redacts the value from build
 logs if it is ever printed. Never set this from a literal value in `pipeline.yml` or a committed script —
 baking that list into a public repo's tree would itself be exactly the leak `content-policy.sh` exists to
-catch. Left unset (no cluster secret configured), the step still runs (gitleaks and the rest of
-content-policy.sh's rules are unaffected); only the private-repo-name rule is skipped, same as running
-the GH job locally today.
+catch.
+
+**The cluster secret must exist, not merely be unset.** The Buildkite agent fetches every key named in
+a step's `secrets:` list before the step's command runs at all; a key that does not exist in the
+cluster fails that fetch and the job never starts — `secrets-content-policy.sh` never runs, so its own
+"unset → skip the rule" fallback never gets a chance to apply. That differs from the GH Actions
+variable, which really can be left undefined. To get the GH-equivalent behavior on Buildkite ("rule
+skipped"), the cluster secret must exist with an **empty string** value, not be absent.
+
+**Same-repo PR builds receive this secret.** This pipeline builds pushes and same-repo (non-fork) pull
+requests (see step 4 below); fork PRs never get a Buildkite agent at all, so only contributors who can
+push a branch in `wave-av/sdk` can trigger a build that sees `GUARD_PRIVATE_REPOS`. That is the same
+trust boundary every other step on this queue already operates under — this secret does not widen it.
+It is also a low-sensitivity value: GitHub itself stores the equivalent as a plain, unmasked Actions
+**variable**, not a secret, so step-scoped injection plus automatic log redaction here is already
+stricter than the GH baseline. Restricting the secret to protected-branch-only builds was considered
+and rejected: this step's job is to scan each PR's own content for policy violations, including a PR
+that edits the step itself — running it only from a trusted ref would defeat that purpose.
 
 **Not ported**: `body-guard`, the other job in `public-repo-guard.yml`. It scans PR/issue/comment/review
 **text** read from the GitHub event payload (`$GITHUB_EVENT_PATH`), which has no Buildkite equivalent —
@@ -145,8 +160,10 @@ An operator still needs to:
    pipelines.
 6. **Cancel/skip intermediate builds** on `!main`, mirroring `foundation-gate.yml`'s
    `cancel-in-progress: true` per ref.
-7. **Run an agent on queue `fpc-isolated`** (or confirm one is already polling it) so builds are not
-   stuck pending.
+7. **Run a Buildkite Agent v3.106.0 or later on queue `fpc-isolated`** (or confirm one already polling
+   it meets that minimum) so builds are not stuck pending — v3.106.0+ is required for the
+   pipeline-YAML `secrets:` attribute `secrets-content-policy` uses
+   (<https://buildkite.com/docs/pipelines/security/secrets/buildkite-secrets>).
 8. **Observe a green build** — all three steps (`gate-checks`, `gate-skill-validate`,
    `secrets-content-policy`) passing on both a push to `main` and a PR build, **and** confirm all three
    post as distinct `buildkite/<slug>/<step-key>` commit statuses on the PR (not one pipeline-level
