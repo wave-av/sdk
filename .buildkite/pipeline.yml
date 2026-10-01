@@ -1,0 +1,66 @@
+# sdk required-checks shadow port (SHADOW mode). See .buildkite/README.md.
+#
+# Uploaded only by the pipeline's UI settings step, which runs .buildkite/steps/upload.sh
+# (buildkite-agent pipeline upload --no-interpolation --reject-parse-warnings). Every GH workflow stays
+# untouched and remains the gate until this pipeline is green for 7 consecutive days. Nothing under
+# .github/ changes in this port, and branch protection is not touched by this PR.
+#
+# Rules for every step here:
+#   - command is one checked-in script (compatible with agent no-command-eval)
+#   - explicit timeout_in_minutes
+#   - automatic retry only for infra loss (-1 agent lost, 255 guest died), limit 1 each; a real gate
+#     failure is never retried automatically, so flakes stay visible
+#   - no plugins, no secret values in env, no cancel_on_build_failing
+# Steps have no depends_on: each runs in its own disposable guest, in parallel, mirroring the three
+# independent GH required contexts they shadow.
+
+agents:
+  queue: fpc-isolated
+
+env:
+  CI: "true"
+
+steps:
+  - label: ":lock: gate / checks (secret-regex + file-size)"
+    key: gate-checks
+    command: .buildkite/steps/gate-checks.sh
+    timeout_in_minutes: 10
+    retry:
+      automatic:
+        - exit_status: -1
+          limit: 1
+        - exit_status: 255
+          limit: 1
+      manual:
+        allowed: true
+        permit_on_passed: false
+
+  - label: ":scroll: gate / skill-validate (SKILL.md frontmatter)"
+    key: gate-skill-validate
+    command: .buildkite/steps/gate-skill-validate.sh
+    timeout_in_minutes: 5
+    retry:
+      automatic:
+        - exit_status: -1
+          limit: 1
+        - exit_status: 255
+          limit: 1
+      manual:
+        allowed: true
+        permit_on_passed: false
+
+  - label: ":closed_lock_with_key: Secrets + content policy (gitleaks + content-policy.sh)"
+    key: secrets-content-policy
+    command: .buildkite/steps/secrets-content-policy.sh
+    secrets:
+      - GUARD_PRIVATE_REPOS
+    timeout_in_minutes: 10
+    retry:
+      automatic:
+        - exit_status: -1
+          limit: 1
+        - exit_status: 255
+          limit: 1
+      manual:
+        allowed: true
+        permit_on_passed: false
