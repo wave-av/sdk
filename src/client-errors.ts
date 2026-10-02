@@ -38,6 +38,7 @@ export function parseErrorBody(body: unknown, statusCode: number, statusText?: s
     const errSlug = errString && /^[A-Za-z0-9_.-]+$/.test(errString) ? errString : undefined;
     code = flatCode || errSlug || code;
     message = flatMessage || errString || message;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- discarded on purpose, keeps `rest`
     const { error: _e, code: _c, message: _m, request_id: _r, ...rest } = b;
     if (errString && flatCode) rest['error'] = errString;
     details = Object.keys(rest).length ? rest : undefined;

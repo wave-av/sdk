@@ -12,7 +12,6 @@ import type {
   WaveClientConfig,
   RequestOptions,
   WaveClientEvents,
-  WaveAPIErrorResponse,
 } from './client-types';
 
 // Re-export shared types so sibling modules and the barrel can import them

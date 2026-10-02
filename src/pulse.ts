@@ -4,6 +4,7 @@
  * Analytics, metrics, and business intelligence for streams and viewers.
  */
 
+import { WaveError } from "./client";
 import type { WaveClient, PaginationParams, PaginatedResponse, Timestamps } from "./client";
 
 // ============================================================================
@@ -86,6 +87,11 @@ export interface EngagementMetrics {
   drop_off_points: { time_seconds: number; drop_rate: number }[];
 }
 
+/**
+ * @deprecated No gateway route ever served this shape — `getRevenueMetrics` always 404'd. The
+ * method now throws a `WaveError` (code `METHOD_NOT_SUPPORTED`) instead of calling a dead route.
+ * Kept only so existing imports of the type don't break; do not build against it.
+ */
 export interface RevenueMetrics {
   total_revenue_cents: number;
   subscription_revenue_cents: number;
@@ -96,6 +102,26 @@ export interface RevenueMetrics {
   arpu_cents: number;
   new_subscribers: number;
   cancelled_subscribers: number;
+}
+
+/**
+ * Real shape of `GET /v1/analytics/engagement` (wave-gateway `src/analytics-routes.ts`,
+ * `handleAnalyticsEngagement`) — aggregated server-side from `usage_ledger_daily`, a daily
+ * rollup with no per-event granularity. Fields the gateway cannot honestly derive from that
+ * rollup (`totalEvents`, `averageEventsPerDay`, `peakEvents`) come back `null`, not fabricated.
+ */
+export interface EngagementAnalytics {
+  organizationId: string;
+  period: { from: string; to: string };
+  engagement: {
+    totalEvents: number | null;
+    totalQuantity: number;
+    averageEventsPerDay: number | null;
+    peakDay: string | null;
+    peakEvents: number | null;
+    peakQuantity: number;
+    activeDays: number;
+  };
 }
 
 export interface TimeSeriesPoint {
@@ -145,12 +171,14 @@ export interface CreateDashboardRequest {
 // ============================================================================
 
 /**
- * Analytics and business intelligence for streams, viewers, quality, and revenue.
+ * Analytics and business intelligence for streams, viewers, and quality.
+ *
+ * `getRevenueMetrics` is deprecated and throws — no gateway route has ever served org revenue
+ * metrics (see its own doc comment below).
  *
  * @example
  * ```typescript
- * const viewers = await wave.pulse.getViewerAnalytics({ time_range: '7d' });
- * const revenue = await wave.pulse.getRevenueMetrics({ time_range: '30d' });
+ * const engagement = await wave.pulse.getViewerAnalytics({ time_range: '7d' });
  * const timeseries = await wave.pulse.getTimeSeries('viewers', { time_range: '24h', granularity: 'hour' });
  * ```
  */
@@ -168,8 +196,17 @@ export class PulseAPI {
     });
   }
 
-  async getViewerAnalytics(params?: QueryParams): Promise<ViewerAnalytics> {
-    return this.client.get<ViewerAnalytics>(`${this.basePath}/viewers`, {
+  /**
+   * Viewer/engagement analytics for the calling org.
+   *
+   * `/v1/analytics/viewers` was never served (always 404 `ROUTE_NOT_FOUND`) — wave-gateway's own
+   * route manifest (`src/agent-plugin.ts`, `analytics/viewers→analytics/engagement`) names
+   * `/v1/analytics/engagement` as the real, served successor, so this calls that instead. The
+   * response shape changed to match (see `EngagementAnalytics`) — it is not the old per-viewer
+   * geo/device/protocol breakdown, which no served route has ever returned.
+   */
+  async getViewerAnalytics(params?: QueryParams): Promise<EngagementAnalytics> {
+    return this.client.get<EngagementAnalytics>(`${this.basePath}/engagement`, {
       params: params as Record<string, string | number | boolean | undefined>,
     });
   }
@@ -186,10 +223,25 @@ export class PulseAPI {
     });
   }
 
+  /**
+   * @deprecated `/v1/analytics/revenue` has never been served — it 404s `ROUTE_NOT_FOUND` on
+   * every call, live, today (re-verified against https://api.wave.online). No gateway route
+   * (checked wave-gateway `src/analytics-routes.ts` / `src/gateway-native-owned-routes.ts` at
+   * `main`) serves org revenue metrics under any path. Rather than ship a call that always 404s,
+   * this throws immediately — no network call is made. Use `GET /v1/billing/usage` (cost/usage,
+   * not revenue) via the gateway directly if that is what you need, or watch for a future
+   * `pulse` release once a revenue-metrics route actually ships.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- kept for call-site compatibility
   async getRevenueMetrics(params?: QueryParams): Promise<RevenueMetrics> {
-    return this.client.get<RevenueMetrics>(`${this.basePath}/revenue`, {
-      params: params as Record<string, string | number | boolean | undefined>,
-    });
+    throw new WaveError(
+      "getRevenueMetrics() is not supported: no WAVE gateway route serves org revenue metrics " +
+        "(/v1/analytics/revenue was never served and 404s ROUTE_NOT_FOUND on every call). This " +
+        "method throws instead of shipping a request that cannot succeed. See the free capability " +
+        "index at https://gateway.wave.online/.well-known/wave-skills.json for what is actually served.",
+      "METHOD_NOT_SUPPORTED",
+      501,
+    );
   }
 
   async getTimeSeries(metric: MetricType, params?: QueryParams): Promise<TimeSeriesPoint[]> {
