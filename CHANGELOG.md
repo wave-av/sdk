@@ -8,6 +8,13 @@ All notable changes to this project are documented here. The format is based on
 
 ### Fixed
 
+- Errors from gateway paths that answer with a flat body keep their code and message. The
+  spend-cap 402 (`{"error":"spend_cap_exceeded","code":"SPEND_CAP_TIER_BLOCKED","message":"Add a
+  payment method…"}`) surfaced as `HTTP_402` / "Payment Required", and the mesh 400
+  (`{"error":"missing x-wave-node"}`) as "Bad Request". `WaveClient` now reads the canonical
+  `{error:{code,message}}` envelope, then top-level `code`/`message`, then a string `error`
+  (as the code only when it is a slug).
+
 - `pr-agent` lane: fork-triggered `/` commands are now refused, and the AI
   call's budget fits inside its step. Three defects, one of them only visible
   once the first was fixed.
