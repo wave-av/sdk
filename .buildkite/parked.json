@@ -1,0 +1,124 @@
+{
+  "$comment": "NOT RENDERED: the pipeline renderer reads only the settings file. This file records every GitHub Actions job (or secret-bearing leg of a ported job) that is parked, with the reason and what unblocks it, so nothing is dropped silently. Classes: publish (deploy-class, waits for an explicit owner decision), event-bot (waits on a GitHub-event bridge for Buildkite), secret (a main-only step needing a secret that is not granted to a public repository yet), registry (waits on a self-hosted npm registry). deferred_schedules lists GH schedule legs whose job is parked; ported schedules live in the settings `schedules`.",
+  "deferred_schedules": [
+    {
+      "reason": "release-drift.yml runs daily; its job (drift-check) is parked (needs a GitHub token for `gh release view`).",
+      "blocked_on": "secret decision: a read-only GitHub token for this public pipeline, as a main-only step",
+      "schedule": {
+        "name": "release-drift-daily",
+        "label": "daily npm / tag / GitHub Release drift check, 06:17 UTC (release-drift.yml schedule)",
+        "cronline": "17 6 * * *",
+        "branch": "main",
+        "steps": [
+          "version-drift"
+        ]
+      }
+    }
+  ],
+  "parked": [
+    {
+      "workflow": "release.yml",
+      "jobs": [
+        "resolve-ref",
+        "secret-scan",
+        "verify",
+        "publish",
+        "release",
+        "sbom"
+      ],
+      "class": "publish",
+      "reason": "Tag-triggered (sdk-v*) npm publish with OIDC trusted publishing, a GitHub Release (contents: write) and an SBOM asset. Deploy-class; not enabled. The check content already runs on every build: secret-scan = secrets-content-policy, verify = lint + typecheck + test + smoke-install-node-20/22.",
+      "blocked_on": "the owner explicitly enables publishing; then a main_only, tag-gated step with an npm publish credential or OIDC federation"
+    },
+    {
+      "workflow": "sbom.yml",
+      "jobs": [
+        "sbom"
+      ],
+      "class": "publish",
+      "reason": "Runs on release: published (and from release.yml); uploads an SBOM to the GitHub Release with contents: write.",
+      "blocked_on": "the publish crossing above"
+    },
+    {
+      "workflow": "governance-enforce.yml",
+      "jobs": [
+        "enforce"
+      ],
+      "class": "registry",
+      "reason": "Installs @wave-av/governance@0.4.6 from GitHub Packages, which returns 403 (billing) for every install, and needs a packages read credential this public pipeline does not hold. Not worked around.",
+      "blocked_on": "the self-hosted npm registry, then a governance-enforce step that diffs against the PR merge-base"
+    },
+    {
+      "workflow": "release-drift.yml",
+      "jobs": [
+        "drift-check"
+      ],
+      "class": "secret",
+      "reason": "scripts/release/drift-check.sh calls `gh release view`, which needs a GitHub token (GH passes GITHUB_TOKEN). It runs on main pushes and daily.",
+      "blocked_on": "secret decision: a read-only GitHub token name for step `version-drift` (main-only; the step key avoids the caps-lint deploy words)"
+    },
+    {
+      "workflow": "smoke-install.yml",
+      "jobs": [
+        "smoke: README quickstart against the live gateway"
+      ],
+      "class": "secret",
+      "reason": "The last smoke step calls the live gateway with WAVE_GATEWAY_API_KEY. GH skips it without the key; the ported smoke steps always take that skip.",
+      "blocked_on": "secret decision: WAVE_GATEWAY_API_KEY for a main-only live-smoke step"
+    },
+    {
+      "workflow": "public-repo-guard.yml",
+      "jobs": [
+        "guard: private-repo-name rule"
+      ],
+      "class": "secret",
+      "reason": "content-policy.sh checks private repository names only when GUARD_PRIVATE_REPOS is set (an org Actions variable on GH). Here it would be a job secret; the ported secrets-content-policy step runs without it, as a fork PR does on GH.",
+      "blocked_on": "secret decision: GUARD_PRIVATE_REPOS for a main-only content-policy step"
+    },
+    {
+      "workflow": "public-repo-guard.yml",
+      "jobs": [
+        "body-guard"
+      ],
+      "class": "event-bot",
+      "reason": "Scans PR, issue, comment and review TEXT read from the GitHub event payload (issues, issue_comment, pull_request_review* events). Buildkite has no such trigger.",
+      "blocked_on": "GitHub-event bridge"
+    },
+    {
+      "workflow": "auto-merge.yml",
+      "jobs": [
+        "auto-merge"
+      ],
+      "class": "event-bot",
+      "reason": "Triggered by labels and check_suite completion; acts with a GitHub App key (WAVE_AGENT_APP_ID, WAVE_AGENT_PRIVATE_KEY).",
+      "blocked_on": "GitHub-event bridge"
+    },
+    {
+      "workflow": "pr-agent.yml",
+      "jobs": [
+        "pr_agent"
+      ],
+      "class": "event-bot",
+      "reason": "Triggered by PR and issue_comment events; comments with an LLM key (OPENAI_KEY) and a write token.",
+      "blocked_on": "GitHub-event bridge"
+    },
+    {
+      "workflow": "issue-ops-triage.yml",
+      "jobs": [
+        "triage"
+      ],
+      "class": "event-bot",
+      "reason": "Triggered by issues events; uses ISSUE_OPS_PAT, BOT_ISSUE_OPS_APP_ID, BOT_ISSUE_OPS_PRIVATE_KEY.",
+      "blocked_on": "GitHub-event bridge"
+    },
+    {
+      "workflow": "foundation-gate.yml, governance-enforce.yml, public-repo-guard.yml",
+      "jobs": [
+        "merge_group trigger"
+      ],
+      "class": "event-bot",
+      "reason": "GitHub merge queue events have no Buildkite equivalent while GitHub's merge queue gates merges.",
+      "blocked_on": "a required-check swap decision"
+    }
+  ]
+}

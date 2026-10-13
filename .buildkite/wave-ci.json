@@ -1,0 +1,82 @@
+{
+  "$comment": "Pipeline settings for wave-av/sdk, PUBLIC. Template node-lib: lint, typecheck and test are built-in steps; the rest are this repo's .buildkite/scripts. No step holds a secret. Parked jobs (publish/release, event bots, secret-bearing legs, governance-enforce) are in .buildkite/parked.json with reasons; see .buildkite/README.md.",
+  "wave_ci": "296cc0cf4faf1f06d0acd4c2a767d6c111d2adf3",
+  "repo": "wave-av/sdk",
+  "pipeline": "sdk",
+  "template": "node-lib",
+  "visibility": "public",
+  "default_branch": "main",
+  "node": {
+    "version": "24",
+    "package_manager": "npm"
+  },
+  "overrides": {
+    "lint": {
+      "label": ":eslint: lint (lint.yml)",
+      "timeout": 10
+    },
+    "typecheck": {
+      "label": ":typescript: type-check (lint.yml)",
+      "scripts": [
+        "type-check"
+      ],
+      "timeout": 10
+    },
+    "test": {
+      "label": ":vitest: vitest run (lint.yml capabilities test + full suite)",
+      "timeout": 15
+    }
+  },
+  "extra_steps": [
+    {
+      "key": "gate-checks",
+      "label": ":lock: gate / checks: secret scan + file size + verify-routes",
+      "script": ".buildkite/scripts/gate-checks.sh",
+      "timeout": 10
+    },
+    {
+      "key": "gate-skill-validate",
+      "label": ":scroll: gate / skill-validate (SKILL.md frontmatter)",
+      "script": ".buildkite/scripts/gate-skill-validate.sh",
+      "timeout": 5
+    },
+    {
+      "key": "secrets-content-policy",
+      "label": ":closed_lock_with_key: secrets + content policy (gitleaks, content-policy, body fixtures)",
+      "script": ".buildkite/scripts/secrets-content-policy.sh",
+      "timeout": 10
+    },
+    {
+      "key": "smoke-install-node-20",
+      "label": ":package: fresh-install smoke (node 20)",
+      "script": ".buildkite/scripts/smoke-install.sh",
+      "timeout": 15
+    },
+    {
+      "key": "smoke-install-node-22",
+      "label": ":package: fresh-install smoke (node 22)",
+      "script": ".buildkite/scripts/smoke-install.sh",
+      "timeout": 15
+    },
+    {
+      "key": "ga-evidence",
+      "label": ":clipboard: GA evidence producer (VER-001)",
+      "script": ".buildkite/scripts/ga-evidence.sh",
+      "timeout": 15,
+      "artifacts": [
+        "ga-out/**"
+      ]
+    }
+  ],
+  "schedules": [
+    {
+      "name": "ga-evidence-daily",
+      "label": "daily GA evidence VER-001, 09:31 UTC (ga-evidence.yml schedule)",
+      "cronline": "31 9 * * *",
+      "branch": "main",
+      "steps": [
+        "ga-evidence"
+      ]
+    }
+  ]
+}
