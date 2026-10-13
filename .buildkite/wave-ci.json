@@ -1,5 +1,5 @@
 {
-  "$comment": "wave-ci settings for wave-av/sdk (wave-ci#55), PUBLIC. Template node-lib: lint, typecheck and test are wave-ci built-ins; the rest are this repo's .buildkite/scripts. No step holds a secret. Parked jobs (publish/release, event bots, secret-bearing legs, governance-enforce) are in .buildkite/wave-ci.deferred.json with reasons; see .buildkite/README.md.",
+  "$comment": "Pipeline settings for wave-av/sdk, PUBLIC. Template node-lib: lint, typecheck and test are built-in steps; the rest are this repo's .buildkite/scripts. No step holds a secret. Parked jobs (publish/release, event bots, secret-bearing legs, governance-enforce) are in .buildkite/parked.json with reasons; see .buildkite/README.md.",
   "wave_ci": "296cc0cf4faf1f06d0acd4c2a767d6c111d2adf3",
   "repo": "wave-av/sdk",
   "pipeline": "sdk",
@@ -17,7 +17,9 @@
     },
     "typecheck": {
       "label": ":typescript: type-check (lint.yml)",
-      "scripts": ["type-check"],
+      "scripts": [
+        "type-check"
+      ],
       "timeout": 10
     },
     "test": {
@@ -61,7 +63,9 @@
       "label": ":clipboard: GA evidence producer (VER-001)",
       "script": ".buildkite/scripts/ga-evidence.sh",
       "timeout": 15,
-      "artifacts": ["ga-out/**"]
+      "artifacts": [
+        "ga-out/**"
+      ]
     }
   ],
   "schedules": [
@@ -70,7 +74,9 @@
       "label": "daily GA evidence VER-001, 09:31 UTC (ga-evidence.yml schedule)",
       "cronline": "31 9 * * *",
       "branch": "main",
-      "steps": ["ga-evidence"]
+      "steps": [
+        "ga-evidence"
+      ]
     }
   ]
 }

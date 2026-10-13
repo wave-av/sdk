@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Step `ga-evidence`: .github/workflows/ga-evidence.yml job `ga-evidence` (VER-001). Runs on every build
 # (the workflow runs on pull_request) and on the daily schedule `ga-evidence-daily` (cron 31 9 * * *,
-# declared in .buildkite/wave-ci.json `schedules`).
+# declared in the pipeline settings `schedules`).
 #
 # Same contract as the workflow's Enforce step:
 #   exit 0 -> pass

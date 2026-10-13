@@ -8,7 +8,7 @@
 #
 # The workflow's last step (README quickstart against the live gateway) needs WAVE_GATEWAY_API_KEY and
 # skips itself when the key is absent (forks, unset). This step holds no secret, so it always takes that
-# skip; the live leg is parked in .buildkite/wave-ci.deferred.json (see README, "Parked").
+# skip; the live leg is parked in .buildkite/parked.json (see README, "Parked").
 set -euo pipefail
 # shellcheck source-path=SCRIPTDIR source=lib/common.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
