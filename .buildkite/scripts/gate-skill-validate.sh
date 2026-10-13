@@ -1,26 +1,38 @@
 #!/usr/bin/env bash
-# Step `gate-skill-validate`: shadow-ports the required GitHub context "gate / skill-validate" — job
-# `skill-validate` in .github/workflows/_checks.yml. Validates every tracked *SKILL.md's frontmatter
-# (name == directory name, non-empty description, no empty allowed-tools/hooks, no duplicate frontmatter
-# keys). Auto-discovers *SKILL.md; a no-op pass if the repo has none. The `git ls-files` call and the
-# inline python3 validator are copied BYTE-FOR-BYTE from _checks.yml.
+# Step `gate-skill-validate`: the GitHub "gate / skill-validate" context, job `skill-validate` of
+# .github/workflows/_checks.yml. Validates every tracked *SKILL.md's frontmatter: name equals the
+# directory name, a non-empty description, no empty allowed-tools/hooks, no duplicate keys. A no-op
+# pass when the repository has none. The validator body is the workflow's inline python, unchanged.
 #
-# Would post as buildkite/<pipeline-slug>/gate-skill-validate (shadow mode; GitHub's
-# "gate / skill-validate" stays the required context until an operator swaps it — see
-# .buildkite/README.md).
+# Python comes from the guest image's mise at the version the workflow pins (PY_VERSION). PyYAML is
+# baked into every image python; when it is missing, a job-local venv installs the pinned wheel
+# (binary only) instead of the workflow's unpinned `pip install pyyaml`.
 set -euo pipefail
-# shellcheck source-path=SCRIPTDIR source=../lib/common.sh
-source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
+# shellcheck source-path=SCRIPTDIR source=lib/common.sh
+source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
 
-cd "$BK_REPO_ROOT"
-bk_refuse_doppler
-bk_require_tools python3 git
+PY_VERSION="3.14"
+PYYAML_VERSION="6.0.3"
 
-bk_section "pip install pyyaml"
-python3 -m pip install --quiet --disable-pip-version-check pyyaml
+bk_preflight
+bk_require_tools git
 
-# Verbatim from _checks.yml, step "Skill frontmatter gate".
-bk_gate "Skill frontmatter gate" python3 - <<'PY'
+py_dir=""
+bk_mise_dir python "$PY_VERSION" py_dir
+py="${py_dir}/bin/python3"
+"$py" --version
+
+if ! "$py" -c 'import yaml' >/dev/null 2>&1; then
+  bk_section "PyYAML not in the image python; job-local venv with pyyaml==${PYYAML_VERSION} (wheel only)"
+  venv=""
+  bk_mktemp_dir venv
+  "$py" -m venv "${venv}/py"
+  "${venv}/py/bin/python" -m pip install --quiet --disable-pip-version-check --only-binary=:all: \
+    "pyyaml==${PYYAML_VERSION}"
+  py="${venv}/py/bin/python"
+fi
+
+bk_gate "skill frontmatter gate" "$py" - <<'PY'
 import sys, os, re, subprocess
 import yaml
 allf = subprocess.run(["git","ls-files","*SKILL.md"], capture_output=True, text=True).stdout.splitlines()
