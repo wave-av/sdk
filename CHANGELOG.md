@@ -8,10 +8,10 @@ All notable changes to this project are documented here. The format is based on
 
 ### Fixed
 
-- The npm package description no longer states a raw API module count. It
-  said 35 here (34 on npm) while the package's own exports measure more, and
-  the README already dropped the number. wave.online's copy-freshness gate
-  checks registry descriptions against measured facts (WAVE-32922).
+- The npm package description no longer states an API module count. The
+  number in the description (35 in the manifest, 34 on npm) had fallen behind
+  the package's actual exports. The README's subpath list remains the place
+  to see what the package exports.
 - `pr-agent` lane: fork-triggered `/` commands are now refused, and the AI
   call's budget fits inside its step. Three defects, one of them only visible
   once the first was fixed.
